@@ -114,6 +114,12 @@
 - **Per-format pricing** (spec §10): each carried format can have a *default rental category*; choosing a format when adding copies preselects it (and shows that category's price). To price DVDs differently, create e.g. "DVD NEW RELEASE" and make it DVD's default. Server checks the id belongs to the store's own kept categories (never trusts the browser); FK is `ON DELETE SET NULL`.
 - Inventory settings: default replacement cost (moved here) and default low-stock threshold (prefills new merchandise). DB CHECK keeps the threshold non-negative. 88 unit tests.
 
+**Polish step 5 — Editable concession categories**
+- Merchandise categories are now a per-store table (`ConcessionCategory`: name, SKU letter, order, active) editable in Store Settings → *Concession Categories* (and in first-run setup, prefilled with the six defaults). Replaces the fixed enum; hand-written data migration preserved every existing item (verified before/after, database backed up first, Prisma reports zero schema drift).
+- Removing a category deletes it if unused, otherwise **retires** it (items keep it and show `NAME (RETIRED)` when edited); adding a retired name brings it back. Names unique per store (case-insensitive), 1–20 categories, SKU letter A–Z. Server verifies every category id against the store; new items get SKUs from their category's letter (C001, F001…).
+- Sale-screen category buttons, concessions filters/lists, forms, reports and the sample-data generator all use the store's categories.
+- Bug found and fixed during verification: blank-form constants exported from client component files were being *spread* by a server page (arrived empty) and broke saving new merchandise — introduced in step 4. Defaults now live in `lib/form-defaults.ts` (a plain module) with a regression test. 92 unit tests + 6 DB tests.
+
 ## Current Work
 Nothing in progress.
 

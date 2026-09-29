@@ -1,4 +1,5 @@
-import { CustomerForm, EMPTY_CUSTOMER } from "@/components/CustomerForm";
+import { CustomerForm } from "@/components/CustomerForm";
+import { EMPTY_CUSTOMER } from "@/lib/form-defaults";
 import { Screen } from "@/components/Screen";
 import { requireStore } from "@/lib/store-access";
 

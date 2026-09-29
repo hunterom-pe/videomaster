@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Screen } from "@/components/Screen";
-import { EMPTY_STORE, StoreForm } from "@/components/StoreForm";
+import { StoreForm } from "@/components/StoreForm";
+import { EMPTY_STORE } from "@/lib/form-defaults";
 import { requireUser, getUserStore } from "@/lib/store-access";
 
 export const metadata = { title: "STORE CONFIGURATION" };

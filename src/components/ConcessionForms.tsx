@@ -4,14 +4,10 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { addStock, createConcession, updateConcession } from "@/actions/concessions";
 import { ErrorBox } from "@/components/Screen";
-import { CONCESSION_CATEGORIES, concessionSchema, zodErrors, type ConcessionFormValues } from "@/lib/validation";
+import { concessionSchema, zodErrors, type ConcessionFormValues } from "@/lib/validation";
 
-export const EMPTY_CONCESSION: ConcessionFormValues = {
-  sku: "", name: "", category: "CANDY", retailPrice: "", costPrice: "", quantityOnHand: "0",
-  lowStockThreshold: "5", taxable: true, active: true, barcode: "",
-};
 
-export function ConcessionForm({ itemId, initial }: { itemId?: string; initial: ConcessionFormValues }) {
+export function ConcessionForm({ itemId, initial, categories }: { itemId?: string; initial: ConcessionFormValues; categories: { id: string; name: string }[] }) {
   const [v, setV] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
@@ -57,11 +53,11 @@ export function ConcessionForm({ itemId, initial }: { itemId?: string; initial: 
           {text("name", "ITEM NAME")}
           {text("sku", "SKU", itemId ? { disabled: true, hint: "SKU CANNOT BE CHANGED" } : { hint: "LEAVE BLANK TO ASSIGN AUTOMATICALLY (E.G. C001)" })}
           <div className="vm-field">
-            <label htmlFor="category">CATEGORY</label>
-            <select id="category" value={v.category} onChange={(e) => set("category", e.target.value)}>
-              {CONCESSION_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+            <label htmlFor="categoryId">CATEGORY</label>
+            <select id="categoryId" value={v.categoryId} onChange={(e) => set("categoryId", e.target.value)} aria-invalid={!!errors.categoryId} aria-describedby={errors.categoryId ? "categoryId-err" : undefined}>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            {errors.category && <span id="category-err" className="vm-fielderr">{errors.category}</span>}
+            {errors.categoryId && <span id="categoryId-err" className="vm-fielderr">{errors.categoryId}</span>}
           </div>
           {text("barcode", "BARCODE (OPTIONAL)")}
           {text("retailPrice", "RETAIL PRICE", { mode: "decimal" })}

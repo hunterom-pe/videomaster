@@ -50,6 +50,7 @@ const MERCH = [
   { name: "VHS REWINDER", category: "ACCESSORIES", price: 19.99, qty: 2 }, // at threshold => low stock
 ] as const;
 const PREFIX: Record<string, string> = { CANDY: "C", POPCORN: "P", DRINKS: "D", SNACKS: "S", ACCESSORIES: "A", OTHER: "O" };
+const MERCH_CATEGORY_NAME: Record<string, string> = { CANDY: "CANDY", POPCORN: "POPCORN", DRINKS: "DRINKS", SNACKS: "SNACKS", ACCESSORIES: "VIDEO ACCESSORIES", OTHER: "OTHER" };
 const KIDS = new Set(["Toy Story", "Aladdin", "The Lion King", "Beauty and the Beast", "Home Alone"]);
 
 const pad = (n: number, w: number) => String(n).padStart(w, "0");
@@ -113,11 +114,25 @@ export async function loadSampleData(tx: Tx, storeId: string, actorUserId: strin
   const rentable = customers.filter((c) => c.status === "GOOD");
 
   // ── merchandise ──
+  // Make sure the store has the merchandise categories the demo uses (reactivating or creating them as needed).
+  const merchCategoryIds = new Map<string, { id: string; prefix: string }>();
+  for (const key of new Set(MERCH.map((m) => m.category))) {
+    const name = MERCH_CATEGORY_NAME[key];
+    const existing = await tx.concessionCategory.findUnique({ where: { storeId_name: { storeId, name } } });
+    const row = existing
+      ? await tx.concessionCategory.update({ where: { id: existing.id, storeId }, data: { active: true } })
+      : await tx.concessionCategory.create({ data: { storeId, name, prefix: PREFIX[key], sortOrder: 50 } });
+    merchCategoryIds.set(key, { id: row.id, prefix: row.prefix });
+  }
   const counters: Record<string, number> = {};
+  const demoCategoryOf = new Map<string, string>(); // merchandise id -> demo category key (for sales weighting)
   const merch = MERCH.map((m) => {
-    counters[m.category] = (counters[m.category] ?? 0) + 1;
+    const cat = merchCategoryIds.get(m.category)!;
+    counters[cat.prefix] = (counters[cat.prefix] ?? 0) + 1;
+    const id = randomUUID();
+    demoCategoryOf.set(id, m.category);
     return {
-      id: randomUUID(), storeId, sku: `${PREFIX[m.category]}${pad(counters[m.category], 3)}`, name: m.name, category: m.category as never,
+      id, storeId, sku: `${cat.prefix}${pad(counters[cat.prefix], 3)}`, name: m.name, categoryId: cat.id,
       retailPrice: m.price.toFixed(2), costPrice: (m.price * 0.5).toFixed(2), taxable: true, quantityOnHand: m.qty,
       lowStockThreshold: m.name === "VHS REWINDER" ? 2 : 5, active: true, barcode: null as string | null,
     };
@@ -125,10 +140,10 @@ export async function loadSampleData(tx: Tx, storeId: string, actorUserId: strin
   const sellable = merch.filter((m) => m.quantityOnHand > 0);
   // Snacks sell far more often than $20 accessories.
   const SALE_WEIGHT: Record<string, number> = { CANDY: 30, POPCORN: 30, DRINKS: 20, SNACKS: 15, ACCESSORIES: 1 };
-  const saleWeightTotal = sellable.reduce((n, m) => n + (SALE_WEIGHT[m.category] ?? 5), 0);
+  const saleWeightTotal = sellable.reduce((n, m) => n + (SALE_WEIGHT[demoCategoryOf.get(m.id)!] ?? 5), 0);
   const pickMerch = () => {
     let r = rnd() * saleWeightTotal;
-    for (const m of sellable) if ((r -= SALE_WEIGHT[m.category] ?? 5) <= 0) return m;
+    for (const m of sellable) if ((r -= SALE_WEIGHT[demoCategoryOf.get(m.id)!] ?? 5) <= 0) return m;
     return sellable[sellable.length - 1];
   };
 

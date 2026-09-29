@@ -85,17 +85,18 @@ model Store {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
-  members          StoreMember[]
-  settings         StoreSettings?
-  formats          StoreFormat[]
-  rentalCategories RentalCategory[]
-  customers        Customer[]
-  movieTitles      MovieTitle[]
-  inventoryCopies  InventoryCopy[]
-  rentals          Rental[]
-  transactions     Transaction[]
-  concessionItems  ConcessionItem[]
-  transactionItems TransactionItem[]
+  members              StoreMember[]
+  settings             StoreSettings?
+  formats              StoreFormat[]
+  rentalCategories     RentalCategory[]
+  customers            Customer[]
+  movieTitles          MovieTitle[]
+  inventoryCopies      InventoryCopy[]
+  rentals              Rental[]
+  transactions         Transaction[]
+  concessionItems      ConcessionItem[]
+  transactionItems     TransactionItem[]
+  concessionCategories ConcessionCategory[]
 }
 
 model StoreSettings {
@@ -351,22 +352,13 @@ model Transaction {
   @@index([storeId, createdAt])
 }
 
-enum ConcessionCategory {
-  CANDY
-  POPCORN
-  DRINKS
-  SNACKS
-  ACCESSORIES
-  OTHER
-}
-
 // Retail merchandise (not rental inventory). quantityOnHand >= 0 is enforced by a DB CHECK constraint.
 model ConcessionItem {
   id                String             @id @default(cuid())
   storeId           String
   sku               String
   name              String
-  category          ConcessionCategory @default(OTHER)
+  categoryId        String
   retailPrice       Decimal            @db.Decimal(8, 2)
   costPrice         Decimal?           @db.Decimal(8, 2)
   taxable           Boolean            @default(true)
@@ -376,13 +368,14 @@ model ConcessionItem {
   barcode           String?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @default(now()) @updatedAt
+  category          ConcessionCategory @relation(fields: [storeId, categoryId], references: [storeId, id])
   store             Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
   saleItems         TransactionItem[]
 
   @@unique([storeId, sku])
   @@unique([storeId, barcode])
   @@unique([storeId, id])
-  @@index([storeId, category])
+  @@index([storeId, categoryId])
 }
 
 // Merchandise lines on a transaction (rentals are linked via Rental.transactionId).
@@ -404,4 +397,20 @@ model TransactionItem {
 
   @@index([storeId, transactionId])
   @@index([storeId, concessionItemId])
+}
+
+// Merchandise categories, editable per store (CANDY, POPCORN, ...). The prefix is the letter used for auto SKUs (C001).
+model ConcessionCategory {
+  id        String           @id @default(cuid())
+  storeId   String
+  name      String
+  prefix    String
+  sortOrder Int              @default(0)
+  active    Boolean          @default(true)
+  store     Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  items     ConcessionItem[]
+
+  @@unique([storeId, id])
+  @@unique([storeId, name])
+  @@index([storeId])
 }

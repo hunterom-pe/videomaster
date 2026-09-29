@@ -3,7 +3,7 @@ import { stockState } from "@/lib/concessions";
 import { addStockSchema, concessionSchema, zodErrors, type ConcessionFormValues } from "@/lib/validation";
 
 const valid: ConcessionFormValues = {
-  sku: "", name: "Sour Patch Kids", category: "CANDY", retailPrice: "1.49", costPrice: "", quantityOnHand: "10",
+  sku: "", name: "Sour Patch Kids", categoryId: "cat-1", retailPrice: "1.49", costPrice: "", quantityOnHand: "10",
   lowStockThreshold: "5", taxable: true, active: true, barcode: "",
 };
 const errs = (patch: Partial<ConcessionFormValues>) => {
@@ -31,7 +31,7 @@ describe("concessionSchema", () => {
   });
   it("rejects fractional quantity and bad category/sku", () => {
     expect(errs({ quantityOnHand: "2.5" }).quantityOnHand).toBeDefined();
-    expect(errs({ category: "TOYS" }).category).toBeDefined();
+    expect(errs({ categoryId: "" }).categoryId).toBeDefined();
     expect(errs({ sku: "bad sku!" }).sku).toBeDefined();
   });
   it("allows blank optional cost and sku", () => expect(errs({ costPrice: "", sku: "" })).toEqual({}));

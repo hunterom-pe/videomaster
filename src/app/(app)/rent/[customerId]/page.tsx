@@ -47,7 +47,7 @@ export default async function CheckoutPage({ params }: { params: Promise<{ custo
           )}
           <CheckoutClient
             customerId={c.id} customerName={name} status={status} fees={c.outstandingFees.toFixed(2)}
-            restrictions={restrictions} activeOut={activeOut} maxOut={maxOut} timezone={tz} canOverride={role !== "EMPLOYEE"} taxPercent={store.settings!.salesTaxPercent.toString()}
+            restrictions={restrictions} activeOut={activeOut} maxOut={maxOut} timezone={tz} saleCategories={store.concessionCategories.map((c) => ({ id: c.id, name: c.name }))} canOverride={role !== "EMPLOYEE"} taxPercent={store.settings!.salesTaxPercent.toString()}
           />
         </>
       )}

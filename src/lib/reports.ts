@@ -118,7 +118,7 @@ export async function inventorySummary(storeId: string, tz: string) {
 }
 
 export async function merchandiseInventory(storeId: string) {
-  const items = await db.concessionItem.findMany({ where: { storeId, active: true }, orderBy: [{ category: "asc" }, { name: "asc" }], take: 2000 });
+  const items = await db.concessionItem.findMany({ where: { storeId, active: true }, orderBy: [{ category: { sortOrder: "asc" } }, { name: "asc" }], take: 2000, include: { category: { select: { name: true } } } });
   const out = items.filter((i) => i.quantityOnHand <= 0);
   const low = items.filter((i) => i.quantityOnHand > 0 && i.quantityOnHand <= i.lowStockThreshold);
   const units = items.reduce((n, i) => n + i.quantityOnHand, 0);

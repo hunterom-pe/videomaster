@@ -3,31 +3,29 @@ import { Screen } from "@/components/Screen";
 import { stockState } from "@/lib/concessions";
 import { db } from "@/lib/db";
 import { requireStore } from "@/lib/store-access";
-import { CONCESSION_CATEGORIES } from "@/lib/validation";
-import type { ConcessionCategory } from "@/generated/prisma/client";
 
 export const metadata = { title: "CONCESSIONS" };
 
 const PAGE_SIZE = 30;
-const catLabel = (v: string) => CONCESSION_CATEGORIES.find((c) => c.value === v)?.label ?? v;
 
 export default async function ConcessionsPage({ searchParams }: { searchParams: Promise<{ q?: string; cat?: string; page?: string; saved?: string; inactive?: string }> }) {
   const { user, store } = await requireStore();
   const sp = await searchParams;
   const q = (sp.q ?? "").trim().slice(0, 100);
-  const cat = CONCESSION_CATEGORIES.some((c) => c.value === sp.cat) ? (sp.cat as ConcessionCategory) : undefined;
+  // Only a category id that belongs to this store counts as a filter.
+  const cat = store.concessionCategories.find((c) => c.id === sp.cat)?.id;
   const showInactive = sp.inactive === "1";
   const page = Math.max(1, Math.min(100000, parseInt(sp.page ?? "1", 10) || 1));
 
   const terms = q.split(/\s+/).filter(Boolean).slice(0, 5);
   const where = {
     storeId: store.id,
-    ...(cat ? { category: cat } : {}),
+    ...(cat ? { categoryId: cat } : {}),
     ...(showInactive ? {} : { active: true }),
     AND: terms.map((t) => ({ OR: [{ name: { contains: t, mode: "insensitive" as const } }, { sku: { contains: t, mode: "insensitive" as const } }, { barcode: t }] })),
   };
   const [items, total, lowRows] = await Promise.all([
-    db.concessionItem.findMany({ where, orderBy: [{ category: "asc" }, { name: "asc" }], skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
+    db.concessionItem.findMany({ where, orderBy: [{ category: { sortOrder: "asc" } }, { name: "asc" }], skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE, include: { category: { select: { name: true } } } }),
     db.concessionItem.count({ where }),
     // Low-stock warnings cover the whole active catalog, independent of the current search/page.
     db.$queryRaw<{ sku: string; name: string; quantityOnHand: number }[]>`
@@ -67,7 +65,7 @@ export default async function ConcessionsPage({ searchParams }: { searchParams: 
           <label htmlFor="cat">CATEGORY</label>
           <select id="cat" name="cat" defaultValue={cat ?? ""}>
             <option value="">ALL</option>
-            {CONCESSION_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+            {store.concessionCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
         <label className="vm-check" style={{ flex: "0 0 auto" }}>
@@ -92,7 +90,7 @@ export default async function ConcessionsPage({ searchParams }: { searchParams: 
                     <tr key={i.id} className={i.active ? "" : "vm-dim"}>
                       <td>{i.sku}</td>
                       <td><Link href={`/concessions/${i.id}`} className="vm-rowlink">{i.name.toUpperCase()}</Link></td>
-                      <td>{catLabel(i.category)}</td>
+                      <td>{i.category.name}</td>
                       <td>{i.quantityOnHand}</td>
                       <td>${i.retailPrice.toFixed(2)}{i.taxable ? "" : " (NO TAX)"}</td>
                       <td>

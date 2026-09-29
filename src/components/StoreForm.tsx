@@ -7,19 +7,12 @@ import { ErrorBox } from "@/components/Screen";
 import { DEFAULT_TIMEZONE, TIMEZONES, isValidTimeZone } from "@/lib/tz";
 import {
   CURRENCIES,
-  DEFAULT_CATEGORIES,
   FORMAT_OPTIONS,
   storeSchema,
   zodErrors,
   type StoreFormValues,
 } from "@/lib/validation";
 
-export const EMPTY_STORE: StoreFormValues = {
-  name: "", number: "", address: "", city: "", region: "", postalCode: "", phone: "",
-  managerName: "", slogan: "", currency: "USD", timezone: DEFAULT_TIMEZONE, salesTaxPercent: "", storeYear: "",
-  onlyMoviesUpToStoreYear: false, rewindFee: "0.00", damageFee: "0.00", lostItemFee: "0.00", replacementFee: "19.99",
-  membershipFee: "0.00", membershipTermMonths: "0", maxRentalsOut: "0", defaultLowStock: "5", formatDefaults: {}, functionKeys: false, receiptFooter: "THANK YOU!", formats: ["VHS"], categories: DEFAULT_CATEGORIES,
-};
 
 export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initial: StoreFormValues }) {
   const [v, setV] = useState<StoreFormValues>(initial);
@@ -37,6 +30,8 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
   }, [mode]);
 
   const set = <K extends keyof StoreFormValues>(key: K, value: StoreFormValues[K]) => setV((p) => ({ ...p, [key]: value }));
+  const setMerch = (i: number, key: "name" | "prefix", value: string) =>
+    setV((p) => ({ ...p, concessionCategories: p.concessionCategories.map((c, idx) => (idx === i ? { ...c, [key]: key === "prefix" ? value.toUpperCase().slice(0, 1) : value } : c)) }));
   const setCat = (i: number, key: string, value: string) =>
     setV((p) => ({ ...p, categories: p.categories.map((c, idx) => (idx === i ? { ...c, [key]: value } : c)) }));
 
@@ -73,7 +68,7 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
 
   const SECTIONS = [
     ["store", "STORE INFO"], ["tax", "TAX"], ["year", "STORE YEAR"], ["formats", "FORMATS"], ["categories", "PRICING & LATE FEES"],
-    ["fees", "OPTIONAL FEES"], ["inventory", "INVENTORY"], ["membership", "MEMBERSHIP"], ["system", "SYSTEM"],
+    ["fees", "OPTIONAL FEES"], ["merch", "MERCHANDISE"], ["inventory", "INVENTORY"], ["membership", "MEMBERSHIP"], ["system", "SYSTEM"],
   ] as const;
   const savedCategories = v.categories.filter((c) => c.id);
 
@@ -231,6 +226,46 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
           {text("lostItemFee", "LOST-ITEM FEE", { hint: "ADDED TO THE REPLACEMENT COST WHEN A VIDEO IS LOST. 0 = NONE", inputMode: "decimal" })}
         </div>
         <p className="vm-hint">LATE FEES ARE SET PER RENTAL CATEGORY ABOVE. ALL FEES ARE OPTIONAL AND CAN BE CHANGED ANY TIME.</p>
+      </fieldset>
+
+      <fieldset className="vm-section" id="sec-merch">
+        <legend>CONCESSION CATEGORIES</legend>
+        <div className="vm-tablewrap">
+          <table className="vm-table" style={{ minWidth: 420 }}>
+            <thead>
+              <tr><th scope="col">CATEGORY NAME</th><th scope="col">SKU LETTER</th><th scope="col"><span className="vm-hint">ACTION</span></th></tr>
+            </thead>
+            <tbody>
+              {v.concessionCategories.map((c, i) => {
+                const e = (k: string) => errors[`concessionCategories.${i}.${k}`];
+                return (
+                  <tr key={c.id ?? `new-merch-${i}`}>
+                    <td>
+                      <input aria-label={`NAME FOR MERCHANDISE CATEGORY ${i + 1}`} type="text" value={c.name} onChange={(ev) => setMerch(i, "name", ev.target.value)}
+                        aria-invalid={!!e("name")} aria-describedby={e("name") ? `merch-${i}-name-err` : undefined} />
+                      {e("name") && <span id={`merch-${i}-name-err`} className="vm-fielderr">{e("name")}</span>}
+                    </td>
+                    <td>
+                      <input aria-label={`SKU LETTER FOR MERCHANDISE CATEGORY ${i + 1}`} type="text" value={c.prefix} maxLength={1} style={{ maxWidth: 90 }}
+                        onChange={(ev) => setMerch(i, "prefix", ev.target.value)} aria-invalid={!!e("prefix")} aria-describedby={e("prefix") ? `merch-${i}-prefix-err` : undefined} />
+                      {e("prefix") && <span id={`merch-${i}-prefix-err`} className="vm-fielderr">{e("prefix")}</span>}
+                    </td>
+                    <td>
+                      <button type="button" className="vm-btn small danger" disabled={v.concessionCategories.length <= 1} aria-label={`REMOVE MERCHANDISE CATEGORY ${i + 1}`}
+                        onClick={() => set("concessionCategories", v.concessionCategories.filter((_, idx) => idx !== i))}>[ REMOVE ]</button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {errors.concessionCategories && <span className="vm-fielderr">{errors.concessionCategories}</span>}
+        <div className="vm-actions">
+          <button type="button" className="vm-btn small" disabled={v.concessionCategories.length >= 20}
+            onClick={() => set("concessionCategories", [...v.concessionCategories, { name: "", prefix: "" }])}>[ ADD CATEGORY ]</button>
+        </div>
+        <p className="vm-hint">GROUPS MERCHANDISE ON THE CONCESSIONS AND SALE SCREENS. THE SKU LETTER STARTS AUTOMATIC SKUS (C001, C002...). A CATEGORY THAT HAS ITEMS IS RETIRED, NOT DELETED, WHEN REMOVED.</p>
       </fieldset>
 
       <fieldset className="vm-section" id="sec-inventory">

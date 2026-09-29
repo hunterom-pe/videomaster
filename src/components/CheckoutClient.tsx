@@ -6,7 +6,7 @@ import { checkout, findRentableCopies, findSaleItems, type CartItem, type SaleIt
 import { ErrorBox } from "@/components/Screen";
 import { RetroDialog } from "@/components/RetroDialog";
 import { computeTotals, dueDate, fmtDate, fmtMoney } from "@/lib/pricing";
-import { CONCESSION_CATEGORIES, PAYMENT_METHODS } from "@/lib/validation";
+import { PAYMENT_METHODS } from "@/lib/validation";
 
 type Props = {
   customerId: string | null; // null = walk-in merchandise sale (no rentals)
@@ -19,6 +19,7 @@ type Props = {
   canOverride: boolean;
   taxPercent: string;
   timezone: string; // store zone, for due-date previews
+  saleCategories: { id: string; name: string }[]; // merchandise category buttons
 };
 
 type SaleLine = { item: SaleItem; qty: number };
@@ -28,7 +29,7 @@ const saleKey = (id: string) => `sale:${id}`;
 const rowStyle = (selected: boolean) => (selected ? { background: "var(--cyan)", color: "var(--black)" } : undefined);
 const plainBtn = { background: "none", border: 0, font: "inherit", color: "inherit", padding: 0, cursor: "pointer", textAlign: "left" } as const;
 
-export function CheckoutClient({ customerId, customerName, status, fees, restrictions, activeOut, maxOut, canOverride, taxPercent, timezone }: Props) {
+export function CheckoutClient({ customerId, customerName, status, fees, restrictions, activeOut, maxOut, canOverride, taxPercent, timezone, saleCategories }: Props) {
   const [rentals, setRentals] = useState<CartItem[]>([]);
   const [sales, setSales] = useState<SaleLine[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -185,10 +186,10 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
         <legend>ADD SALE ITEM</legend>
         <div className="vm-actions" style={{ marginTop: 0 }} role="group" aria-label="Merchandise categories">
           <button type="button" className="vm-btn small" aria-pressed={saleCat === "" && saleLoaded} onClick={() => { setSaleCat(""); loadSale(saleQuery, ""); }}>[ ALL ]</button>
-          {CONCESSION_CATEGORIES.map((c) => (
-            <button key={c.value} type="button" className="vm-btn small" aria-pressed={saleCat === c.value}
-              style={saleCat === c.value ? { background: "var(--cyan)" } : undefined}
-              onClick={() => { setSaleCat(c.value); loadSale(saleQuery, c.value); }}>[ {c.label} ]</button>
+          {saleCategories.map((c) => (
+            <button key={c.id} type="button" className="vm-btn small" aria-pressed={saleCat === c.id}
+              style={saleCat === c.id ? { background: "var(--cyan)" } : undefined}
+              onClick={() => { setSaleCat(c.id); loadSale(saleQuery, c.id); }}>[ {c.name} ]</button>
           ))}
         </div>
         <form onSubmit={(e) => { e.preventDefault(); loadSale(saleQuery, saleCat); }} className="vm-searchbar" role="search" style={{ marginTop: 10 }}>

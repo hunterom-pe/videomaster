@@ -110,6 +110,14 @@ describe.skipIf(!url)("sample store generator (database)", () => {
       // Stock and the demo's designed warnings.
       for (const m of merch) expect(m.quantityOnHand).toBeGreaterThanOrEqual(0);
       expect(merch.filter((m) => m.quantityOnHand === 0)).toHaveLength(1);
+      // Every item points at a category of THIS store, and SKUs follow the category letter (C001, C002, P001...).
+      const cats = await db.concessionCategory.findMany({ where: { storeId: store.id } });
+      for (const m of merch) {
+        const cat = cats.find((c) => c.id === m.categoryId);
+        expect(cat).toBeDefined();
+        expect(m.sku.startsWith(cat!.prefix)).toBe(true);
+      }
+      expect(new Set(merch.map((m) => m.sku)).size).toBe(merch.length);
       expect(merch.filter((m) => m.quantityOnHand > 0 && m.quantityOnHand <= m.lowStockThreshold).length).toBeGreaterThanOrEqual(2);
       // Overdue is measured in the STORE's calendar (the summary and an independent recount agree).
       const today = localDayKey(now, tz);

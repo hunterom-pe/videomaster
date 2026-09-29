@@ -44,6 +44,7 @@ export default async function SettingsPage() {
     functionKeys: s.functionKeys,
     receiptFooter: s.receiptFooter,
     formats: store.formats.filter((f) => f.enabled).map((f) => f.format),
+    concessionCategories: store.concessionCategories.map((c) => ({ id: c.id, name: c.name, prefix: c.prefix })),
     categories: store.rentalCategories.map((c) => ({
       id: c.id,
       name: c.name,

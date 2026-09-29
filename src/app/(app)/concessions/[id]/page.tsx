@@ -11,6 +11,11 @@ export default async function EditConcessionPage({ params }: { params: Promise<{
   const { id } = await params;
   const i = await db.concessionItem.findFirst({ where: { id, storeId: store.id } });
   if (!i) notFound();
+  const categories = store.concessionCategories.map((c) => ({ id: c.id, name: c.name }));
+  if (!categories.some((c) => c.id === i.categoryId)) {
+    const retired = await db.concessionCategory.findFirst({ where: { id: i.categoryId, storeId: store.id }, select: { id: true, name: true } });
+    if (retired) categories.push({ id: retired.id, name: `${retired.name} (RETIRED)` });
+  }
   return (
     <Screen title="EDIT MERCHANDISE" userEmail={user.email} storeLine={`STORE: ${store.name} #${store.number}`}>
       <h1>{i.sku} — {i.name.toUpperCase()}</h1>
@@ -22,8 +27,9 @@ export default async function EditConcessionPage({ params }: { params: Promise<{
       </fieldset>
       <ConcessionForm
         itemId={i.id}
+        categories={categories}
         initial={{
-          sku: i.sku, name: i.name, category: i.category, retailPrice: i.retailPrice.toFixed(2), costPrice: i.costPrice?.toFixed(2) ?? "",
+          sku: i.sku, name: i.name, categoryId: i.categoryId, retailPrice: i.retailPrice.toFixed(2), costPrice: i.costPrice?.toFixed(2) ?? "",
           quantityOnHand: String(i.quantityOnHand), lowStockThreshold: String(i.lowStockThreshold), taxable: i.taxable, active: i.active, barcode: i.barcode ?? "",
         }}
       />

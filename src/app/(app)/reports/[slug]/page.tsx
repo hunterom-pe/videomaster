@@ -8,7 +8,6 @@ import { resolveDay, resolveRange } from "@/lib/report-range";
 import { dailyActivity, inventorySummary, listOverdue, merchandiseInventory, popularRentals, revenue, topCustomers } from "@/lib/reports";
 import { requireStore } from "@/lib/store-access";
 import { PAYMENT_LABELS } from "@/lib/transactions";
-import { CONCESSION_CATEGORIES } from "@/lib/validation";
 import type { MediaFormat, PaymentMethod } from "@/generated/prisma/client";
 
 const REPORT_TITLES: Record<string, string> = {
@@ -181,7 +180,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
                   return (
                     <tr key={i.id}>
                       <td>{i.sku}</td><td>{i.name.toUpperCase()}</td>
-                      <td>{CONCESSION_CATEGORIES.find((c) => c.value === i.category)?.label}</td>
+                      <td>{i.category.name}</td>
                       <td>{i.quantityOnHand}</td><td>${i.retailPrice.toFixed(2)}</td>
                       <td>{st === "OUT" ? <span className="vm-red"><strong>OUT OF STOCK</strong></span> : st === "LOW" ? <span className="vm-yellow"><strong>*** LOW STOCK</strong></span> : "OK"}</td>
                     </tr>

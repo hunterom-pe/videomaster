@@ -5,7 +5,7 @@ const valid: StoreFormValues = {
   name: "VIDEO WORLD", number: "147", address: "123 MAIN ST", city: "PHOENIX", region: "AZ",
   postalCode: "85001", phone: "(602) 555-0147", managerName: "S. CONNOR", slogan: "",
   currency: "USD", timezone: "America/Phoenix", salesTaxPercent: "8.6", storeYear: "1996", onlyMoviesUpToStoreYear: true,
-  rewindFee: "", damageFee: "", lostItemFee: "", replacementFee: "19.99", membershipFee: "", membershipTermMonths: "", maxRentalsOut: "", defaultLowStock: "5", formatDefaults: {}, functionKeys: false, receiptFooter: "THANK YOU!",
+  rewindFee: "", damageFee: "", lostItemFee: "", replacementFee: "19.99", membershipFee: "", membershipTermMonths: "", maxRentalsOut: "", defaultLowStock: "5", formatDefaults: {}, concessionCategories: [{ name: "CANDY", prefix: "C" }, { name: "POPCORN", prefix: "P" }], functionKeys: false, receiptFooter: "THANK YOU!",
   formats: ["VHS"], categories: DEFAULT_CATEGORIES,
 };
 const errorsFor = (patch: Partial<StoreFormValues>) => {
@@ -83,5 +83,14 @@ describe("storeSchema", () => {
     expect(errorsFor({ defaultLowStock: "10" })).toEqual({});
     expect(errorsFor({ defaultLowStock: "-1" }).defaultLowStock).toBeDefined();
     expect(errorsFor({ defaultLowStock: "2.5" }).defaultLowStock).toBeDefined();
+  });
+  it("validates merchandise categories: name, single SKU letter, at least one, no duplicates", () => {
+    expect(errorsFor({ concessionCategories: [{ name: "Candy", prefix: "c" }] })).toEqual({}); // letter is upper-cased
+    expect(errorsFor({ concessionCategories: [] }).concessionCategories).toBeDefined();
+    expect(errorsFor({ concessionCategories: [{ name: "", prefix: "C" }] })["concessionCategories.0.name"]).toBeDefined();
+    expect(errorsFor({ concessionCategories: [{ name: "CANDY", prefix: "CC" }] })["concessionCategories.0.prefix"]).toBeDefined();
+    expect(errorsFor({ concessionCategories: [{ name: "CANDY", prefix: "1" }] })["concessionCategories.0.prefix"]).toBeDefined();
+    expect(errorsFor({ concessionCategories: [{ name: "CANDY", prefix: "C" }, { name: "candy", prefix: "D" }] })["concessionCategories.1.name"]).toBeDefined();
+    expect(errorsFor({ concessionCategories: Array.from({ length: 21 }, (_, i) => ({ name: `C${i}`, prefix: "C" })) }).concessionCategories).toBeDefined();
   });
 });

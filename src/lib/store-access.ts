@@ -21,7 +21,14 @@ export const getUserStore = cache(async (userId: string) => {
     where: { userId },
     orderBy: { createdAt: "asc" },
     include: {
-      store: { include: { settings: true, formats: true, rentalCategories: { where: { active: true }, orderBy: { sortOrder: "asc" } } } },
+      store: {
+        include: {
+          settings: true,
+          formats: true,
+          rentalCategories: { where: { active: true }, orderBy: { sortOrder: "asc" } },
+          concessionCategories: { where: { active: true }, orderBy: { sortOrder: "asc" } },
+        },
+      },
     },
   });
   return membership ? { role: membership.role, store: membership.store } : null;

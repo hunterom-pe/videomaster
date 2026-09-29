@@ -2,14 +2,14 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import type { ConcessionCategory, PaymentMethod } from "@/generated/prisma/client";
+import type { PaymentMethod } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { FORMAT_LABELS } from "@/lib/inventory";
 import { computeTotals, dueDate, fromCents, toCents } from "@/lib/pricing";
 import { membershipState } from "@/lib/membership";
 import { effectiveStatus, overdueCounts } from "@/lib/overdue";
 import { requireStore } from "@/lib/store-access";
-import { CONCESSION_CATEGORIES, checkoutSchema, zodErrors, type ActionState, type CheckoutValues } from "@/lib/validation";
+import { checkoutSchema, zodErrors, type ActionState, type CheckoutValues } from "@/lib/validation";
 
 export type CartItem = {
   copyId: string;
@@ -111,21 +111,23 @@ export type SaleItem = {
 export async function findSaleItems(query: string, category: string): Promise<{ items: SaleItem[]; message?: string }> {
   const { store } = await requireStore();
   const q = query.trim().slice(0, 100);
-  const cat = CONCESSION_CATEGORIES.find((c) => c.value === category);
+  // A category filter only counts if it belongs to this store.
+  const cat = category ? store.concessionCategories.find((c) => c.id === category) : undefined;
   const terms = q.split(/\s+/).filter(Boolean).slice(0, 5);
   const rows = await db.concessionItem.findMany({
     where: {
       storeId: store.id,
       active: true,
       quantityOnHand: { gt: 0 },
-      ...(cat ? { category: cat.value as ConcessionCategory } : {}),
+      ...(cat ? { categoryId: cat.id } : {}),
       AND: terms.map((t) => ({ OR: [{ name: { contains: t, mode: "insensitive" as const } }, { sku: { contains: t, mode: "insensitive" as const } }, { barcode: t }] })),
     },
-    orderBy: [{ category: "asc" }, { name: "asc" }],
+    orderBy: [{ category: { sortOrder: "asc" } }, { name: "asc" }],
     take: 30,
+    include: { category: { select: { name: true } } },
   });
   const items = rows.map((r) => ({
-    itemId: r.id, sku: r.sku, name: r.name, category: CONCESSION_CATEGORIES.find((c) => c.value === r.category)?.label ?? r.category,
+    itemId: r.id, sku: r.sku, name: r.name, category: r.category.name,
     priceCents: toCents(r.retailPrice), taxable: r.taxable, onHand: r.quantityOnHand,
   }));
   return { items, message: items.length === 0 ? "NO IN-STOCK MERCHANDISE MATCHES. CHECK THE CONCESSIONS SCREEN FOR STOCK LEVELS." : undefined };

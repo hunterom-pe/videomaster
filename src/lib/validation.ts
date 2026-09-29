@@ -73,6 +73,18 @@ function optionalNumber(label: string, opts: { max: number; decimals: number; in
     });
 }
 
+/** Categories every new store starts with (editable in Store Settings). Prefix = letter for auto SKUs (C001). */
+export const DEFAULT_CONCESSION_CATEGORIES: { name: string; prefix: string }[] = [
+  { name: "CANDY", prefix: "C" }, { name: "POPCORN", prefix: "P" }, { name: "DRINKS", prefix: "D" },
+  { name: "SNACKS", prefix: "S" }, { name: "VIDEO ACCESSORIES", prefix: "A" }, { name: "OTHER", prefix: "O" },
+];
+
+export const concessionCategorySchema = z.object({
+  id: z.string().optional(),
+  name: text("CATEGORY NAME", 30),
+  prefix: z.string().trim().toUpperCase().regex(/^[A-Z]$/, "SKU LETTER MUST BE A SINGLE LETTER A-Z"),
+});
+
 export const categorySchema = z.object({
   id: z.string().optional(),
   name: text("CATEGORY NAME", 30),
@@ -131,6 +143,7 @@ export const storeSchema = z
       .min(1, "SELECT AT LEAST ONE FORMAT")
       .transform((f) => [...new Set(f)]),
     categories: z.array(categorySchema).min(1, "AT LEAST ONE RENTAL CATEGORY IS REQUIRED").max(20, "MAXIMUM 20 CATEGORIES"),
+    concessionCategories: z.array(concessionCategorySchema).min(1, "AT LEAST ONE MERCHANDISE CATEGORY IS REQUIRED").max(20, "MAXIMUM 20 MERCHANDISE CATEGORIES"),
   })
   .superRefine((val, ctx) => {
     const seen = new Set<string>();
@@ -138,6 +151,12 @@ export const storeSchema = z
       const key = c.name.toUpperCase();
       if (seen.has(key)) ctx.addIssue({ code: "custom", path: ["categories", i, "name"], message: "DUPLICATE CATEGORY NAME" });
       seen.add(key);
+    });
+    const seenMerch = new Set<string>();
+    val.concessionCategories.forEach((c, i) => {
+      const key = c.name.toUpperCase();
+      if (seenMerch.has(key)) ctx.addIssue({ code: "custom", path: ["concessionCategories", i, "name"], message: "DUPLICATE CATEGORY NAME" });
+      seenMerch.add(key);
     });
   });
 
@@ -171,6 +190,7 @@ export type StoreFormValues = {
   receiptFooter: string;
   formats: string[];
   categories: { id?: string; name: string; rentalPrice: string; rentalDays: string; lateFeePerDay: string }[];
+  concessionCategories: { id?: string; name: string; prefix: string }[];
 };
 
 export type ActionState =
@@ -356,19 +376,10 @@ export const returnSchema = z.object({
 export type ReturnValues = { outcome: string; lateFee: string; otherFee: string; paymentMethod: string; notRewound: boolean };
 
 // ── Concessions ──
-export const CONCESSION_CATEGORIES = [
-  { value: "CANDY", label: "CANDY", prefix: "C" },
-  { value: "POPCORN", label: "POPCORN", prefix: "P" },
-  { value: "DRINKS", label: "DRINKS", prefix: "D" },
-  { value: "SNACKS", label: "SNACKS", prefix: "S" },
-  { value: "ACCESSORIES", label: "VIDEO ACCESSORIES", prefix: "A" },
-  { value: "OTHER", label: "OTHER", prefix: "O" },
-] as const;
-
 export const concessionSchema = z.object({
   sku: z.string().trim().toUpperCase().regex(/^([A-Z0-9-]{1,12})?$/, "SKU MAY ONLY CONTAIN LETTERS, DIGITS AND - (MAX 12)"),
   name: text("ITEM NAME", 60),
-  category: z.enum(CONCESSION_CATEGORIES.map((c) => c.value) as [string, ...string[]], "SELECT A CATEGORY"),
+  categoryId: z.string().min(1, "SELECT A CATEGORY"),
   retailPrice: numberField("RETAIL PRICE", { min: 0, max: 999.99, decimals: 2 }),
   costPrice: z
     .string()
@@ -389,7 +400,7 @@ export const concessionSchema = z.object({
   barcode: z.string().trim().max(40, "BARCODE IS TOO LONG").regex(/^[\w-]*$/, "BARCODE MAY ONLY CONTAIN LETTERS, DIGITS, - AND _"),
 });
 export type ConcessionFormValues = {
-  sku: string; name: string; category: string; retailPrice: string; costPrice: string; quantityOnHand: string;
+  sku: string; name: string; categoryId: string; retailPrice: string; costPrice: string; quantityOnHand: string;
   lowStockThreshold: string; taxable: boolean; active: boolean; barcode: string;
 };
 

@@ -15,7 +15,7 @@ export default async function SalePage() {
         <Link href="/concessions" className="vm-btn">[ CONCESSIONS ]</Link>
       </div>
       <hr className="vm-rule" />
-      <CheckoutClient customerId={null} customerName="WALK-IN" status="GOOD" fees="0.00" restrictions={[]} activeOut={0} maxOut={0} timezone={store.settings!.timezone} canOverride={false} taxPercent={store.settings!.salesTaxPercent.toString()} />
+      <CheckoutClient customerId={null} customerName="WALK-IN" status="GOOD" fees="0.00" restrictions={[]} activeOut={0} maxOut={0} timezone={store.settings!.timezone} saleCategories={store.concessionCategories.map((c) => ({ id: c.id, name: c.name }))} canOverride={false} taxPercent={store.settings!.salesTaxPercent.toString()} />
     </Screen>
   );
 }

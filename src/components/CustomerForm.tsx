@@ -6,10 +6,6 @@ import { createCustomer, updateCustomer } from "@/actions/customers";
 import { ErrorBox } from "@/components/Screen";
 import { CUSTOMER_STATUSES, PAYMENT_METHODS, customerSchema, zodErrors, type CustomerFormValues } from "@/lib/validation";
 
-export const EMPTY_CUSTOMER: CustomerFormValues = {
-  firstName: "", lastName: "", phone: "", email: "", address: "", city: "",
-  region: "", postalCode: "", dateOfBirth: "", status: "GOOD", notes: "", collectFee: true, paymentMethod: "CASH",
-};
 
 export function CustomerForm({ customerId, initial, membershipFee }: { customerId?: string; initial: CustomerFormValues; membershipFee?: string }) {
   const [v, setV] = useState(initial);

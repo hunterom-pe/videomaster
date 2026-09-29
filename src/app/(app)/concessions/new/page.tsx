@@ -1,4 +1,5 @@
-import { ConcessionForm, EMPTY_CONCESSION } from "@/components/ConcessionForms";
+import { ConcessionForm } from "@/components/ConcessionForms";
+import { EMPTY_CONCESSION } from "@/lib/form-defaults";
 import { Screen } from "@/components/Screen";
 import { requireStore } from "@/lib/store-access";
 
@@ -10,7 +11,7 @@ export default async function NewConcessionPage() {
     <Screen title="ADD MERCHANDISE" userEmail={user.email} storeLine={`STORE: ${store.name} #${store.number}`}>
       <h1>NEW MERCHANDISE ITEM</h1>
       <hr className="vm-rule" />
-      <ConcessionForm initial={{ ...EMPTY_CONCESSION, lowStockThreshold: String(store.settings!.defaultLowStockThreshold) }} />
+      <ConcessionForm initial={{ ...EMPTY_CONCESSION, categoryId: store.concessionCategories[0]?.id ?? "", lowStockThreshold: String(store.settings!.defaultLowStockThreshold) }} categories={store.concessionCategories.map((c) => ({ id: c.id, name: c.name }))} />
     </Screen>
   );
 }
