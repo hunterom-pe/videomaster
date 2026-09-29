@@ -12,3 +12,11 @@ export function lateFeeCents(days: number, perDayCents: number, maxCents: number
   const fee = days * perDayCents;
   return maxCents !== null ? Math.min(fee, maxCents) : fee;
 }
+
+/** Start (00:00 UTC) of the day containing `d`. A rental is overdue iff its dueAt is before this cutoff. */
+export const startOfUtcDay = (d: Date): Date => new Date(Math.floor(d.getTime() / DAY) * DAY);
+
+/** Late fee accrued so far on an unreturned rental. */
+export function accruedLateFeeCents(dueAt: Date, now: Date, perDayCents: number, maxCents: number | null): number {
+  return lateFeeCents(daysLate(dueAt, now), perDayCents, maxCents);
+}

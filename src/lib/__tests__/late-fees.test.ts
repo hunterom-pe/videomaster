@@ -22,3 +22,19 @@ describe("lateFeeCents", () => {
     expect(lateFeeCents(3, 100, 800)).toBe(300);
   });
 });
+
+import { accruedLateFeeCents, startOfUtcDay } from "@/lib/late-fees";
+
+describe("overdue helpers", () => {
+  it("startOfUtcDay truncates to midnight UTC", () => expect(startOfUtcDay(d("2026-10-02T15:30:00Z")).toISOString()).toBe("2026-10-02T00:00:00.000Z"));
+  it("a rental due earlier today is NOT overdue; due yesterday is", () => {
+    const cutoff = startOfUtcDay(d("2026-10-02T15:30:00Z"));
+    expect(d("2026-10-02T09:00:00Z") < cutoff).toBe(false);
+    expect(d("2026-10-01T23:59:00Z") < cutoff).toBe(true);
+  });
+  it("accrued fee uses days late and the cap", () => {
+    expect(accruedLateFeeCents(d("2026-09-26T10:00:00Z"), d("2026-09-29T09:00:00Z"), 100, null)).toBe(300);
+    expect(accruedLateFeeCents(d("2026-09-01T10:00:00Z"), d("2026-09-29T09:00:00Z"), 100, 500)).toBe(500);
+    expect(accruedLateFeeCents(d("2026-09-29T10:00:00Z"), d("2026-09-29T20:00:00Z"), 100, null)).toBe(0);
+  });
+});

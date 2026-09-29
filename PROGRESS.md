@@ -66,6 +66,12 @@
 - Shown automatically after every checkout and return (replaces the old completion screens; `/rent/done/*` and `/return/done/*` redirect to it). `[ PRINT ]` uses the browser's print dialog; print CSS hides the app chrome and prints black-on-white. `[ RECEIPT ]` on any transaction detail reprints it (marked `** REPRINT **`).
 - 54 unit tests.
 
+**Milestone 16 — Overdue management**
+- OVERDUE is **derived on read** (unreturned and due before today, UTC) — never stored, so it can't go stale on a serverless host with no background job. `effectiveStatus()`: a GOOD customer with overdue rentals behaves as OVERDUE; manual statuses (BLOCKED/SUSPENDED/CLOSED) always win.
+- OVERDUE RENTALS screen: customer (link to account), phone, title, copy, due date, days late (yellow, red `***` beyond 7 days), accrued late fee per video, customer balance (accrued fees + outstanding fees); worst first; row click opens the return screen; summary banner (videos, customers, accrued fees). Menu shows `OVERDUE: n` in red and on the button.
+- Customer account: `*** ACCOUNT OVERDUE ***` banner with per-rental RETURN buttons and accrued fees; days-late column. Customer lists show effective status. Checkout requires manager override for rentals on effectively-overdue accounts (merchandise-only sales are never blocked). Title page shows an OVERDUE column and marks overdue copies.
+- Verified: boundary case (due earlier today = not overdue), return clears overdue status. 57 unit tests.
+
 ## Current Work
 Nothing in progress.
 
@@ -76,7 +82,7 @@ Nothing in progress.
 - Concessions: categories are a fixed list (not yet editable in Store Settings); no stock-adjustment history/audit log; items can't be deleted (deactivate instead). Selling happens in Milestone 13.
 - Dates/lateness use UTC calendar days (consistent with dates shown on screen). A store timezone setting is needed so a rental made in the evening doesn't roll to the next day; add with store settings.
 - Late fees are paid at return time only; no unpaid-balance tracking (`Customer.outstandingFees` is never changed yet), no rewind/membership/damage fee policy settings (damage/lost fees are entered manually).
-- OVERDUE copy/customer status is not auto-computed yet (Milestone 16); RENTED copies past due still show RENTED.
+- `InventoryCopy.status = OVERDUE` and stored `Customer.status = OVERDUE` are not written by the system (derived instead); manually choosing OVERDUE on a customer only has a display effect.
 - Dev tip: after any Prisma schema change, restart `npm run dev` (Next caches the generated client). `NEXT_DIST_DIR` allows a second dev server for testing.
 - Checkout: no cash-tendered/change calculation yet; no rental limits per customer; outstanding fees warn but don't block. Due date = rental time + N days (a timestamp; day-boundary rules to be decided with late fees).
 - Rentals stay RENTED until returns exist (M10); OVERDUE status is not computed yet (M11/M16).
@@ -96,7 +102,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Milestone 16 — Overdue management: compute OVERDUE (copies + customer status), dedicated OVERDUE RENTALS screen (customer, phone, title, copy, due date, days late, balance; clickable rows), running late-fee display.
+Milestone 17 — Reports (Daily Activity, Overdue, Inventory, Popular Rentals, Customer Activity, Merchandise Inventory, Revenue; date filters; printable).
 
 ## Decisions
 - Browser-based web app only (Next.js/React/HTML/CSS/TS). Never native/Electron/desktop/CLI.

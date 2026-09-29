@@ -1,20 +1,21 @@
 import Link from "next/link";
 import { Screen } from "@/components/Screen";
 import { db } from "@/lib/db";
+import { overdueWhere } from "@/lib/overdue";
 import { requireStore } from "@/lib/store-access";
 
 const ITEMS = [
-  { key: "F6", label: "OVERDUE RENTALS" },
   { key: "F8", label: "REPORTS" },
 ];
 
 export default async function MenuPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   const { user, store } = await requireStore();
   const { saved } = await searchParams;
-  const [videosOut, customers, lowStock] = await Promise.all([
+  const [videosOut, customers, lowStock, overdueCount] = await Promise.all([
     db.rental.count({ where: { storeId: store.id, returnedAt: null } }),
     db.customer.count({ where: { storeId: store.id } }),
     db.$queryRaw<{ n: bigint }[]>`SELECT count(*) AS n FROM "ConcessionItem" WHERE "storeId" = ${store.id} AND active AND "quantityOnHand" <= "lowStockThreshold"`,
+    db.rental.count({ where: overdueWhere(store.id) }),
   ]);
   const lowCount = Number(lowStock[0]?.n ?? 0);
 
@@ -52,6 +53,10 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
           <span className="fkey">[F7]</span>TRANSACTIONS
           <small>RENTALS, RETURNS AND SALES HISTORY</small>
         </Link>
+        <Link href="/overdue" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
+          <span className="fkey">[F6]</span>OVERDUE RENTALS
+          <small>{overdueCount > 0 ? `*** ${overdueCount} OVERDUE ***` : "NONE OVERDUE"}</small>
+        </Link>
         <Link href="/customers" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
           <span className="fkey">[F3]</span>CUSTOMERS
           <small>SEARCH, ADD AND EDIT MEMBERS</small>
@@ -67,7 +72,7 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
       </div>
       <hr className="vm-rule" />
       <div className="vm-cyan">
-        VIDEOS OUT: {videosOut} &nbsp;&nbsp; CUSTOMERS: {customers}
+        VIDEOS OUT: {videosOut} &nbsp;&nbsp; <span className={overdueCount > 0 ? "vm-red" : ""}>OVERDUE: {overdueCount}</span> &nbsp;&nbsp; CUSTOMERS: {customers}
       </div>
       {lowCount > 0 && (
         <div className="vm-yellow" style={{ marginTop: 6 }}>

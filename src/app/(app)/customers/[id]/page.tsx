@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Screen } from "@/components/Screen";
 import { db } from "@/lib/db";
-import { fmtDate } from "@/lib/pricing";
+import { accruedLateFeeCents, daysLate, startOfUtcDay } from "@/lib/late-fees";
+import { effectiveStatus } from "@/lib/overdue";
+import { fmtDate, fmtMoney, toCents } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
 
 export default async function CustomerPage({
@@ -21,8 +23,16 @@ export default async function CustomerPage({
   const activeRentals = await db.rental.findMany({
     where: { storeId: store.id, customerId: c.id, returnedAt: null },
     orderBy: { dueAt: "asc" },
-    include: { copy: { include: { movieTitle: true } } },
+    include: { copy: { include: { movieTitle: true, rentalCategory: true } } },
   });
+  const now = new Date();
+  const cutoff = startOfUtcDay(now);
+  const overdueRentals = activeRentals.filter((r) => r.dueAt < cutoff);
+  const status = effectiveStatus(c.status, overdueRentals.length);
+  const accruedCents = overdueRentals.reduce((n, r) => {
+    const cat = r.copy.rentalCategory;
+    return n + (cat ? accruedLateFeeCents(r.dueAt, now, toCents(cat.lateFeePerDay), cat.maxLateFee ? toCents(cat.maxLateFee) : null) : 0);
+  }, 0);
   const fees = Number(c.outstandingFees);
   const address = [c.address, [c.city, c.region].filter(Boolean).join(", "), c.postalCode].filter(Boolean).join(" · ");
 
@@ -38,10 +48,21 @@ export default async function CustomerPage({
       </div>
       <hr className="vm-rule" />
       {saved && <div className="vm-notice" role="status">*** CUSTOMER SAVED ***</div>}
-      {c.status !== "GOOD" && (
+      {overdueRentals.length > 0 && (
         <div className="vm-alert" role="alert">
-          <strong>*** ACCOUNT {c.status} ***</strong>
-          {c.status === "CLOSED" ? "THIS ACCOUNT IS CLOSED." : "MANAGER OVERRIDE REQUIRED FOR NEW RENTALS."}
+          <strong>*** ACCOUNT OVERDUE ***</strong>
+          CUSTOMER HAS {overdueRentals.length} OVERDUE RENTAL{overdueRentals.length === 1 ? "" : "S"}. ACCRUED LATE FEES: {fmtMoney(accruedCents)}
+          <div>{status === "OVERDUE" ? "MANAGER OVERRIDE REQUIRED FOR NEW RENTALS." : ""}</div>
+          <div className="vm-actions">
+            {overdueRentals.slice(0, 3).map((r) => <Link key={r.id} href={`/return/${r.id}`} className="vm-btn small">[ RETURN {r.copy.copyNumber} ]</Link>)}
+            <Link href="/overdue" className="vm-btn small">[ ALL OVERDUE RENTALS ]</Link>
+          </div>
+        </div>
+      )}
+      {status !== "GOOD" && status !== "OVERDUE" && (
+        <div className="vm-alert" role="alert">
+          <strong>*** ACCOUNT {status} ***</strong>
+          {status === "CLOSED" ? "THIS ACCOUNT IS CLOSED." : "MANAGER OVERRIDE REQUIRED FOR NEW RENTALS."}
         </div>
       )}
       {fees > 0 && <div className="vm-notice" role="status">OUTSTANDING BALANCE: ${fees.toFixed(2)}</div>}
@@ -49,7 +70,7 @@ export default async function CustomerPage({
         <legend>ACCOUNT</legend>
         <dl className="vm-kv">
           <dt>MEMBER #</dt><dd>{c.membershipNumber}</dd>
-          <dt>STATUS</dt><dd><span className={`vm-status ${c.status}`}>{c.status}</span></dd>
+          <dt>STATUS</dt><dd><span className={`vm-status ${status}`}>{status}</span></dd>
           <dt>DATE JOINED</dt><dd>{c.createdAt.toISOString().slice(0, 10)}</dd>
           <dt>PHONE</dt><dd>{c.phone ?? "—"}</dd>
           <dt>E-MAIL</dt><dd>{c.email ?? "—"}</dd>
@@ -66,7 +87,7 @@ export default async function CustomerPage({
         ) : (
           <div className="vm-tablewrap">
             <table className="vm-table" style={{ minWidth: 480 }}>
-              <thead><tr><th scope="col">TITLE</th><th scope="col">COPY</th><th scope="col">RENTED</th><th scope="col">DUE</th></tr></thead>
+              <thead><tr><th scope="col">TITLE</th><th scope="col">COPY</th><th scope="col">RENTED</th><th scope="col">DUE</th><th scope="col">STATUS</th></tr></thead>
               <tbody>
                 {activeRentals.map((r) => (
                   <tr key={r.id}>
@@ -74,6 +95,7 @@ export default async function CustomerPage({
                     <td>{r.copy.copyNumber}</td>
                     <td>{fmtDate(r.rentedAt)}</td>
                     <td>{fmtDate(r.dueAt)}</td>
+                    <td>{r.dueAt < cutoff ? <span className="vm-red"><strong>{daysLate(r.dueAt, now)} DAY{daysLate(r.dueAt, now) === 1 ? "" : "S"} LATE</strong></span> : "OUT"}</td>
                   </tr>
                 ))}
               </tbody>

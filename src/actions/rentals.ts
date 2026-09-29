@@ -6,6 +6,7 @@ import type { ConcessionCategory, PaymentMethod } from "@/generated/prisma/clien
 import { db } from "@/lib/db";
 import { FORMAT_LABELS } from "@/lib/inventory";
 import { computeTotals, dueDate, fromCents, toCents } from "@/lib/pricing";
+import { effectiveStatus, overdueCounts } from "@/lib/overdue";
 import { requireStore } from "@/lib/store-access";
 import { CONCESSION_CATEGORIES, checkoutSchema, zodErrors, type ActionState, type CheckoutValues } from "@/lib/validation";
 
@@ -149,10 +150,11 @@ export async function checkout(customerId: string | null, input: CheckoutValues)
     if (!customer) return { ok: false, errors: {}, message: "CUSTOMER NOT FOUND" };
     // Account restrictions apply to rentals; a merchandise-only purchase is always allowed.
     if (copyIds.length > 0) {
-      if (customer.status === "CLOSED") return { ok: false, errors: {}, message: "*** CUSTOMER ACCOUNT CLOSED *** NO RENTALS ARE ALLOWED ON A CLOSED ACCOUNT." };
-      if (customer.status !== "GOOD") {
-        if (role === "EMPLOYEE") return { ok: false, errors: {}, message: `*** ACCOUNT ${customer.status} *** MANAGER OVERRIDE REQUIRED.` };
-        if (!override) return { ok: false, errors: {}, message: `*** ACCOUNT ${customer.status} *** CHECK "MANAGER OVERRIDE" TO CONTINUE.` };
+      const acct = effectiveStatus(customer.status, (await overdueCounts(store.id, [customer.id])).get(customer.id) ?? 0);
+      if (acct === "CLOSED") return { ok: false, errors: {}, message: "*** CUSTOMER ACCOUNT CLOSED *** NO RENTALS ARE ALLOWED ON A CLOSED ACCOUNT." };
+      if (acct !== "GOOD") {
+        if (role === "EMPLOYEE") return { ok: false, errors: {}, message: `*** ACCOUNT ${acct} *** MANAGER OVERRIDE REQUIRED.` };
+        if (!override) return { ok: false, errors: {}, message: `*** ACCOUNT ${acct} *** CHECK "MANAGER OVERRIDE" TO CONTINUE.` };
       }
     }
   }

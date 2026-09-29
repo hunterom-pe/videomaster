@@ -5,6 +5,7 @@ import { Screen } from "@/components/Screen";
 import { db } from "@/lib/db";
 import { FORMAT_LABELS, summarize } from "@/lib/inventory";
 import { categoryOptions, formatOptions } from "@/lib/inventory-options";
+import { overdueWhere } from "@/lib/overdue";
 import { requireStore } from "@/lib/store-access";
 import { posterUrl } from "@/lib/tmdb";
 
@@ -17,6 +18,10 @@ export default async function TitlePage({ params, searchParams }: { params: Prom
   if (!t) notFound();
   const { added, copy: savedCopy } = await searchParams;
 
+  const overdueRentals = await db.rental.findMany({ where: { ...overdueWhere(store.id), copy: { movieTitleId: t.id } }, select: { copyId: true, copy: { select: { format: true } } } });
+  const overdueIds = new Set(overdueRentals.map((r) => r.copyId));
+  const overdueByFormat = new Map<string, number>();
+  for (const r of overdueRentals) overdueByFormat.set(r.copy.format, (overdueByFormat.get(r.copy.format) ?? 0) + 1);
   const [copies, groups] = await Promise.all([
     db.inventoryCopy.findMany({ where: { storeId: store.id, movieTitleId: t.id }, orderBy: { copyNumber: "asc" }, take: MAX_COPIES_SHOWN, include: { rentalCategory: { select: { name: true } } } }),
     db.inventoryCopy.groupBy({ by: ["movieTitleId", "format", "status"], where: { storeId: store.id, movieTitleId: t.id }, _count: { _all: true } }),
@@ -60,10 +65,10 @@ export default async function TitlePage({ params, searchParams }: { params: Prom
         {sums.length === 0 ? <span className="vm-dim">NO ACTIVE COPIES</span> : (
           <div className="vm-tablewrap">
             <table className="vm-table" style={{ minWidth: 480 }}>
-              <thead><tr><th scope="col">FORMAT</th><th scope="col">TOTAL</th><th scope="col">AVAILABLE</th><th scope="col">RENTED</th><th scope="col">DAMAGED/REPAIR</th><th scope="col">LOST</th></tr></thead>
+              <thead><tr><th scope="col">FORMAT</th><th scope="col">TOTAL</th><th scope="col">AVAILABLE</th><th scope="col">RENTED</th><th scope="col">OVERDUE</th><th scope="col">DAMAGED/REPAIR</th><th scope="col">LOST</th></tr></thead>
               <tbody>
                 {sums.map((s) => (
-                  <tr key={s.format}><td>{FORMAT_LABELS[s.format]}</td><td>{s.total}</td><td>{s.available}</td><td>{s.out}</td><td>{s.damaged}</td><td>{s.lost}</td></tr>
+                  <tr key={s.format}><td>{FORMAT_LABELS[s.format]}</td><td>{s.total}</td><td>{s.available}</td><td>{s.out}</td><td>{(overdueByFormat.get(s.format) ?? 0) > 0 ? <span className="vm-red"><strong>{overdueByFormat.get(s.format)}</strong></span> : 0}</td><td>{s.damaged}</td><td>{s.lost}</td></tr>
                 ))}
               </tbody>
             </table>
@@ -83,7 +88,7 @@ export default async function TitlePage({ params, searchParams }: { params: Prom
                 <tr key={c.id}>
                   <td><Link href={`/inventory/${t.id}/copy/${c.id}`} className="vm-rowlink">{c.copyNumber}</Link></td>
                   <td>{FORMAT_LABELS[c.format]}</td>
-                  <td><span className={`vm-status ${c.status === "AVAILABLE" ? "GOOD" : c.status === "RENTED" ? "SUSPENDED" : c.status === "RETIRED" ? "CLOSED" : "BLOCKED"}`}>{c.status}</span></td>
+                  <td><span className={`vm-status ${overdueIds.has(c.id) ? "BLOCKED" : c.status === "AVAILABLE" ? "GOOD" : c.status === "RENTED" ? "SUSPENDED" : c.status === "RETIRED" ? "CLOSED" : "BLOCKED"}`}>{overdueIds.has(c.id) ? "OVERDUE" : c.status}</span></td>
                   <td>{c.condition ?? "—"}</td>
                   <td>{c.rentalCategory?.name ?? "—"}</td>
                   <td>{price(c.rentalCategory?.name) ? `$${price(c.rentalCategory?.name)!.rentalPrice.toFixed(2)}` : "—"}</td>

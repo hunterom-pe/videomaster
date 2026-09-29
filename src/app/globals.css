@@ -158,3 +158,9 @@ table.vm-table.rows { min-width: 560px; }
   .vm-body { padding: 0 !important; }
   .vm-receipt { border: 0; background: #fff; max-width: 38ch; margin: 0; padding: 0; }
 }
+
+/* secondary links inside a clickable row (sit above the row-wide overlay link) */
+.vm-rowsublink { position: relative; z-index: 1; }
+.vm-overdue-hot { color: var(--red); font-weight: bold; }
+.vm-overdue-warm { color: var(--yellow); font-weight: bold; }
+.vm-table.rows tbody tr:hover .vm-overdue-hot, .vm-table.rows tbody tr:hover .vm-overdue-warm { color: var(--black); }

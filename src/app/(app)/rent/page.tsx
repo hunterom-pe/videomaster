@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Screen } from "@/components/Screen";
 import { searchCustomers } from "@/lib/customers";
+import { effectiveStatus, overdueCounts } from "@/lib/overdue";
 import { requireStore } from "@/lib/store-access";
 
 export default async function RentPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
@@ -9,6 +10,7 @@ export default async function RentPage({ searchParams }: { searchParams: Promise
   const q = (sp.q ?? "").slice(0, 100);
   const page = Math.max(1, Math.min(100000, parseInt(sp.page ?? "1", 10) || 1));
   const { rows, total, pages } = await searchCustomers(store.id, q, page);
+  const overdue = await overdueCounts(store.id, rows.map((r) => r.id));
   const href = (p: number) => `/rent?${new URLSearchParams({ ...(q ? { q } : {}), page: String(p) })}`;
 
   return (
@@ -44,7 +46,7 @@ export default async function RentPage({ searchParams }: { searchParams: Promise
                     <td>{c.membershipNumber}</td>
                     <td><Link href={`/rent/${c.id}`} className="vm-rowlink">{c.lastName.toUpperCase()}, {c.firstName.toUpperCase()}</Link></td>
                     <td>{c.phone ?? "—"}</td>
-                    <td><span className={`vm-status ${c.status}`}>{c.status}</span></td>
+                    <td><span className={`vm-status ${effectiveStatus(c.status, overdue.get(c.id) ?? 0)}`}>{effectiveStatus(c.status, overdue.get(c.id) ?? 0)}</span></td>
                   </tr>
                 ))}
               </tbody>
