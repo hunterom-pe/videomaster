@@ -164,3 +164,14 @@ table.vm-table.rows { min-width: 560px; }
 .vm-overdue-hot { color: var(--red); font-weight: bold; }
 .vm-overdue-warm { color: var(--yellow); font-weight: bold; }
 .vm-table.rows tbody tr:hover .vm-overdue-hot, .vm-table.rows tbody tr:hover .vm-overdue-warm { color: var(--black); }
+
+/* ── Reports: same data on screen (blue) and on paper (black on white) ── */
+.vm-report-head { display: none; }
+@media print {
+  .vm-report-head { display: block; margin-bottom: 8px; color: #000; }
+  .vm-report, .vm-report * { color: #000 !important; background: transparent !important; border-color: #000 !important; }
+  .vm-report .vm-section { border: 1px solid #000 !important; page-break-inside: avoid; }
+  .vm-report .vm-alert, .vm-report .vm-notice { border: 1px solid #000 !important; }
+  .vm-report table.vm-table { min-width: 0 !important; font-size: 12px; }
+  .vm-report .vm-tablewrap { overflow: visible; }
+}

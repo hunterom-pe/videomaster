@@ -72,10 +72,17 @@
 - Customer account: `*** ACCOUNT OVERDUE ***` banner with per-rental RETURN buttons and accrued fees; days-late column. Customer lists show effective status. Checkout requires manager override for rentals on effectively-overdue accounts (merchandise-only sales are never blocked). Title page shows an OVERDUE column and marks overdue copies.
 - Verified: boundary case (due earlier today = not overdue), return clears overdue status. 57 unit tests.
 
+**Milestone 17 — Reports**
+- REPORTS index + seven printable reports (spec §23), each with `[ PRINT ]` (print CSS → black on white, header with store/period): Daily Activity (rentals, returns, merchandise units/$, rental revenue, late/damage fees, tax, total, transactions), Overdue Rentals, Inventory (titles/copies by status and format, overdue derived), Popular Rentals (ranked), Customer Activity (top customers), Merchandise Inventory (units, retail value, low/out of stock), Revenue (rental + merchandise + fees + taxes = total, by payment method).
+- Date filters (UTC `YYYY-MM-DD`): single date for Daily; from/to for Popular, Customers, Revenue (default last 30 days). Invalid input falls back with a notice; reversed ranges swap.
+- Verified against independent SQL: report totals equal raw sums and the identity rentals + merchandise + fees + tax = total holds.
+- Main menu: all nine items live (placeholder code removed) in spec order. 61 unit tests.
+
 ## Current Work
 Nothing in progress.
 
 ## Known Issues
+- Reports: dates are UTC days; Popular/Customer reports count rentals *started* in the period (not only returned ones); no CSV export; reports are computed live (fine for MVP scale, may need indexes/caching for very large stores).
 - Receipts: no cash-tendered/change lines (no cash-handling yet); print layout not verified on a physical/thermal printer (uses standard browser printing, ~38 char wide).
 - Transaction history shows times in UTC (no store timezone yet); the list total is money collected across all types (fees on returns included).
 - POS: no cash-tendered/change, no voids/refunds yet (Transaction types REFUND/FEE_WAIVER exist in the schema but are unused); a CLOSED customer cannot check out at all (use the walk-in sale for merchandise).
@@ -102,7 +109,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Milestone 17 — Reports (Daily Activity, Overdue, Inventory, Popular Rentals, Customer Activity, Merchandise Inventory, Revenue; date filters; printable).
+Milestone 18 — Polish & accessibility: full keyboard/focus pass, contrast, form labels, table semantics, responsive checks, optional keyboard shortcuts (F-keys), store timezone, password reset, sample/demo data (spec §30), Store Settings sections (fees, membership rules), title edit.
 
 ## Decisions
 - Browser-based web app only (Next.js/React/HTML/CSS/TS). Never native/Electron/desktop/CLI.

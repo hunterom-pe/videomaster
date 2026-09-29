@@ -4,10 +4,6 @@ import { db } from "@/lib/db";
 import { overdueWhere } from "@/lib/overdue";
 import { requireStore } from "@/lib/store-access";
 
-const ITEMS = [
-  { key: "F8", label: "REPORTS" },
-];
-
 export default async function MenuPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   const { user, store } = await requireStore();
   const { saved } = await searchParams;
@@ -31,12 +27,6 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
       <hr className="vm-rule" />
       {saved && <div className="vm-notice" role="status">*** STORE SETTINGS SAVED ***</div>}
       <div className="vm-menu">
-        {ITEMS.map((i) => (
-          <button key={i.label} type="button" className="vm-btn" disabled>
-            <span className="fkey">[{i.key}]</span>{i.label}
-            <small>NOT YET INSTALLED</small>
-          </button>
-        ))}
         <Link href="/rent" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
           <span className="fkey">[F1]</span>RENT VIDEO
           <small>CHECK OUT VIDEOS TO A CUSTOMER</small>
@@ -45,18 +35,6 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
           <span className="fkey">[F2]</span>RETURN VIDEO
           <small>RETURN A RENTED VIDEO, LATE FEES</small>
         </Link>
-        <Link href="/concessions" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
-          <span className="fkey">[F5]</span>CONCESSIONS
-          <small>CANDY, POPCORN, DRINKS AND STOCK</small>
-        </Link>
-        <Link href="/transactions" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
-          <span className="fkey">[F7]</span>TRANSACTIONS
-          <small>RENTALS, RETURNS AND SALES HISTORY</small>
-        </Link>
-        <Link href="/overdue" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
-          <span className="fkey">[F6]</span>OVERDUE RENTALS
-          <small>{overdueCount > 0 ? `*** ${overdueCount} OVERDUE ***` : "NONE OVERDUE"}</small>
-        </Link>
         <Link href="/customers" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
           <span className="fkey">[F3]</span>CUSTOMERS
           <small>SEARCH, ADD AND EDIT MEMBERS</small>
@@ -64,6 +42,22 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
         <Link href="/inventory" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
           <span className="fkey">[F4]</span>MOVIE INVENTORY
           <small>TITLES, COPIES AND MOVIE SEARCH</small>
+        </Link>
+        <Link href="/concessions" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
+          <span className="fkey">[F5]</span>CONCESSIONS
+          <small>CANDY, POPCORN, DRINKS AND STOCK</small>
+        </Link>
+        <Link href="/overdue" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
+          <span className="fkey">[F6]</span>OVERDUE RENTALS
+          <small>{overdueCount > 0 ? `*** ${overdueCount} OVERDUE ***` : "NONE OVERDUE"}</small>
+        </Link>
+        <Link href="/transactions" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
+          <span className="fkey">[F7]</span>TRANSACTIONS
+          <small>RENTALS, RETURNS AND SALES HISTORY</small>
+        </Link>
+        <Link href="/reports" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
+          <span className="fkey">[F8]</span>REPORTS
+          <small>ACTIVITY, INVENTORY, REVENUE AND MORE</small>
         </Link>
         <Link href="/settings" className="vm-btn" style={{ minHeight: 52, fontSize: 17 }}>
           <span className="fkey">[F9]</span>STORE SETTINGS
