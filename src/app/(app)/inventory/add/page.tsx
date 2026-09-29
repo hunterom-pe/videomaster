@@ -47,15 +47,20 @@ export default async function AddTitleSearchPage({ searchParams }: { searchParam
           YOU CAN STILL ADD A TITLE BY HAND WITH [ ADD MANUALLY ].
         </div>
       )}
-      {yearLimit && (
-        <p className="vm-hint">
-          SHOWING MOVIES RELEASED ON OR BEFORE {yearLimit}{hidden > 0 ? ` (${hidden} LATER RESULT${hidden === 1 ? "" : "S"} HIDDEN)` : ""}.{" "}
-          <Link href={`/inventory/add?${new URLSearchParams({ q, all: "1" })}`}>SHOW ALL YEARS</Link>
-        </p>
+      {yearLimit && hidden > 0 && (
+        <div className="vm-notice" role="status">
+          *** {hidden} RESULT{hidden === 1 ? "" : "S"} HIDDEN: RELEASED AFTER STORE YEAR {yearLimit} ***
+          {shown.length === 0 && <div>ALL RESULTS FOR THIS SEARCH ARE NEWER THAN YOUR STORE YEAR.</div>}
+          <div className="vm-actions" style={{ justifyContent: "center" }}>
+            <Link href={`/inventory/add?${new URLSearchParams({ q, all: "1" })}`} className="vm-btn small">[ SHOW ALL YEARS ]</Link>
+          </div>
+          <div className="vm-hint">TO TURN THIS FILTER OFF PERMANENTLY, UNCHECK IT UNDER STORE SETTINGS &gt; STORE ERA.</div>
+        </div>
       )}
+      {yearLimit && hidden === 0 && result?.ok && <p className="vm-hint">SHOWING MOVIES RELEASED ON OR BEFORE {yearLimit} (STORE YEAR FILTER IS ON).</p>}
       {sp.all === "1" && s.onlyMoviesUpToStoreYear && <p className="vm-hint">SHOWING ALL YEARS. <Link href={`/inventory/add?${new URLSearchParams({ q })}`}>APPLY STORE YEAR FILTER</Link></p>}
 
-      {result?.ok && shown.length === 0 && <div className="vm-notice" role="status">*** NO MOVIES FOUND FOR &quot;{q.toUpperCase()}&quot; ***</div>}
+      {result?.ok && all.length === 0 && <div className="vm-notice" role="status">*** NO MOVIES FOUND FOR &quot;{q.toUpperCase()}&quot; ***</div>}
       {shown.length > 0 && (
         <div className="vm-tablewrap">
           <table className="vm-table rows">

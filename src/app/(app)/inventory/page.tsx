@@ -59,7 +59,13 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
 
       {total === 0 ? (
         <div className="vm-notice" role="status">
-          {filtered ? "*** NO TITLES MATCH YOUR SEARCH ***" : "*** NO TITLES IN INVENTORY. CLICK [ ADD TITLE ] TO ADD YOUR FIRST MOVIE. ***"}
+          {filtered ? "*** NO TITLES IN YOUR STORE MATCH YOUR SEARCH ***" : "*** NO TITLES IN INVENTORY YET ***"}
+          <div className="vm-hint">THIS SCREEN ONLY SEARCHES MOVIES YOU HAVE ALREADY ADDED TO YOUR STORE.</div>
+          <div className="vm-actions" style={{ justifyContent: "center" }}>
+            <Link href={f.q ? `/inventory/add?${new URLSearchParams({ q: f.q })}` : "/inventory/add"} className="vm-btn">
+              {f.q ? `[ SEARCH MOVIE DATABASE FOR "${f.q.toUpperCase()}" ]` : "[ ADD TITLE FROM MOVIE DATABASE ]"}
+            </Link>
+          </div>
         </div>
       ) : (
         <>

@@ -87,7 +87,12 @@ export function CheckoutClient({ customerId, customerName, status, fees, needsOv
           </div>
           <button type="submit" className="vm-btn" disabled={searching}>{searching ? "SEARCHING..." : "[ FIND ]"}</button>
         </form>
-        {searchMsg && <div className="vm-notice" role="status">{searchMsg}</div>}
+        {searchMsg && (
+          <div className="vm-notice" role="status">
+            {searchMsg}
+            <div className="vm-hint">ONLY MOVIES ALREADY IN YOUR STORE INVENTORY CAN BE RENTED. <Link href="/inventory/add">ADD A TITLE FIRST</Link>.</div>
+          </div>
+        )}
         {hits.map((h) => (
           <div key={h.titleId} style={{ marginBottom: 10 }}>
             <div className="vm-cyan">{h.title.toUpperCase()}{h.year ? ` (${h.year})` : ""}</div>
