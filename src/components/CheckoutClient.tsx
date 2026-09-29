@@ -12,7 +12,9 @@ type Props = {
   customerName: string;
   status: string;
   fees: string;
-  needsOverride: boolean;
+  restrictions: string[]; // reasons rentals need a manager override (account status, expired membership)
+  activeOut: number; // videos this customer already has out
+  maxOut: number; // store limit (0 = unlimited)
   canOverride: boolean;
   taxPercent: string;
 };
@@ -24,7 +26,7 @@ const saleKey = (id: string) => `sale:${id}`;
 const rowStyle = (selected: boolean) => (selected ? { background: "var(--cyan)", color: "var(--black)" } : undefined);
 const plainBtn = { background: "none", border: 0, font: "inherit", color: "inherit", padding: 0, cursor: "pointer", textAlign: "left" } as const;
 
-export function CheckoutClient({ customerId, customerName, status, fees, needsOverride, canOverride, taxPercent }: Props) {
+export function CheckoutClient({ customerId, customerName, status, fees, restrictions, activeOut, maxOut, canOverride, taxPercent }: Props) {
   const [rentals, setRentals] = useState<CartItem[]>([]);
   const [sales, setSales] = useState<SaleLine[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -54,7 +56,9 @@ export function CheckoutClient({ customerId, customerName, status, fees, needsOv
   );
   const itemCount = rentals.length + sales.reduce((n, s) => n + s.qty, 0);
   const now = new Date();
-  const needsOverrideNow = needsOverride && rentals.length > 0;
+  const limitReason = maxOut > 0 && activeOut + rentals.length > maxOut ? `RENTAL LIMIT ${maxOut} (${activeOut} ALREADY OUT)` : null;
+  const reasons = rentals.length > 0 ? [...restrictions, ...(limitReason ? [limitReason] : [])] : [];
+  const needsOverrideNow = reasons.length > 0;
 
   function searchRentals(e?: React.FormEvent) {
     e?.preventDefault();
@@ -118,7 +122,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, needsOv
   function tryPay() {
     if (itemCount === 0) return setError("*** CART EMPTY *** ADD AT LEAST ONE ITEM BEFORE TAKING PAYMENT.");
     if (needsOverrideNow && !override)
-      return setError(canOverride ? `*** ACCOUNT ${status} *** CHECK "MANAGER OVERRIDE" BELOW TO CONTINUE.` : `*** ACCOUNT ${status} *** MANAGER OVERRIDE REQUIRED.`);
+      return setError(canOverride ? `*** ${reasons.join("; ")} *** CHECK "MANAGER OVERRIDE" BELOW TO CONTINUE.` : `*** ${reasons.join("; ")} *** MANAGER OVERRIDE REQUIRED.`);
     setError("");
     setConfirming(true);
   }
@@ -272,7 +276,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, needsOv
               <span className="vm-label">MANAGER OVERRIDE</span>
               <label className="vm-check">
                 <input type="checkbox" checked={override} disabled={!canOverride} onChange={(e) => setOverride(e.target.checked)} />
-                <span>{canOverride ? `ALLOW RENTAL ON ${status} ACCOUNT` : "MANAGER OVERRIDE REQUIRED"}</span>
+                <span>{canOverride ? `ALLOW RENTAL DESPITE: ${reasons.join("; ")}` : "MANAGER OVERRIDE REQUIRED"}</span>
               </label>
             </div>
           )}

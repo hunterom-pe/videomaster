@@ -4,7 +4,8 @@ import { Screen } from "@/components/Screen";
 import { db } from "@/lib/db";
 import { accruedLateFeeCents, daysLate, startOfUtcDay } from "@/lib/late-fees";
 import { effectiveStatus } from "@/lib/overdue";
-import { fmtDate, fmtMoney, toCents } from "@/lib/pricing";
+import { membershipState } from "@/lib/membership";
+import { fmtDate, fmtDateUS, fmtMoney, toCents } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
 
 export default async function CustomerPage({
@@ -33,6 +34,9 @@ export default async function CustomerPage({
     const cat = r.copy.rentalCategory;
     return n + (cat ? accruedLateFeeCents(r.dueAt, now, toCents(cat.lateFeePerDay), cat.maxLateFee ? toCents(cat.maxLateFee) : null) : 0);
   }, 0);
+  const settings = store.settings!;
+  const mState = membershipState(c.membershipExpiresAt, now);
+  const feesTracked = Number(settings.membershipFee) > 0 || settings.membershipTermMonths > 0;
   const fees = Number(c.outstandingFees);
   const address = [c.address, [c.city, c.region].filter(Boolean).join(", "), c.postalCode].filter(Boolean).join(" · ");
 
@@ -42,12 +46,20 @@ export default async function CustomerPage({
         <h1>{c.lastName.toUpperCase()}, {c.firstName.toUpperCase()}</h1>
         <span className="vm-actions" style={{ marginTop: 0 }}>
           <Link href={`/rent/${c.id}`} className="vm-btn">[ RENT VIDEO ]</Link>
+          {feesTracked && <Link href={`/customers/${c.id}/renew`} className="vm-btn">[ RENEW MEMBERSHIP ]</Link>}
           <Link href={`/customers/${c.id}/edit`} className="vm-btn">[ EDIT ]</Link>
           <Link href="/customers" className="vm-btn">[ CUSTOMER SEARCH ]</Link>
         </span>
       </div>
       <hr className="vm-rule" />
       {saved && <div className="vm-notice" role="status">*** CUSTOMER SAVED ***</div>}
+      {mState === "EXPIRED" && c.membershipExpiresAt && (
+        <div className="vm-alert" role="alert">
+          <strong>*** MEMBERSHIP EXPIRED ***</strong>
+          EXPIRED {fmtDateUS(c.membershipExpiresAt)}. MANAGER OVERRIDE REQUIRED FOR NEW RENTALS.
+          <div className="vm-actions"><Link href={`/customers/${c.id}/renew`} className="vm-btn small">[ RENEW MEMBERSHIP ]</Link></div>
+        </div>
+      )}
       {overdueRentals.length > 0 && (
         <div className="vm-alert" role="alert">
           <strong>*** ACCOUNT OVERDUE ***</strong>
@@ -71,6 +83,7 @@ export default async function CustomerPage({
         <dl className="vm-kv">
           <dt>MEMBER #</dt><dd>{c.membershipNumber}</dd>
           <dt>STATUS</dt><dd><span className={`vm-status ${status}`}>{status}</span></dd>
+          <dt>MEMBERSHIP</dt><dd>{c.membershipExpiresAt ? `${mState === "EXPIRED" ? "EXPIRED" : "VALID THROUGH"} ${fmtDateUS(c.membershipExpiresAt)}` : c.membershipPaidAt ? "LIFETIME (FEE PAID)" : feesTracked ? "NO FEE COLLECTED" : "—"}</dd>
           <dt>DATE JOINED</dt><dd>{c.createdAt.toISOString().slice(0, 10)}</dd>
           <dt>PHONE</dt><dd>{c.phone ?? "—"}</dd>
           <dt>E-MAIL</dt><dd>{c.email ?? "—"}</dd>

@@ -5,6 +5,7 @@ const valid: StoreFormValues = {
   name: "VIDEO WORLD", number: "147", address: "123 MAIN ST", city: "PHOENIX", region: "AZ",
   postalCode: "85001", phone: "(602) 555-0147", managerName: "S. CONNOR", slogan: "",
   currency: "USD", salesTaxPercent: "8.6", storeYear: "1996", onlyMoviesUpToStoreYear: true,
+  rewindFee: "", damageFee: "", lostItemFee: "", replacementFee: "19.99", membershipFee: "", membershipTermMonths: "", maxRentalsOut: "",
   formats: ["VHS"], categories: DEFAULT_CATEGORIES,
 };
 const errorsFor = (patch: Partial<StoreFormValues>) => {
@@ -45,5 +46,25 @@ describe("storeSchema", () => {
   it("rejects bad store number and unknown format", () => {
     expect(errorsFor({ number: "abc" }).number).toBeDefined();
     expect(errorsFor({ formats: ["BETAMAX"] })["formats.0"]).toBeDefined();
+  });
+  it("treats blank optional fees as 0 and accepts valid values", () => {
+    const r = storeSchema.safeParse({ ...valid, rewindFee: "1.00", membershipFee: "10", membershipTermMonths: "12", maxRentalsOut: "5" });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.rewindFee).toBe(1);
+      expect(r.data.damageFee).toBe(0);
+      expect(r.data.membershipTermMonths).toBe(12);
+      expect(r.data.maxRentalsOut).toBe(5);
+    }
+  });
+  it("rejects negative or malformed fees and membership rules", () => {
+    expect(errorsFor({ rewindFee: "-1" }).rewindFee).toMatch(/NEGATIVE/);
+    expect(errorsFor({ damageFee: "1.234" }).damageFee).toBeDefined();
+    expect(errorsFor({ lostItemFee: "abc" }).lostItemFee).toBeDefined();
+    expect(errorsFor({ membershipFee: "1000" }).membershipFee).toBeDefined();
+    expect(errorsFor({ membershipTermMonths: "-3" }).membershipTermMonths).toBeDefined();
+    expect(errorsFor({ membershipTermMonths: "1.5" }).membershipTermMonths).toBeDefined();
+    expect(errorsFor({ maxRentalsOut: "-1" }).maxRentalsOut).toBeDefined();
+    expect(errorsFor({ maxRentalsOut: "100" }).maxRentalsOut).toBeDefined();
   });
 });

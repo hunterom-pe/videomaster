@@ -72,7 +72,9 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
       if (lateCharged > calculated) throw new ReturnError(`LATE FEE CANNOT EXCEED THE CALCULATED AMOUNT (${fmtMoney(calculated)}).`);
       const other = d.outcome === "RETURNED" ? 0 : toCents(d.otherFee);
       if (d.outcome === "LOST") lateCharged = 0;
-      const total = lateCharged + other;
+      // Rewind fee: amount comes from store settings (never from the browser); VHS only; not for lost items.
+      const rewind = d.notRewound && d.outcome !== "LOST" && rental.copy.format === "VHS" ? toCents(store.settings!.rewindFee) : 0;
+      const total = lateCharged + other + rewind;
 
       const { nextTransactionNumber } = await tx.store.update({
         where: { id: store.id },
@@ -83,6 +85,7 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
         d.outcome !== "RETURNED" ? `COPY MARKED ${d.outcome}` : null,
         calculated !== lateCharged && d.outcome !== "LOST" ? `LATE FEE ${fmtMoney(calculated)} CALCULATED, ${fmtMoney(lateCharged)} CHARGED${lateCharged === 0 ? " (WAIVED)" : " (REDUCED)"}` : null,
         d.outcome === "LOST" && calculated > 0 ? `LATE FEE ${fmtMoney(calculated)} NOT CHARGED (LOST ITEM)` : null,
+        rewind > 0 ? `REWIND FEE ${fmtMoney(rewind)}` : null,
       ].filter(Boolean).join("; ");
       const transaction = await tx.transaction.create({
         data: {
@@ -96,7 +99,7 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
         where: { id: rental.id, storeId: store.id, returnedAt: null },
         data: {
           returnedAt: now, outcome: d.outcome, calculatedLateFee: fromCents(calculated), chargedLateFee: fromCents(lateCharged),
-          otherFee: other > 0 ? fromCents(other) : null, returnTransactionId: transaction.id,
+          otherFee: other > 0 ? fromCents(other) : null, rewindFee: rewind > 0 ? fromCents(rewind) : null, returnTransactionId: transaction.id,
         },
       });
       if (closed.count !== 1) throw new ReturnError("THIS RENTAL WAS JUST RETURNED BY ANOTHER CLERK.");

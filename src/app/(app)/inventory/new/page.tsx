@@ -16,7 +16,7 @@ export default async function NewTitlePage({ searchParams }: { searchParams: Pro
 
   const blank: AddTitleValues = {
     title: "", year: "", director: "", runtime: "", genres: "", cast: "", rating: "", overview: "", tmdbId: "", posterPath: "",
-    format: formats[0]?.value ?? "", categoryId: categories[0]?.id ?? "", quantity: "1", replacementCost: "19.99",
+    format: formats[0]?.value ?? "", categoryId: categories[0]?.id ?? "", quantity: "1", replacementCost: store.settings!.replacementFee.toFixed(2),
   };
   let initial = blank;
   let problem: string | null = null;

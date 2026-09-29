@@ -4,6 +4,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireStore } from "@/lib/store-access";
+import { renewedExpiry } from "@/lib/membership";
+import { fromCents, toCents } from "@/lib/pricing";
+import { PAYMENT_METHODS } from "@/lib/validation";
+import type { PaymentMethod } from "@/generated/prisma/client";
 import { customerSchema, zodErrors, type ActionState, type CustomerFormValues } from "@/lib/validation";
 
 type Parsed = ReturnType<typeof customerSchema.parse>;
@@ -31,11 +35,18 @@ function validate(input: CustomerFormValues) {
 }
 
 export async function createCustomer(input: CustomerFormValues): Promise<ActionState> {
-  const { store } = await requireStore();
+  const { store, user } = await requireStore();
   const v = validate(input);
   if ("state" in v) return v.state;
 
-  const customer = await db.$transaction(async (tx) => {
+  const settings = store.settings!;
+  const feeCents = toCents(settings.membershipFee);
+  const collect = feeCents > 0 && input.collectFee === true;
+  const method = PAYMENT_METHODS.find((p) => p.value === input.paymentMethod)?.value;
+  if (collect && !method) return { ok: false, errors: { paymentMethod: "SELECT A PAYMENT METHOD" }, message: "PLEASE CORRECT THE FIELDS MARKED BELOW" };
+
+  const now = new Date();
+  const { customer, transactionId } = await db.$transaction(async (tx) => {
     // Atomic per-store counter: concurrent creates can never share a membership number.
     const { nextMembershipNumber } = await tx.store.update({
       where: { id: store.id },
@@ -43,10 +54,58 @@ export async function createCustomer(input: CustomerFormValues): Promise<ActionS
       select: { nextMembershipNumber: true },
     });
     const membershipNumber = String(nextMembershipNumber - 1).padStart(6, "0");
-    return tx.customer.create({ data: { storeId: store.id, membershipNumber, ...fields(v.data) } });
+    // Term starts when the fee is collected; a waived fee leaves expiry untracked.
+    const membership = collect ? { membershipPaidAt: now, membershipExpiresAt: renewedExpiry(null, now, settings.membershipTermMonths) } : {};
+    const customer = await tx.customer.create({ data: { storeId: store.id, membershipNumber, ...fields(v.data), ...membership } });
+    let transactionId: string | null = null;
+    if (collect) {
+      const { nextTransactionNumber } = await tx.store.update({ where: { id: store.id }, data: { nextTransactionNumber: { increment: 1 } }, select: { nextTransactionNumber: true } });
+      transactionId = (
+        await tx.transaction.create({
+          data: {
+            storeId: store.id, number: nextTransactionNumber - 1, type: "MEMBERSHIP_FEE", customerId: customer.id, createdById: user.id,
+            subtotal: fromCents(feeCents), tax: "0.00", total: fromCents(feeCents), paymentMethod: method as PaymentMethod, notes: "MEMBERSHIP FEE",
+          },
+        })
+      ).id;
+    }
+    return { customer, transactionId };
   });
   revalidatePath("/customers");
-  redirect(`/customers/${customer.id}?saved=1`);
+  revalidatePath("/transactions");
+  redirect(transactionId ? `/receipt/${transactionId}?new=1` : `/customers/${customer.id}?saved=1`);
+}
+
+/** Collect the membership fee (if any) and extend the term. */
+export async function renewMembership(customerId: string, paymentMethod: string): Promise<ActionState> {
+  const { store, user } = await requireStore();
+  const settings = store.settings!;
+  const feeCents = toCents(settings.membershipFee);
+  const method = PAYMENT_METHODS.find((p) => p.value === paymentMethod)?.value;
+  if (feeCents > 0 && !method) return { ok: false, errors: { paymentMethod: "SELECT A PAYMENT METHOD" }, message: "PLEASE CORRECT THE FIELDS MARKED BELOW" };
+
+  const now = new Date();
+  const transactionId = await db.$transaction(async (tx) => {
+    const c = await tx.customer.findFirst({ where: { id: customerId, storeId: store.id } });
+    if (!c) return null;
+    await tx.customer.update({
+      where: { id: c.id, storeId: store.id },
+      data: { membershipPaidAt: now, membershipExpiresAt: renewedExpiry(c.membershipExpiresAt, now, settings.membershipTermMonths) },
+    });
+    if (feeCents <= 0) return "none";
+    const { nextTransactionNumber } = await tx.store.update({ where: { id: store.id }, data: { nextTransactionNumber: { increment: 1 } }, select: { nextTransactionNumber: true } });
+    return (
+      await tx.transaction.create({
+        data: {
+          storeId: store.id, number: nextTransactionNumber - 1, type: "MEMBERSHIP_FEE", customerId: c.id, createdById: user.id,
+          subtotal: fromCents(feeCents), tax: "0.00", total: fromCents(feeCents), paymentMethod: method as PaymentMethod, notes: "MEMBERSHIP RENEWAL",
+        },
+      })
+    ).id;
+  });
+  if (!transactionId) return { ok: false, errors: {}, message: "CUSTOMER NOT FOUND" };
+  revalidatePath("/customers");
+  redirect(transactionId === "none" ? `/customers/${customerId}?saved=1` : `/receipt/${transactionId}?new=1`);
 }
 
 export async function updateCustomer(customerId: string, input: CustomerFormValues): Promise<ActionState> {

@@ -6,6 +6,7 @@ import type { ConcessionCategory, PaymentMethod } from "@/generated/prisma/clien
 import { db } from "@/lib/db";
 import { FORMAT_LABELS } from "@/lib/inventory";
 import { computeTotals, dueDate, fromCents, toCents } from "@/lib/pricing";
+import { membershipState } from "@/lib/membership";
 import { effectiveStatus, overdueCounts } from "@/lib/overdue";
 import { requireStore } from "@/lib/store-access";
 import { CONCESSION_CATEGORIES, checkoutSchema, zodErrors, type ActionState, type CheckoutValues } from "@/lib/validation";
@@ -152,9 +153,19 @@ export async function checkout(customerId: string | null, input: CheckoutValues)
     if (copyIds.length > 0) {
       const acct = effectiveStatus(customer.status, (await overdueCounts(store.id, [customer.id])).get(customer.id) ?? 0);
       if (acct === "CLOSED") return { ok: false, errors: {}, message: "*** CUSTOMER ACCOUNT CLOSED *** NO RENTALS ARE ALLOWED ON A CLOSED ACCOUNT." };
-      if (acct !== "GOOD") {
-        if (role === "EMPLOYEE") return { ok: false, errors: {}, message: `*** ACCOUNT ${acct} *** MANAGER OVERRIDE REQUIRED.` };
-        if (!override) return { ok: false, errors: {}, message: `*** ACCOUNT ${acct} *** CHECK "MANAGER OVERRIDE" TO CONTINUE.` };
+      // Anything that needs a manager override, gathered so the clerk sees every reason at once.
+      const reasons: string[] = [];
+      if (acct !== "GOOD") reasons.push(`ACCOUNT ${acct}`);
+      if (membershipState(customer.membershipExpiresAt, new Date()) === "EXPIRED") reasons.push("MEMBERSHIP EXPIRED");
+      const max = store.settings!.maxRentalsOut;
+      if (max > 0) {
+        const out = await db.rental.count({ where: { storeId: store.id, customerId: customer.id, returnedAt: null } });
+        if (out + copyIds.length > max) reasons.push(`RENTAL LIMIT ${max} (${out} ALREADY OUT)`);
+      }
+      if (reasons.length > 0) {
+        const why = `*** ${reasons.join("; ")} ***`;
+        if (role === "EMPLOYEE") return { ok: false, errors: {}, message: `${why} MANAGER OVERRIDE REQUIRED.` };
+        if (!override) return { ok: false, errors: {}, message: `${why} CHECK "MANAGER OVERRIDE" TO CONTINUE.` };
       }
     }
   }

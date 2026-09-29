@@ -9,11 +9,14 @@ import { PAYMENT_METHODS, returnSchema, zodErrors } from "@/lib/validation";
 
 type Outcome = "RETURNED" | "DAMAGED" | "LOST";
 
-export function ReturnClient({ rentalId, calculated, replacementCost }: { rentalId: string; calculated: string; replacementCost: string }) {
+type Props = { rentalId: string; calculated: string; lostFee: string; damageFee: string; rewindFee: string; isVhs: boolean };
+
+export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindFee, isVhs }: Props) {
   const [outcome, setOutcome] = useState<Outcome>("RETURNED");
   const [lateFee, setLateFee] = useState(calculated);
   const [otherFee, setOtherFee] = useState("0.00");
   const [payment, setPayment] = useState("CASH");
+  const [notRewound, setNotRewound] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [confirming, setConfirming] = useState(false);
@@ -24,18 +27,19 @@ export function ReturnClient({ rentalId, calculated, replacementCost }: { rental
   const lateCents = outcome === "LOST" || !Number.isFinite(lateNum) ? 0 : toCents(lateNum);
   const otherNum = Number(otherFee);
   const otherCents = outcome === "RETURNED" || !Number.isFinite(otherNum) ? 0 : toCents(otherNum);
-  const total = lateCents + otherCents;
+  const rewindCents = notRewound && outcome !== "LOST" && isVhs ? toCents(rewindFee) : 0;
+  const total = lateCents + otherCents + rewindCents;
 
   function pick(next: Outcome) {
     const value = outcome === next ? "RETURNED" : next; // click again to undo
     setOutcome(value);
-    setOtherFee(value === "LOST" ? replacementCost : "0.00");
+    setOtherFee(value === "LOST" ? lostFee : value === "DAMAGED" ? damageFee : "0.00");
     setErrors({});
     setMessage("");
   }
 
   function tryComplete() {
-    const parsed = returnSchema.safeParse({ outcome, lateFee, otherFee, paymentMethod: payment });
+    const parsed = returnSchema.safeParse({ outcome, lateFee, otherFee, paymentMethod: payment, notRewound });
     if (!parsed.success) {
       setErrors(zodErrors(parsed.error));
       setMessage("PLEASE CORRECT THE FIELDS MARKED BELOW");
@@ -54,7 +58,7 @@ export function ReturnClient({ rentalId, calculated, replacementCost }: { rental
   function complete() {
     setConfirming(false);
     startTransition(async () => {
-      const r = await completeReturn(rentalId, { outcome, lateFee, otherFee, paymentMethod: payment });
+      const r = await completeReturn(rentalId, { outcome, lateFee, otherFee, paymentMethod: payment, notRewound });
       if (r && !r.ok) {
         setErrors(r.errors);
         setMessage(r.message);
@@ -80,6 +84,15 @@ export function ReturnClient({ rentalId, calculated, replacementCost }: { rental
               <label htmlFor="other">{outcome === "LOST" ? "LOST-ITEM / REPLACEMENT FEE" : "DAMAGE FEE"}</label>
               <input id="other" type="text" inputMode="decimal" value={otherFee} onChange={(e) => setOtherFee(e.target.value)} aria-invalid={!!errors.otherFee} />
               {errors.otherFee && <span className="vm-fielderr">{errors.otherFee}</span>}
+            </div>
+          )}
+          {isVhs && Number(rewindFee) > 0 && outcome !== "LOST" && (
+            <div className="vm-field">
+              <span className="vm-label">REWIND</span>
+              <label className="vm-check">
+                <input type="checkbox" checked={notRewound} onChange={(e) => setNotRewound(e.target.checked)} />
+                <span>TAPE WAS NOT REWOUND (+{fmtMoney(toCents(rewindFee))})</span>
+              </label>
             </div>
           )}
           <div className="vm-field">
@@ -110,6 +123,7 @@ export function ReturnClient({ rentalId, calculated, replacementCost }: { rental
           <hr className="vm-thin-rule" />
           <dl className="vm-kv">
             <dt>OUTCOME</dt><dd>{outcome}</dd>
+            {rewindCents > 0 && (<><dt>REWIND FEE</dt><dd>{fmtMoney(rewindCents)}</dd></>)}
             <dt>FEES DUE</dt><dd>{fmtMoney(total)}</dd>
             {total > 0 && (<><dt>PAYMENT</dt><dd>{PAYMENT_METHODS.find((p) => p.value === payment)?.label}</dd></>)}
           </dl>

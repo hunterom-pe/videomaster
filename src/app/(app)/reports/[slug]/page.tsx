@@ -36,6 +36,8 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
             <Row label="RENTAL REVENUE" value={fmtMoney(a.rentalCents)} />
             <Row label="LATE FEES CHARGED" value={fmtMoney(a.lateFeeCents)} />
             <Row label="DAMAGE / LOST FEES" value={fmtMoney(a.otherFeeCents)} />
+            <Row label="REWIND FEES" value={fmtMoney(a.rewindFeeCents)} />
+            <Row label="MEMBERSHIP FEES" value={fmtMoney(a.membershipCents)} />
             <Row label="SALES TAX" value={fmtMoney(a.taxCents)} />
             <Row label="TOTAL REVENUE" value={fmtMoney(a.totalCents)} strong />
             <Row label="TRANSACTIONS" value={a.transactions} />
@@ -193,7 +195,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
           <dl className="vm-kv">
             <Row label="RENTAL REVENUE" value={fmtMoney(v.rentalCents)} />
             <Row label="MERCHANDISE REVENUE" value={fmtMoney(v.merchandiseCents)} />
-            <Row label="FEES (LATE / DAMAGE / LOST)" value={fmtMoney(v.feeCents)} />
+            <Row label="FEES (LATE / DAMAGE / LOST / REWIND / MEMBERSHIP)" value={fmtMoney(v.feeCents)} />
             <Row label="TAXES" value={fmtMoney(v.taxCents)} />
             <Row label="TOTAL" value={fmtMoney(v.totalCents)} strong />
             <Row label="TRANSACTIONS" value={v.transactions} />

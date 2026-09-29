@@ -104,6 +104,15 @@ model StoreSettings {
   salesTaxPercent         Decimal  @db.Decimal(6, 3)
   storeYear               Int?
   onlyMoviesUpToStoreYear Boolean  @default(false)
+  // Optional fees (0 = not charged)
+  rewindFee               Decimal  @default(0) @db.Decimal(8, 2)
+  damageFee               Decimal  @default(0) @db.Decimal(8, 2)
+  lostItemFee             Decimal  @default(0) @db.Decimal(8, 2)
+  replacementFee          Decimal  @default(19.99) @db.Decimal(8, 2) // default replacement cost for new copies
+  // Membership rules
+  membershipFee           Decimal  @default(0) @db.Decimal(8, 2)
+  membershipTermMonths    Int      @default(0) // 0 = never expires
+  maxRentalsOut           Int      @default(0) // 0 = unlimited
   updatedAt               DateTime @updatedAt
   store                   Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
 }
@@ -163,27 +172,29 @@ enum CustomerStatus {
 }
 
 model Customer {
-  id               String         @id @default(cuid())
-  storeId          String
-  membershipNumber String
-  firstName        String
-  lastName         String
-  phone            String?
-  phoneDigits      String? // digits-only copy of phone, for search
-  email            String?
-  address          String?
-  city             String?
-  region           String?
-  postalCode       String?
-  dateOfBirth      DateTime?      @db.Date
-  status           CustomerStatus @default(GOOD)
-  notes            String?
-  outstandingFees  Decimal        @default(0) @db.Decimal(8, 2)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  store            Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  rentals          Rental[]
-  transactions     Transaction[]
+  id                  String         @id @default(cuid())
+  storeId             String
+  membershipNumber    String
+  firstName           String
+  lastName            String
+  phone               String?
+  phoneDigits         String? // digits-only copy of phone, for search
+  email               String?
+  address             String?
+  city                String?
+  region              String?
+  postalCode          String?
+  dateOfBirth         DateTime?      @db.Date
+  status              CustomerStatus @default(GOOD)
+  notes               String?
+  outstandingFees     Decimal        @default(0) @db.Decimal(8, 2)
+  membershipPaidAt    DateTime?
+  membershipExpiresAt DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  store               Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  rentals             Rental[]
+  transactions        Transaction[]
 
   @@unique([storeId, id])
   @@unique([storeId, membershipNumber])
@@ -269,6 +280,7 @@ model Rental {
   calculatedLateFee   Decimal?       @db.Decimal(8, 2) // what policy says
   chargedLateFee      Decimal?       @db.Decimal(8, 2) // what was actually charged (waived/reduced)
   otherFee            Decimal?       @db.Decimal(8, 2) // damage / lost-item fee
+  rewindFee           Decimal?       @db.Decimal(8, 2)
   returnTransactionId String?
   store               Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
   customer            Customer       @relation(fields: [storeId, customerId], references: [storeId, id])
@@ -292,6 +304,7 @@ enum TransactionType {
   FEE_WAIVER
   DAMAGE_FEE
   LOST_ITEM_FEE
+  MEMBERSHIP_FEE
 }
 
 enum PaymentMethod {

@@ -9,7 +9,7 @@ export default async function NewCustomerPage() {
       <h1>NEW CUSTOMER</h1>
       <div className="vm-cyan">A MEMBERSHIP NUMBER IS ASSIGNED WHEN SAVED</div>
       <hr className="vm-rule" />
-      <CustomerForm initial={EMPTY_CUSTOMER} />
+      <CustomerForm initial={EMPTY_CUSTOMER} membershipFee={store.settings!.membershipFee.toFixed(2)} />
     </Screen>
   );
 }

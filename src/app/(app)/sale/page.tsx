@@ -13,7 +13,7 @@ export default async function SalePage() {
         <Link href="/concessions" className="vm-btn">[ CONCESSIONS ]</Link>
       </div>
       <hr className="vm-rule" />
-      <CheckoutClient customerId={null} customerName="WALK-IN" status="GOOD" fees="0.00" needsOverride={false} canOverride={false} taxPercent={store.settings!.salesTaxPercent.toString()} />
+      <CheckoutClient customerId={null} customerName="WALK-IN" status="GOOD" fees="0.00" restrictions={[]} activeOut={0} maxOut={0} canOverride={false} taxPercent={store.settings!.salesTaxPercent.toString()} />
     </Screen>
   );
 }

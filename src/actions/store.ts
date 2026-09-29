@@ -28,6 +28,13 @@ const settingsFields = (d: Parsed) => ({
   salesTaxPercent: d.salesTaxPercent.toString(),
   storeYear: d.storeYear,
   onlyMoviesUpToStoreYear: d.storeYear !== null && d.onlyMoviesUpToStoreYear,
+  rewindFee: d.rewindFee.toFixed(2),
+  damageFee: d.damageFee.toFixed(2),
+  lostItemFee: d.lostItemFee.toFixed(2),
+  replacementFee: d.replacementFee.toFixed(2),
+  membershipFee: d.membershipFee.toFixed(2),
+  membershipTermMonths: d.membershipTermMonths,
+  maxRentalsOut: d.maxRentalsOut,
 });
 
 const formatRows = (d: Parsed) =>

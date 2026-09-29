@@ -105,7 +105,7 @@ export default async function TitlePage({ params, searchParams }: { params: Prom
         <p className="vm-hint">CURRENT COPIES: {total}. THIS CREATES NEW INDIVIDUAL COPY RECORDS FOR THIS TITLE — NO DUPLICATE TITLE IS CREATED.</p>
         {formats.length === 0 ? <span className="vm-yellow">NO FORMATS ENABLED. SEE STORE SETTINGS.</span> : (
           <AddCopiesForm titleId={t.id} formats={formats} categories={categories}
-            initial={{ format: formats[0].value, categoryId: categories[0]?.id ?? "", quantity: "1", replacementCost: "19.99" }} />
+            initial={{ format: formats[0].value, categoryId: categories[0]?.id ?? "", quantity: "1", replacementCost: store.settings!.replacementFee.toFixed(2) }} />
         )}
       </fieldset>
     </Screen>

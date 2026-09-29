@@ -16,7 +16,8 @@ import {
 export const EMPTY_STORE: StoreFormValues = {
   name: "", number: "", address: "", city: "", region: "", postalCode: "", phone: "",
   managerName: "", slogan: "", currency: "USD", salesTaxPercent: "", storeYear: "",
-  onlyMoviesUpToStoreYear: false, formats: ["VHS"], categories: DEFAULT_CATEGORIES,
+  onlyMoviesUpToStoreYear: false, rewindFee: "0.00", damageFee: "0.00", lostItemFee: "0.00", replacementFee: "19.99",
+  membershipFee: "0.00", membershipTermMonths: "0", maxRentalsOut: "0", formats: ["VHS"], categories: DEFAULT_CATEGORIES,
 };
 
 export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initial: StoreFormValues }) {
@@ -166,6 +167,26 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
           </button>
         </div>
         <p className="vm-hint">PRICES IN THE STORE CURRENCY. LATE FEES ARE CHARGED PER DAY OVERDUE. ALL VALUES CAN BE CHANGED LATER IN STORE SETTINGS.</p>
+      </fieldset>
+
+      <fieldset className="vm-section">
+        <legend>5. OPTIONAL FEES</legend>
+        <div className="vm-grid">
+          {text("rewindFee", "REWIND FEE", { hint: "CHARGED AT RETURN IF A VHS IS NOT REWOUND. 0 = NONE", inputMode: "decimal" })}
+          {text("damageFee", "DAMAGE FEE", { hint: "SUGGESTED WHEN A VIDEO IS RETURNED DAMAGED. 0 = NONE", inputMode: "decimal" })}
+          {text("lostItemFee", "LOST-ITEM FEE", { hint: "ADDED TO THE REPLACEMENT COST WHEN A VIDEO IS LOST. 0 = NONE", inputMode: "decimal" })}
+          {text("replacementFee", "DEFAULT REPLACEMENT COST", { hint: "PREFILLED WHEN YOU ADD NEW COPIES", inputMode: "decimal" })}
+        </div>
+        <p className="vm-hint">LATE FEES ARE SET PER RENTAL CATEGORY IN SECTION 4. ALL FEES ARE OPTIONAL AND CAN BE CHANGED ANY TIME.</p>
+      </fieldset>
+
+      <fieldset className="vm-section">
+        <legend>6. MEMBERSHIP RULES</legend>
+        <div className="vm-grid">
+          {text("membershipFee", "MEMBERSHIP FEE", { hint: "COLLECTED WHEN A CUSTOMER JOINS AND ON RENEWAL. 0 = FREE", inputMode: "decimal" })}
+          {text("membershipTermMonths", "MEMBERSHIP TERM (MONTHS)", { hint: "0 = MEMBERSHIP NEVER EXPIRES", inputMode: "numeric" })}
+          {text("maxRentalsOut", "MAXIMUM VIDEOS OUT PER CUSTOMER", { hint: "0 = UNLIMITED. A MANAGER CAN OVERRIDE AT CHECKOUT", inputMode: "numeric" })}
+        </div>
       </fieldset>
 
       <div className="vm-actions">

@@ -78,6 +78,11 @@
 - Verified against independent SQL: report totals equal raw sums and the identity rentals + merchandise + fees + tax = total holds.
 - Main menu: all nine items live (placeholder code removed) in spec order. 61 unit tests.
 
+**Optional fees & membership rules** (Store Settings sections 5–6; everything optional, `0` = off)
+- Fees: rewind fee (VHS "not rewound" checkbox on return), damage fee (suggested when DAMAGE is chosen; editable), lost-item fee (added to the copy's replacement cost on LOST; editable), default replacement cost (prefills new copies). The rewind amount always comes from settings, never from the browser. Rewind/other fees appear on receipts, transaction detail and the Daily report.
+- Membership: fee collected when a customer is added (checkbox to waive, payment method, membership-fee receipt) and on `[ RENEW MEMBERSHIP ]`; term in months (0 = never expires; renewal extends from the later of now/current expiry); max videos out per customer. Expired membership and over-limit rentals need a manager override at checkout, alongside account-status reasons (all reasons listed together, enforced on the server); merchandise-only sales are never blocked. New `MEMBERSHIP_FEE` transaction type is counted under fees in Revenue/Daily reports (reports still reconcile).
+- DB CHECK constraints keep fees/limits non-negative. 71 unit tests.
+
 ## Current Work
 Nothing in progress.
 

@@ -15,9 +15,10 @@ export async function dailyActivity(storeId: string, day: Date, next: Date) {
     db.transaction.count({ where: { storeId, createdAt: between } }),
     db.transactionItem.aggregate({ where: { storeId, transaction: { createdAt: between } }, _sum: { lineTotal: true, quantity: true } }),
     db.transaction.aggregate({ where: { storeId, createdAt: between }, _sum: { total: true, tax: true } }),
-    db.rental.aggregate({ where: { storeId, returnedAt: between }, _sum: { chargedLateFee: true, otherFee: true } }),
+    db.rental.aggregate({ where: { storeId, returnedAt: between }, _sum: { chargedLateFee: true, otherFee: true, rewindFee: true } }),
   ]);
   const rentalRevenue = await db.rental.aggregate({ where: { storeId, rentedAt: between }, _sum: { price: true } });
+  const membership = await db.transaction.aggregate({ where: { storeId, type: "MEMBERSHIP_FEE", createdAt: between }, _sum: { total: true } });
   return {
     rentals, returns, transactions: txCount,
     merchandiseUnits: sales._sum.quantity ?? 0,
@@ -25,18 +26,20 @@ export async function dailyActivity(storeId: string, day: Date, next: Date) {
     rentalCents: cents(rentalRevenue._sum.price),
     lateFeeCents: cents(returned._sum.chargedLateFee),
     otherFeeCents: cents(returned._sum.otherFee),
+    rewindFeeCents: cents(returned._sum.rewindFee),
+    membershipCents: cents(membership._sum.total),
     taxCents: cents(txTotal._sum.tax),
     totalCents: cents(txTotal._sum.total),
   };
 }
 
-/** Revenue over a date range. total = rentals + merchandise + fees + tax by construction of the transactions. */
+/** Revenue over a date range. total = rentals + merchandise + fees (return + membership) + tax by construction of the transactions. */
 export async function revenue(storeId: string, r: Range) {
   const between = { gte: r.from, lt: r.toExclusive };
   const [rent, merch, fees, all] = await Promise.all([
     db.rental.aggregate({ where: { storeId, transaction: { createdAt: between } }, _sum: { price: true }, _count: { _all: true } }),
     db.transactionItem.aggregate({ where: { storeId, transaction: { createdAt: between } }, _sum: { lineTotal: true } }),
-    db.transaction.aggregate({ where: { storeId, type: "RETURN", createdAt: between }, _sum: { total: true }, _count: { _all: true } }),
+    db.transaction.aggregate({ where: { storeId, type: { in: ["RETURN", "MEMBERSHIP_FEE"] }, createdAt: between }, _sum: { total: true }, _count: { _all: true } }),
     db.transaction.aggregate({ where: { storeId, createdAt: between }, _sum: { tax: true, total: true }, _count: { _all: true } }),
   ]);
   const byPayment = await db.transaction.groupBy({ by: ["paymentMethod"], where: { storeId, createdAt: between }, _sum: { total: true }, _count: { _all: true }, orderBy: { paymentMethod: "asc" } });

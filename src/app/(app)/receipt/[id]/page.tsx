@@ -41,12 +41,18 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
         <div className="center">{store.phone}</div>
         {store.slogan && <div className="center">&quot;{name(store.slogan)}&quot;</div>}
         <hr className="rule" />
-        <Row left={fmtDateUS(t.createdAt)} right={t.type === "RETURN" ? "RETURN" : t.type === "RETAIL_SALE" ? "SALE" : "RENTAL"} />
+        <Row left={fmtDateUS(t.createdAt)} right={t.type === "RETURN" ? "RETURN" : t.type === "RETAIL_SALE" ? "SALE" : t.type === "MEMBERSHIP_FEE" ? "MEMBERSHIP" : "RENTAL"} />
         <Row left={`TRANSACTION #${String(t.number).padStart(6, "0")}`} />
         {t.customer ? <div>CUSTOMER: {name(t.customer.firstName)} {name(t.customer.lastName)}</div> : null}
         {!isNew && <div className="center strong" style={{ marginTop: 6 }}>** REPRINT **</div>}
         <hr className="rule" />
 
+        {t.type === "MEMBERSHIP_FEE" && (
+          <div className="item">
+            <Row left={t.notes ?? "MEMBERSHIP FEE"} right={money(t.total)} />
+            {t.customer?.membershipExpiresAt && <div className="sub">VALID THROUGH {fmtDateUS(t.customer.membershipExpiresAt)}</div>}
+          </div>
+        )}
         {t.rentals.map((r) => (
           <div key={r.id} className="item">
             <div>{name(r.copy.movieTitle.title)} {FORMAT_LABELS[r.copy.format]}</div>
@@ -68,12 +74,13 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
               <Row left={`LATE FEE${Number(r.chargedLateFee ?? 0) < Number(r.calculatedLateFee) ? (Number(r.chargedLateFee ?? 0) === 0 ? " (WAIVED)" : " (REDUCED)") : ""}`} right={money(r.chargedLateFee ?? 0)} />
             )}
             {r.otherFee && <Row left={r.outcome === "LOST" ? "LOST ITEM FEE" : "DAMAGE FEE"} right={money(r.otherFee)} />}
+            {r.rewindFee && <Row left="REWIND FEE" right={money(r.rewindFee)} />}
           </div>
         ))}
         <hr className="rule" />
 
-        {t.type !== "RETURN" && <Row left="SUBTOTAL" right={money(t.subtotal)} />}
-        {t.type !== "RETURN" && <Row left="TAX" right={money(t.tax)} />}
+        {t.type !== "RETURN" && t.type !== "MEMBERSHIP_FEE" && <Row left="SUBTOTAL" right={money(t.subtotal)} />}
+        {t.type !== "RETURN" && t.type !== "MEMBERSHIP_FEE" && <Row left="TAX" right={money(t.tax)} />}
         <Row left="TOTAL" right={money(t.total)} strong />
         {Number(t.total) > 0 && <Row left={PAYMENT_LABELS[t.paymentMethod]} right={money(t.total)} />}
         <hr className="rule" />

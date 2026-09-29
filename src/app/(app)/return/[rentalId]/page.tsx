@@ -30,7 +30,9 @@ export default async function ReturnDetailPage({ params }: { params: Promise<{ r
   const late = daysLate(r.dueAt, now);
   const cat = r.copy.rentalCategory;
   const calc = cat ? lateFeeCents(late, toCents(cat.lateFeePerDay), cat.maxLateFee ? toCents(cat.maxLateFee) : null) : 0;
-  const lostCost = cat?.replacementBehavior === "NONE" ? 0 : toCents(r.copy.replacementCost ?? 0);
+  const settings = store.settings!;
+  const replacement = cat?.replacementBehavior === "NONE" ? 0 : toCents(r.copy.replacementCost ?? 0);
+  const lostFee = replacement + toCents(settings.lostItemFee); // replacement cost plus optional lost-item fee
 
   return (
     <Screen title="RETURN VIDEO" userEmail={user.email} storeLine={`STORE: ${store.name} #${store.number}`}>
@@ -53,7 +55,7 @@ export default async function ReturnDetailPage({ params }: { params: Promise<{ r
           <dt>LATE FEE</dt><dd>{fmtMoney(calc)}{cat ? ` (${fmtMoney(toCents(cat.lateFeePerDay))}/DAY${cat.maxLateFee ? `, MAX ${fmtMoney(toCents(cat.maxLateFee))}` : ""})` : " (NO CATEGORY — NO POLICY)"}</dd>
         </dl>
       </fieldset>
-      <ReturnClient rentalId={r.id} calculated={fromCents(calc)} replacementCost={fromCents(lostCost)} />
+      <ReturnClient rentalId={r.id} calculated={fromCents(calc)} lostFee={fromCents(lostFee)} damageFee={settings.damageFee.toFixed(2)} rewindFee={settings.rewindFee.toFixed(2)} isVhs={r.copy.format === "VHS"} />
     </Screen>
   );
 }

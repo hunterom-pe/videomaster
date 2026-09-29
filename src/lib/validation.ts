@@ -55,6 +55,23 @@ function numberField(label: string, opts: { min: number; max: number; decimals: 
     });
 }
 
+/** Optional non-negative money/count field: blank means 0. */
+function optionalNumber(label: string, opts: { max: number; decimals: number; integer?: boolean }) {
+  const inner = numberField(label, { min: 0, ...opts });
+  return z
+    .string()
+    .trim()
+    .transform((raw, ctx) => {
+      if (raw === "") return 0;
+      const r = inner.safeParse(raw);
+      if (!r.success) {
+        ctx.addIssue({ code: "custom", message: r.error.issues[0].message });
+        return z.NEVER;
+      }
+      return r.data;
+    });
+}
+
 export const categorySchema = z.object({
   id: z.string().optional(),
   name: text("CATEGORY NAME", 30),
@@ -96,6 +113,13 @@ export const storeSchema = z
         return Number(raw);
       }),
     onlyMoviesUpToStoreYear: z.boolean(),
+    rewindFee: optionalNumber("REWIND FEE", { max: 999.99, decimals: 2 }),
+    damageFee: optionalNumber("DAMAGE FEE", { max: 999.99, decimals: 2 }),
+    lostItemFee: optionalNumber("LOST-ITEM FEE", { max: 999.99, decimals: 2 }),
+    replacementFee: optionalNumber("REPLACEMENT COST", { max: 999.99, decimals: 2 }),
+    membershipFee: optionalNumber("MEMBERSHIP FEE", { max: 999.99, decimals: 2 }),
+    membershipTermMonths: optionalNumber("MEMBERSHIP TERM", { max: 120, decimals: 0, integer: true }),
+    maxRentalsOut: optionalNumber("MAXIMUM VIDEOS OUT", { max: 99, decimals: 0, integer: true }),
     formats: z
       .array(z.enum(FORMAT_VALUES))
       .min(1, "SELECT AT LEAST ONE FORMAT")
@@ -126,6 +150,13 @@ export type StoreFormValues = {
   salesTaxPercent: string;
   storeYear: string;
   onlyMoviesUpToStoreYear: boolean;
+  rewindFee: string;
+  damageFee: string;
+  lostItemFee: string;
+  replacementFee: string;
+  membershipFee: string;
+  membershipTermMonths: string;
+  maxRentalsOut: string;
   formats: string[];
   categories: { id?: string; name: string; rentalPrice: string; rentalDays: string; lateFeePerDay: string }[];
 };
@@ -201,6 +232,9 @@ export const customerSchema = z.object({
 export type CustomerFormValues = {
   firstName: string; lastName: string; phone: string; email: string; address: string; city: string;
   region: string; postalCode: string; dateOfBirth: string; status: string; notes: string;
+  /** New customers only: collect the store membership fee now. */
+  collectFee?: boolean;
+  paymentMethod?: string;
 };
 
 // ── Inventory ──
@@ -305,8 +339,9 @@ export const returnSchema = z.object({
   lateFee: numberField("LATE FEE", { min: 0, max: 999.99, decimals: 2 }),
   otherFee: numberField("DAMAGE / REPLACEMENT FEE", { min: 0, max: 999.99, decimals: 2 }),
   paymentMethod: z.enum(PAYMENT_METHODS.map((p) => p.value) as [string, ...string[]], "SELECT A PAYMENT METHOD"),
+  notRewound: z.boolean(),
 });
-export type ReturnValues = { outcome: string; lateFee: string; otherFee: string; paymentMethod: string };
+export type ReturnValues = { outcome: string; lateFee: string; otherFee: string; paymentMethod: string; notRewound: boolean };
 
 // ── Concessions ──
 export const CONCESSION_CATEGORIES = [

@@ -20,6 +20,13 @@ export default async function SettingsPage() {
     salesTaxPercent: s.salesTaxPercent.toString(),
     storeYear: s.storeYear?.toString() ?? "",
     onlyMoviesUpToStoreYear: s.onlyMoviesUpToStoreYear,
+    rewindFee: s.rewindFee.toFixed(2),
+    damageFee: s.damageFee.toFixed(2),
+    lostItemFee: s.lostItemFee.toFixed(2),
+    replacementFee: s.replacementFee.toFixed(2),
+    membershipFee: s.membershipFee.toFixed(2),
+    membershipTermMonths: String(s.membershipTermMonths),
+    maxRentalsOut: String(s.maxRentalsOut),
     formats: store.formats.filter((f) => f.enabled).map((f) => f.format),
     categories: store.rentalCategories.map((c) => ({
       id: c.id,

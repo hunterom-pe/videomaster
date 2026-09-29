@@ -74,7 +74,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
           <legend>RETURNED ITEMS</legend>
           <div className="vm-tablewrap">
             <table className="vm-table" style={{ minWidth: 640 }}>
-              <thead><tr><th scope="col">TITLE</th><th scope="col">COPY</th><th scope="col">OUTCOME</th><th scope="col">LATE FEE (CALC / CHARGED)</th><th scope="col">OTHER FEE</th></tr></thead>
+              <thead><tr><th scope="col">TITLE</th><th scope="col">COPY</th><th scope="col">OUTCOME</th><th scope="col">LATE FEE (CALC / CHARGED)</th><th scope="col">OTHER FEE</th><th scope="col">REWIND FEE</th></tr></thead>
               <tbody>
                 {t.returnedRentals.map((r) => (
                   <tr key={r.id}>
@@ -83,6 +83,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
                     <td className={r.outcome === "RETURNED" ? "" : "vm-yellow"}>{r.outcome}</td>
                     <td>${r.calculatedLateFee?.toFixed(2) ?? "0.00"} / ${r.chargedLateFee?.toFixed(2) ?? "0.00"}</td>
                     <td>{r.otherFee ? `$${r.otherFee.toFixed(2)}` : "—"}</td>
+                    <td>{r.rewindFee ? `$${r.rewindFee.toFixed(2)}` : "—"}</td>
                   </tr>
                 ))}
               </tbody>

@@ -4,19 +4,20 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createCustomer, updateCustomer } from "@/actions/customers";
 import { ErrorBox } from "@/components/Screen";
-import { CUSTOMER_STATUSES, customerSchema, zodErrors, type CustomerFormValues } from "@/lib/validation";
+import { CUSTOMER_STATUSES, PAYMENT_METHODS, customerSchema, zodErrors, type CustomerFormValues } from "@/lib/validation";
 
 export const EMPTY_CUSTOMER: CustomerFormValues = {
   firstName: "", lastName: "", phone: "", email: "", address: "", city: "",
-  region: "", postalCode: "", dateOfBirth: "", status: "GOOD", notes: "",
+  region: "", postalCode: "", dateOfBirth: "", status: "GOOD", notes: "", collectFee: true, paymentMethod: "CASH",
 };
 
-export function CustomerForm({ customerId, initial }: { customerId?: string; initial: CustomerFormValues }) {
+export function CustomerForm({ customerId, initial, membershipFee }: { customerId?: string; initial: CustomerFormValues; membershipFee?: string }) {
   const [v, setV] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
-  const set = (key: keyof CustomerFormValues, value: string) => setV((p) => ({ ...p, [key]: value }));
+  const set = (key: keyof CustomerFormValues, value: string | boolean) => setV((p) => ({ ...p, [key]: value }));
+  const showFee = !customerId && !!membershipFee && Number(membershipFee) > 0;
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,10 +40,10 @@ export function CustomerForm({ customerId, initial }: { customerId?: string; ini
     });
   }
 
-  const field = (key: keyof CustomerFormValues, label: string, opts: { wide?: boolean; type?: string; hint?: string } = {}) => (
+  const field = (key: Exclude<keyof CustomerFormValues, "collectFee">, label: string, opts: { wide?: boolean; type?: string; hint?: string } = {}) => (
     <div className={`vm-field${opts.wide ? " wide" : ""}`}>
       <label htmlFor={key}>{label}</label>
-      <input id={key} type={opts.type ?? "text"} value={v[key]} onChange={(e) => set(key, e.target.value)} aria-invalid={!!errors[key]} />
+      <input id={key} type={opts.type ?? "text"} value={v[key] ?? ""} onChange={(e) => set(key, e.target.value)} aria-invalid={!!errors[key]} />
       {opts.hint && <span className="vm-hint">{opts.hint}</span>}
       {errors[key] && <span className="vm-fielderr">{errors[key]}</span>}
     </div>
@@ -77,6 +78,30 @@ export function CustomerForm({ customerId, initial }: { customerId?: string; ini
           </div>
         </div>
       </fieldset>
+      {showFee && (
+        <fieldset className="vm-section">
+          <legend>MEMBERSHIP FEE</legend>
+          <div className="vm-grid">
+            <div className="vm-field">
+              <span className="vm-label">FEE</span>
+              <label className="vm-check">
+                <input type="checkbox" checked={v.collectFee ?? false} onChange={(e) => set("collectFee", e.target.checked)} />
+                <span>COLLECT MEMBERSHIP FEE (${membershipFee})</span>
+              </label>
+              <span className="vm-hint">UNCHECK TO WAIVE THE FEE FOR THIS CUSTOMER</span>
+            </div>
+            {v.collectFee && (
+              <div className="vm-field">
+                <label htmlFor="paymentMethod">PAYMENT METHOD</label>
+                <select id="paymentMethod" value={v.paymentMethod ?? "CASH"} onChange={(e) => set("paymentMethod", e.target.value)}>
+                  {PAYMENT_METHODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                </select>
+                {errors.paymentMethod && <span className="vm-fielderr">{errors.paymentMethod}</span>}
+              </div>
+            )}
+          </div>
+        </fieldset>
+      )}
       <div className="vm-actions">
         <button type="submit" className="vm-btn" disabled={pending}>{pending ? "SAVING..." : "[ SAVE CUSTOMER ]"}</button>
         <Link href={customerId ? `/customers/${customerId}` : "/customers"} className="vm-btn">[ CANCEL ]</Link>
