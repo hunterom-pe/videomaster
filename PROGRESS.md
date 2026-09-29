@@ -67,14 +67,14 @@
 - 54 unit tests.
 
 **Milestone 16 — Overdue management**
-- OVERDUE is **derived on read** (unreturned and due before today, UTC) — never stored, so it can't go stale on a serverless host with no background job. `effectiveStatus()`: a GOOD customer with overdue rentals behaves as OVERDUE; manual statuses (BLOCKED/SUSPENDED/CLOSED) always win.
+- OVERDUE is **derived on read** (unreturned and due before today, in the store's time zone) — never stored, so it can't go stale on a serverless host with no background job. `effectiveStatus()`: a GOOD customer with overdue rentals behaves as OVERDUE; manual statuses (BLOCKED/SUSPENDED/CLOSED) always win.
 - OVERDUE RENTALS screen: customer (link to account), phone, title, copy, due date, days late (yellow, red `***` beyond 7 days), accrued late fee per video, customer balance (accrued fees + outstanding fees); worst first; row click opens the return screen; summary banner (videos, customers, accrued fees). Menu shows `OVERDUE: n` in red and on the button.
 - Customer account: `*** ACCOUNT OVERDUE ***` banner with per-rental RETURN buttons and accrued fees; days-late column. Customer lists show effective status. Checkout requires manager override for rentals on effectively-overdue accounts (merchandise-only sales are never blocked). Title page shows an OVERDUE column and marks overdue copies.
 - Verified: boundary case (due earlier today = not overdue), return clears overdue status. 57 unit tests.
 
 **Milestone 17 — Reports**
 - REPORTS index + seven printable reports (spec §23), each with `[ PRINT ]` (print CSS → black on white, header with store/period): Daily Activity (rentals, returns, merchandise units/$, rental revenue, late/damage fees, tax, total, transactions), Overdue Rentals, Inventory (titles/copies by status and format, overdue derived), Popular Rentals (ranked), Customer Activity (top customers), Merchandise Inventory (units, retail value, low/out of stock), Revenue (rental + merchandise + fees + taxes = total, by payment method).
-- Date filters (UTC `YYYY-MM-DD`): single date for Daily; from/to for Popular, Customers, Revenue (default last 30 days). Invalid input falls back with a notice; reversed ranges swap.
+- Date filters (store-local `YYYY-MM-DD`): single date for Daily; from/to for Popular, Customers, Revenue (default last 30 days). Invalid input falls back with a notice; reversed ranges swap.
 - Verified against independent SQL: report totals equal raw sums and the identity rentals + merchandise + fees + tax = total holds.
 - Main menu: all nine items live (placeholder code removed) in spec order. 61 unit tests.
 
@@ -87,6 +87,11 @@
 - IANA zone per store (`StoreSettings.timezone`, default `America/Phoenix`; first-run setup pre-selects the browser's zone). Curated list includes **Arizona (Phoenix, MST, no daylight saving)**, Hawaii, all US/Canadian zones, London/Paris/Sydney, UTC.
 - Everything date-related now uses the store's calendar day: due dates and receipt dates, days late / late fees, OVERDUE (derived), report and transaction-history date filters and ranges, transaction times (shown with the zone abbreviation, e.g. MST), membership expiry dates. New `lib/tz.ts` handles daylight-saving transitions (unit-tested for Phoenix and New York spring-forward/fall-back).
 - Fixes the earlier UTC limitation (an 8pm Arizona rental no longer rolls to "tomorrow"). Verified live: a rental due 8pm today (Arizona) is on time; one due 10pm yesterday is 1 day late; switching the store to Eastern changes both correctly. 83 unit tests.
+
+**Sample demo store** (spec §30)
+- First-run setup has `LOAD SAMPLE STORE DATA?`; Store Settings has `[ LOAD SAMPLE STORE DATA ]` (only into an EMPTY store — refused otherwise) and an owner-only, typed-confirmation `[ CLEAR ALL STORE DATA ]` (keeps settings/categories/formats; resets counters) so the demo can be removed and real data started.
+- Contents: 28 classic movies with real TMDB metadata + posters (fetched once by `scripts/fetch-sample-titles.mjs` into `src/lib/sample-titles.json`, so loading works offline), 22 fictional customers (555-01xx phones; one suspended, one lapsed membership when a term is set), 16 merchandise items (with low-stock and out-of-stock examples), VHS copies (plus DVD copies when DVD is enabled), and 3 weeks of deterministic history: ~90 rental transactions, ~130 return transactions (on-time, late, waived/reduced fees, one lost, a few damaged, rewind fees if configured) and walk-in sales — including 3+ currently overdue videos and activity today. All in the store's own time zone.
+- Verified by SQL invariants and an automated database test (`npm run test:db`, uses the spare `videomaster_test` DB; runs the generator in Arizona, Hawaii and New York zones): no double-rented copies, nothing rented after lost/damaged, contiguous transaction numbers, every transaction adds up, rentals + merchandise + fees + tax = total, no negative stock, overdue measured in store-local days, clear + reload works.
 
 ## Current Work
 Nothing in progress.
@@ -110,7 +115,7 @@ Nothing in progress.
 - `Customer.phoneDigits` is maintained by the create/update actions only — any future import path must set it too.
 - No password reset yet (spec §32) — needs an e-mail provider.
 - Setup is one scrolling form, not a multi-step wizard.
-- Only VHS/other format toggles are stored; per-format pricing is not modelled yet.
+- Per-format pricing is not modelled yet (price comes from the rental category).
 - Double-submit protection for store creation is a transaction re-check, not a DB constraint.
 - Category-removal path (retire vs delete when copies exist) is untested until inventory exists.
 - No automated browser/E2E or DB-backed integration tests yet.
@@ -118,7 +123,9 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Milestone 18 — Polish & accessibility: full keyboard/focus pass, contrast, form labels, table semantics, responsive checks, optional keyboard shortcuts (F-keys), store timezone, password reset, sample/demo data (spec §30), Store Settings sections (fees, membership rules), title edit.
+Polish & accessibility pass: keyboard/focus review, contrast, labels/table semantics, phone-width check, optional F-key shortcuts. Remaining optional spec items: concession categories editable in settings, inventory/system settings sections, per-format pricing overrides.
+
+Deliberately dropped by the owner: password reset (small local project), editing a title's metadata after adding it.
 
 ## Decisions
 - Browser-based web app only (Next.js/React/HTML/CSS/TS). Never native/Electron/desktop/CLI.

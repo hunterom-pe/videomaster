@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { loadSampleData } from "@/lib/sample-store";
 import { getUserStore, requireStore, requireUser } from "@/lib/store-access";
 import { storeSchema, zodErrors, type ActionState, type StoreFormValues } from "@/lib/validation";
 import type { MediaFormat } from "@/generated/prisma/client";
@@ -57,7 +58,7 @@ function validate(input: StoreFormValues): { data: Parsed } | { state: ActionSta
 }
 
 /** First-run setup: creates the user's store, settings, formats and categories. */
-export async function createStore(input: StoreFormValues): Promise<ActionState> {
+export async function createStore(input: StoreFormValues, loadSample = false): Promise<ActionState> {
   const user = await requireUser();
   if (await getUserStore(user.id)) redirect("/menu"); // one store per user in v1.0
 
@@ -65,19 +66,23 @@ export async function createStore(input: StoreFormValues): Promise<ActionState> 
   if ("state" in v) return v.state;
   const d = v.data;
 
-  await db.$transaction(async (tx) => {
-    // Re-check inside the transaction so a double-submit cannot create two stores.
-    if (await tx.storeMember.findFirst({ where: { userId: user.id } })) return;
-    await tx.store.create({
-      data: {
-        ...storeFields(d),
-        members: { create: { userId: user.id, role: "OWNER" } },
-        settings: { create: settingsFields(d) },
-        formats: { create: formatRows(d) },
-        rentalCategories: { create: d.categories.map((c, i) => categoryFields(c, i)) },
-      },
-    });
-  });
+  await db.$transaction(
+    async (tx) => {
+      // Re-check inside the transaction so a double-submit cannot create two stores.
+      if (await tx.storeMember.findFirst({ where: { userId: user.id } })) return;
+      const created = await tx.store.create({
+        data: {
+          ...storeFields(d),
+          members: { create: { userId: user.id, role: "OWNER" } },
+          settings: { create: settingsFields(d) },
+          formats: { create: formatRows(d) },
+          rentalCategories: { create: d.categories.map((c, i) => categoryFields(c, i)) },
+        },
+      });
+      if (loadSample === true) await loadSampleData(tx, created.id, user.id);
+    },
+    { timeout: 60_000, maxWait: 10_000 },
+  );
   redirect("/menu");
 }
 

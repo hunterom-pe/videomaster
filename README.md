@@ -14,7 +14,11 @@ npm run dev                   # http://localhost:3000
 
 **After pulling changes or changing `prisma/schema.prisma`:** run `npx prisma migrate deploy`, then **restart** `npm run dev` (it regenerates the Prisma client on start; a running dev server keeps the old client and will show "This page couldn't load").
 
-Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
+**Demo data:** on first-run setup tick *Load sample store data*, or use *Store Settings → Load sample store data* on an empty store (28 classic movies, customers, merchandise and 3 weeks of history). `node scripts/fetch-sample-titles.mjs` regenerates the movie metadata file from TMDB (needs a TMDB key in `.env`).
+
+**Time zone:** set per store in Store Settings (defaults from your browser; Arizona = `America/Phoenix`, no daylight saving). It decides when "today" starts for due dates, late fees, overdue and reports.
+
+Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. `npm run test:db` runs the database integration test against a spare `videomaster_test` database (created once with `createdb videomaster_test`).
 
 ## Deploying to Netlify
 

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test:db": "TEST_DATABASE_URL=\"${TEST_DATABASE_URL:-postgresql://$USER@localhost:5432/videomaster_test}\" sh -c 'DATABASE_URL=\"$TEST_DATABASE_URL\" npx prisma migrate deploy && vitest run src/lib/__tests__/sample-store.int.test.ts'"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

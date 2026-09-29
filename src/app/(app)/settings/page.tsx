@@ -1,10 +1,19 @@
 import { Screen } from "@/components/Screen";
+import { SamplePanel } from "@/components/SamplePanel";
 import { StoreForm } from "@/components/StoreForm";
+import { db } from "@/lib/db";
 import { requireStore } from "@/lib/store-access";
 import type { StoreFormValues } from "@/lib/validation";
 
 export default async function SettingsPage() {
-  const { user, store } = await requireStore();
+  const { user, store, role } = await requireStore();
+  const [customers, titles, items, transactions] = await Promise.all([
+    db.customer.count({ where: { storeId: store.id } }),
+    db.movieTitle.count({ where: { storeId: store.id } }),
+    db.concessionItem.count({ where: { storeId: store.id } }),
+    db.transaction.count({ where: { storeId: store.id } }),
+  ]);
+  const isEmpty = customers + titles + items + transactions === 0;
   const s = store.settings!;
   const initial: StoreFormValues = {
     name: store.name,
@@ -45,6 +54,8 @@ export default async function SettingsPage() {
       </div>
       <hr className="vm-rule" />
       <StoreForm mode="settings" initial={initial} />
+      <hr className="vm-rule" />
+      <SamplePanel isEmpty={isEmpty} isOwner={role === "OWNER"} canManage={role !== "EMPLOYEE"} />
     </Screen>
   );
 }

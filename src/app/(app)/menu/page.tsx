@@ -4,10 +4,10 @@ import { db } from "@/lib/db";
 import { overdueWhere } from "@/lib/overdue";
 import { requireStore } from "@/lib/store-access";
 
-export default async function MenuPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
+export default async function MenuPage({ searchParams }: { searchParams: Promise<{ saved?: string; sample?: string; cleared?: string }> }) {
   const { user, store } = await requireStore();
   const tz = store.settings!.timezone;
-  const { saved } = await searchParams;
+  const { saved, sample, cleared } = await searchParams;
   const [videosOut, customers, lowStock, overdueCount] = await Promise.all([
     db.rental.count({ where: { storeId: store.id, returnedAt: null } }),
     db.customer.count({ where: { storeId: store.id } }),
@@ -27,6 +27,8 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
       </div>
       <hr className="vm-rule" />
       {saved && <div className="vm-notice" role="status">*** STORE SETTINGS SAVED ***</div>}
+      {sample && <div className="vm-notice" role="status">*** SAMPLE STORE DATA LOADED. EXPLORE THE MENU BELOW. ***</div>}
+      {cleared && <div className="vm-notice" role="status">*** ALL STORE DATA CLEARED ***</div>}
       <div className="vm-menu">
         <Link href="/rent" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
           <span className="fkey">[F1]</span>RENT VIDEO

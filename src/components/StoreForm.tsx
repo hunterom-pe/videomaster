@@ -25,6 +25,7 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
   const [v, setV] = useState<StoreFormValues>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
+  const [loadSample, setLoadSample] = useState(false);
   const [pending, startTransition] = useTransition();
 
   // First-run setup: pre-select the browser's time zone (Arizona stays "America/Phoenix", i.e. no daylight saving).
@@ -51,7 +52,7 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
     setErrors({});
     setMessage("");
     startTransition(async () => {
-      const result = await (mode === "setup" ? createStore(v) : updateStore(v));
+      const result = await (mode === "setup" ? createStore(v, loadSample) : updateStore(v));
       if (result && !result.ok) {
         setErrors(result.errors);
         setMessage(result.message);
@@ -207,9 +208,24 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
         </div>
       </fieldset>
 
+      {mode === "setup" && (
+        <fieldset className="vm-section">
+          <legend>7. SAMPLE STORE DATA (OPTIONAL)</legend>
+          <label className="vm-check">
+            <input type="checkbox" checked={loadSample} onChange={(e) => setLoadSample(e.target.checked)} />
+            <span>LOAD SAMPLE STORE DATA?</span>
+          </label>
+          <p className="vm-hint">
+            FILLS THE STORE WITH A READY-TO-EXPLORE DEMO: 28 CLASSIC MOVIES ON VHS, FICTIONAL CUSTOMERS, CANDY/POPCORN/DRINKS,
+            AND THREE WEEKS OF RENTALS, RETURNS, LATE FEES AND SALES (INCLUDING SOME OVERDUE VIDEOS). YOU CAN CLEAR IT ANY TIME
+            FROM STORE SETTINGS. LEAVE UNCHECKED TO START WITH AN EMPTY STORE.
+          </p>
+        </fieldset>
+      )}
+
       <div className="vm-actions">
         <button type="submit" className="vm-btn" disabled={pending}>
-          {pending ? "SAVING..." : mode === "setup" ? "[ SAVE STORE ]" : "[ SAVE SETTINGS ]"}
+          {pending ? (loadSample ? "BUILDING DEMO STORE..." : "SAVING...") : mode === "setup" ? "[ SAVE STORE ]" : "[ SAVE SETTINGS ]"}
         </button>
         {mode === "settings" && <Link href="/menu" className="vm-btn">[ CANCEL ]</Link>}
       </div>

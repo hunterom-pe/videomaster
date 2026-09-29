@@ -1,14 +1,11 @@
 import "server-only";
 import type { CopyStatus, MediaFormat, Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { FORMAT_CODES, FORMAT_LABELS, buildSearchText } from "@/lib/inventory-shared";
+
+export { FORMAT_CODES, FORMAT_LABELS, buildSearchText };
 
 export const INVENTORY_PAGE_SIZE = 20;
-export const FORMAT_CODES: Record<MediaFormat, string> = {
-  VHS: "VHS", DVD: "DVD", BLURAY: "BD", LASERDISC: "LD", VIDEO_GAME: "GAME", OTHER: "OTH",
-};
-export const FORMAT_LABELS: Record<MediaFormat, string> = {
-  VHS: "VHS", DVD: "DVD", BLURAY: "BLU-RAY", LASERDISC: "LASERDISC", VIDEO_GAME: "VIDEO GAME", OTHER: "OTHER",
-};
 const OUT: CopyStatus[] = ["RENTED", "OVERDUE"];
 
 export type InventoryFilters = { q: string; format: string; categoryId: string; availability: string };
@@ -70,5 +67,3 @@ export function summarize(groups: { format: MediaFormat; status: CopyStatus; _co
   return [...map.values()];
 }
 
-export const buildSearchText = (director: string, genres: string[], cast: string[]) =>
-  [director, ...genres, ...cast].join(" ").toLowerCase();
