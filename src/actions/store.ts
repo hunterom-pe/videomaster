@@ -37,6 +37,7 @@ const settingsFields = (d: Parsed) => ({
   membershipFee: d.membershipFee.toFixed(2),
   membershipTermMonths: d.membershipTermMonths,
   maxRentalsOut: d.maxRentalsOut,
+  defaultLowStockThreshold: d.defaultLowStock,
   functionKeys: d.functionKeys,
   receiptFooter: d.receiptFooter || "THANK YOU!",
 });
@@ -105,12 +106,16 @@ export async function updateStore(input: StoreFormValues): Promise<ActionState> 
   await db.$transaction(async (tx) => {
     await tx.store.update({ where: { id: store.id }, data: storeFields(d) });
     await tx.storeSettings.update({ where: { storeId: store.id }, data: settingsFields(d) });
-    for (const f of formatRows(d))
+    for (const f of formatRows(d)) {
+      // A format's default category must be one of THIS store's kept categories (never trust the browser's id).
+      const wanted = d.formatDefaults[f.format];
+      const defaultCategoryId = f.enabled && wanted && keepIds.includes(wanted) ? wanted : null;
       await tx.storeFormat.upsert({
         where: { storeId_format: { storeId: store.id, format: f.format } },
-        update: { enabled: f.enabled },
-        create: { storeId: store.id, ...f },
+        update: { enabled: f.enabled, defaultCategoryId },
+        create: { storeId: store.id, ...f, defaultCategoryId },
       });
+    }
 
     for (const [i, c] of d.categories.entries()) {
       if (c.id) await tx.rentalCategory.update({ where: { id: c.id, storeId: store.id }, data: { ...categoryFields(c, i), active: true } });

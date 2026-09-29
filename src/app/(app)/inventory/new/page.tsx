@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AddTitleForm } from "@/components/InventoryForms";
 import { Screen } from "@/components/Screen";
 import { db } from "@/lib/db";
-import { categoryOptions, formatOptions } from "@/lib/inventory-options";
+import { categoryOptions, formatDefaultCategories, formatOptions } from "@/lib/inventory-options";
 import { requireStore } from "@/lib/store-access";
 import { getMovie, posterUrl } from "@/lib/tmdb";
 import type { AddTitleValues } from "@/lib/validation";
@@ -15,10 +15,11 @@ export default async function NewTitlePage({ searchParams }: { searchParams: Pro
   const tmdbId = tmdb && /^\d{1,10}$/.test(tmdb) ? Number(tmdb) : null;
   const formats = formatOptions(store);
   const categories = categoryOptions(store);
+  const formatDefaults = formatDefaultCategories(store);
 
   const blank: AddTitleValues = {
     title: "", year: "", director: "", runtime: "", genres: "", cast: "", rating: "", overview: "", tmdbId: "", posterPath: "",
-    format: formats[0]?.value ?? "", categoryId: categories[0]?.id ?? "", quantity: "1", replacementCost: store.settings!.replacementFee.toFixed(2),
+    format: formats[0]?.value ?? "", categoryId: formatDefaults[formats[0]?.value ?? ""] ?? categories[0]?.id ?? "", quantity: "1", replacementCost: store.settings!.replacementFee.toFixed(2),
   };
   let initial = blank;
   let problem: string | null = null;
@@ -57,7 +58,7 @@ export default async function NewTitlePage({ searchParams }: { searchParams: Pro
           <img src={poster} alt={`${initial.title} poster`} width={92} style={{ border: "2px solid var(--gray)" }} />
         </div>
       )}
-      <AddTitleForm initial={initial} formats={formats} categories={categories} />
+      <AddTitleForm initial={initial} formats={formats} categories={categories} formatDefaults={formatDefaults} />
     </Screen>
   );
 }

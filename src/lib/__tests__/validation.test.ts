@@ -5,7 +5,7 @@ const valid: StoreFormValues = {
   name: "VIDEO WORLD", number: "147", address: "123 MAIN ST", city: "PHOENIX", region: "AZ",
   postalCode: "85001", phone: "(602) 555-0147", managerName: "S. CONNOR", slogan: "",
   currency: "USD", timezone: "America/Phoenix", salesTaxPercent: "8.6", storeYear: "1996", onlyMoviesUpToStoreYear: true,
-  rewindFee: "", damageFee: "", lostItemFee: "", replacementFee: "19.99", membershipFee: "", membershipTermMonths: "", maxRentalsOut: "", functionKeys: false, receiptFooter: "THANK YOU!",
+  rewindFee: "", damageFee: "", lostItemFee: "", replacementFee: "19.99", membershipFee: "", membershipTermMonths: "", maxRentalsOut: "", defaultLowStock: "5", formatDefaults: {}, functionKeys: false, receiptFooter: "THANK YOU!",
   formats: ["VHS"], categories: DEFAULT_CATEGORIES,
 };
 const errorsFor = (patch: Partial<StoreFormValues>) => {
@@ -77,5 +77,11 @@ describe("storeSchema", () => {
     expect(errorsFor({ receiptFooter: "SEE YOU NEXT FRIDAY!", functionKeys: true })).toEqual({});
     expect(errorsFor({ receiptFooter: "" })).toEqual({}); // blank falls back to THANK YOU! on save
     expect(errorsFor({ receiptFooter: "X".repeat(41) }).receiptFooter).toBeDefined();
+  });
+  it("validates the default low-stock threshold", () => {
+    expect(errorsFor({ defaultLowStock: "" })).toEqual({});
+    expect(errorsFor({ defaultLowStock: "10" })).toEqual({});
+    expect(errorsFor({ defaultLowStock: "-1" }).defaultLowStock).toBeDefined();
+    expect(errorsFor({ defaultLowStock: "2.5" }).defaultLowStock).toBeDefined();
   });
 });

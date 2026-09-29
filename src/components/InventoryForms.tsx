@@ -41,17 +41,17 @@ function useSubmit<T>(schema: ZodType, values: T, action: (v: T) => Promise<Acti
 const Err = ({ e, id }: { e?: string; id: string }) => (e ? <span id={`${id}-err`} className="vm-fielderr">{e}</span> : null);
 
 function CopyFields({
-  v, set, errors, formats, categories,
+  v, set, errors, formats, categories, onFormat,
 }: {
   v: AddCopiesValues; set: (k: keyof AddCopiesValues, val: string) => void; errors: Record<string, string>;
-  formats: FormatOption[]; categories: CategoryOption[];
+  formats: FormatOption[]; categories: CategoryOption[]; onFormat: (format: string) => void;
 }) {
   const cat = categories.find((c) => c.id === v.categoryId);
   return (
     <div className="vm-grid">
       <div className="vm-field">
         <label htmlFor="format">FORMAT</label>
-        <select id="format" value={v.format} onChange={(e) => set("format", e.target.value)} aria-invalid={!!errors.format} aria-describedby={errors.format ? "format-err" : undefined}>
+        <select id="format" value={v.format} onChange={(e) => onFormat(e.target.value)} aria-invalid={!!errors.format} aria-describedby={errors.format ? "format-err" : undefined}>
           {formats.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
         </select>
         <Err id="format" e={errors.format} />
@@ -79,9 +79,11 @@ function CopyFields({
   );
 }
 
-export function AddTitleForm({ initial, formats, categories }: { initial: AddTitleValues; formats: FormatOption[]; categories: CategoryOption[] }) {
+export function AddTitleForm({ initial, formats, categories, formatDefaults = {} }: { initial: AddTitleValues; formats: FormatOption[]; categories: CategoryOption[]; formatDefaults?: Record<string, string> }) {
   const [v, setV] = useState(initial);
   const set = (k: keyof AddTitleValues, val: string) => setV((p) => ({ ...p, [k]: val }));
+  // Choosing a format preselects that format's default rental category (if the store set one).
+  const onFormat = (format: string) => setV((p) => ({ ...p, format, categoryId: formatDefaults[format] ?? p.categoryId }));
   const { errors, message, pending, submit } = useSubmit(addTitleSchema, v, addTitle);
   const text = (k: keyof AddTitleValues, label: string, wide = false, hint?: string) => (
     <div className={`vm-field${wide ? " wide" : ""}`}>
@@ -113,7 +115,7 @@ export function AddTitleForm({ initial, formats, categories }: { initial: AddTit
       </fieldset>
       <fieldset className="vm-section">
         <legend>ADD TITLE TO INVENTORY</legend>
-        <CopyFields v={v} set={set} errors={errors} formats={formats} categories={categories} />
+        <CopyFields v={v} set={set} errors={errors} formats={formats} categories={categories} onFormat={onFormat} />
         <Err id="tmdbId" e={errors.tmdbId ?? errors.posterPath} />
       </fieldset>
       <div className="vm-actions">
@@ -124,14 +126,15 @@ export function AddTitleForm({ initial, formats, categories }: { initial: AddTit
   );
 }
 
-export function AddCopiesForm({ titleId, initial, formats, categories }: { titleId: string; initial: AddCopiesValues; formats: FormatOption[]; categories: CategoryOption[] }) {
+export function AddCopiesForm({ titleId, initial, formats, categories, formatDefaults = {} }: { titleId: string; initial: AddCopiesValues; formats: FormatOption[]; categories: CategoryOption[]; formatDefaults?: Record<string, string> }) {
   const [v, setV] = useState(initial);
   const set = (k: keyof AddCopiesValues, val: string) => setV((p) => ({ ...p, [k]: val }));
+  const onFormat = (format: string) => setV((p) => ({ ...p, format, categoryId: formatDefaults[format] ?? p.categoryId }));
   const { errors, message, pending, submit } = useSubmit(addCopiesSchema, v, (x: AddCopiesValues) => addCopies(titleId, x));
   return (
     <form onSubmit={submit} noValidate>
       {message && <ErrorBox message={message} />}
-      <CopyFields v={v} set={set} errors={errors} formats={formats} categories={categories} />
+      <CopyFields v={v} set={set} errors={errors} formats={formats} categories={categories} onFormat={onFormat} />
       <div className="vm-actions">
         <button type="submit" className="vm-btn" disabled={pending}>{pending ? "ADDING..." : "[ ADD ]"}</button>
       </div>

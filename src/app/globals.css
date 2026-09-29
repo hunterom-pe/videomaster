@@ -203,3 +203,9 @@ main:focus { outline: none; }
   .vm-body { padding: 12px; }
   h1.vm-brand { font-size: 24px; letter-spacing: 4px; }
 }
+
+/* ── Settings: jump index ── */
+.vm-jumpnav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+.vm-jumpnav a.vm-btn { text-decoration: none; color: var(--black); }
+.vm-section { scroll-margin-top: 12px; }
+@media print { .vm-jumpnav { display: none; } }

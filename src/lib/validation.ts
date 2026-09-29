@@ -122,6 +122,8 @@ export const storeSchema = z
     membershipFee: optionalNumber("MEMBERSHIP FEE", { max: 999.99, decimals: 2 }),
     membershipTermMonths: optionalNumber("MEMBERSHIP TERM", { max: 120, decimals: 0, integer: true }),
     maxRentalsOut: optionalNumber("MAXIMUM VIDEOS OUT", { max: 99, decimals: 0, integer: true }),
+    defaultLowStock: optionalNumber("DEFAULT LOW-STOCK THRESHOLD", { max: 9999, decimals: 0, integer: true }),
+    formatDefaults: z.record(z.string(), z.string()),
     functionKeys: z.boolean(),
     receiptFooter: z.string().trim().max(40, "RECEIPT MESSAGE MUST BE 40 CHARACTERS OR FEWER"),
     formats: z
@@ -162,6 +164,9 @@ export type StoreFormValues = {
   membershipFee: string;
   membershipTermMonths: string;
   maxRentalsOut: string;
+  defaultLowStock: string;
+  /** format -> rental category id preselected when adding copies ("" = none). Existing categories only. */
+  formatDefaults: Record<string, string>;
   functionKeys: boolean;
   receiptFooter: string;
   formats: string[];

@@ -99,26 +99,28 @@ model Store {
 }
 
 model StoreSettings {
-  storeId                 String   @id
-  currency                String   @default("USD")
-  timezone                String   @default("America/Phoenix") // IANA zone; drives "today", due dates, lateness, reports
-  salesTaxPercent         Decimal  @db.Decimal(6, 3)
-  storeYear               Int?
-  onlyMoviesUpToStoreYear Boolean  @default(false)
+  storeId                  String   @id
+  currency                 String   @default("USD")
+  timezone                 String   @default("America/Phoenix") // IANA zone; drives "today", due dates, lateness, reports
+  salesTaxPercent          Decimal  @db.Decimal(6, 3)
+  storeYear                Int?
+  onlyMoviesUpToStoreYear  Boolean  @default(false)
   // Optional fees (0 = not charged)
-  rewindFee               Decimal  @default(0) @db.Decimal(8, 2)
-  damageFee               Decimal  @default(0) @db.Decimal(8, 2)
-  lostItemFee             Decimal  @default(0) @db.Decimal(8, 2)
-  replacementFee          Decimal  @default(19.99) @db.Decimal(8, 2) // default replacement cost for new copies
+  rewindFee                Decimal  @default(0) @db.Decimal(8, 2)
+  damageFee                Decimal  @default(0) @db.Decimal(8, 2)
+  lostItemFee              Decimal  @default(0) @db.Decimal(8, 2)
+  replacementFee           Decimal  @default(19.99) @db.Decimal(8, 2) // default replacement cost for new copies
   // Membership rules
-  membershipFee           Decimal  @default(0) @db.Decimal(8, 2)
-  membershipTermMonths    Int      @default(0) // 0 = never expires
-  maxRentalsOut           Int      @default(0) // 0 = unlimited
+  membershipFee            Decimal  @default(0) @db.Decimal(8, 2)
+  membershipTermMonths     Int      @default(0) // 0 = never expires
+  maxRentalsOut            Int      @default(0) // 0 = unlimited
   // System settings
-  functionKeys            Boolean  @default(false) // F1-F9 keyboard shortcuts (off by default: they are browser keys)
-  receiptFooter           String   @default("THANK YOU!")
-  updatedAt               DateTime @updatedAt
-  store                   Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  functionKeys             Boolean  @default(false) // F1-F9 keyboard shortcuts (off by default: they are browser keys)
+  receiptFooter            String   @default("THANK YOU!")
+  // Inventory settings
+  defaultLowStockThreshold Int      @default(5) // prefilled for new merchandise items
+  updatedAt                DateTime @updatedAt
+  store                    Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
 }
 
 enum MediaFormat {
@@ -131,11 +133,14 @@ enum MediaFormat {
 }
 
 model StoreFormat {
-  id      String      @id @default(cuid())
-  storeId String
-  format  MediaFormat
-  enabled Boolean     @default(false)
-  store   Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  id                String          @id @default(cuid())
+  storeId           String
+  format            MediaFormat
+  enabled           Boolean         @default(false)
+  // Preselected rental category when adding copies of this format (how a store prices formats differently).
+  defaultCategoryId String?
+  defaultCategory   RentalCategory? @relation("FormatDefaultCategory", fields: [defaultCategoryId], references: [id], onDelete: SetNull)
+  store             Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([storeId, format])
 }
@@ -160,6 +165,7 @@ model RentalCategory {
   sortOrder           Int                 @default(0)
   store               Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
   inventoryCopies     InventoryCopy[]
+  formatDefaults      StoreFormat[]       @relation("FormatDefaultCategory")
 
   @@unique([storeId, id])
   @@index([storeId])

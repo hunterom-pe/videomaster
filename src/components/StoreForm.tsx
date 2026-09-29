@@ -18,7 +18,7 @@ export const EMPTY_STORE: StoreFormValues = {
   name: "", number: "", address: "", city: "", region: "", postalCode: "", phone: "",
   managerName: "", slogan: "", currency: "USD", timezone: DEFAULT_TIMEZONE, salesTaxPercent: "", storeYear: "",
   onlyMoviesUpToStoreYear: false, rewindFee: "0.00", damageFee: "0.00", lostItemFee: "0.00", replacementFee: "19.99",
-  membershipFee: "0.00", membershipTermMonths: "0", maxRentalsOut: "0", functionKeys: false, receiptFooter: "THANK YOU!", formats: ["VHS"], categories: DEFAULT_CATEGORIES,
+  membershipFee: "0.00", membershipTermMonths: "0", maxRentalsOut: "0", defaultLowStock: "5", formatDefaults: {}, functionKeys: false, receiptFooter: "THANK YOU!", formats: ["VHS"], categories: DEFAULT_CATEGORIES,
 };
 
 export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initial: StoreFormValues }) {
@@ -71,12 +71,23 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
     </div>
   );
 
+  const SECTIONS = [
+    ["store", "STORE INFO"], ["tax", "TAX"], ["year", "STORE YEAR"], ["formats", "FORMATS"], ["categories", "PRICING & LATE FEES"],
+    ["fees", "OPTIONAL FEES"], ["inventory", "INVENTORY"], ["membership", "MEMBERSHIP"], ["system", "SYSTEM"],
+  ] as const;
+  const savedCategories = v.categories.filter((c) => c.id);
+
   return (
     <form onSubmit={submit} noValidate>
       {message && <ErrorBox message={message} />}
 
-      <fieldset className="vm-section">
-        <legend>1. STORE INFORMATION</legend>
+      <nav aria-label="Jump to a settings section" className="vm-jumpnav">
+        <span className="vm-label">JUMP TO:</span>
+        {SECTIONS.map(([id, label]) => <a key={id} href={`#sec-${id}`} className="vm-btn small">{label}</a>)}
+      </nav>
+
+      <fieldset className="vm-section" id="sec-store">
+        <legend>STORE INFORMATION</legend>
         <div className="vm-grid">
           {text("name", "STORE NAME")}
           {text("number", "STORE NUMBER", { hint: "E.G. 0147", inputMode: "numeric" })}
@@ -103,13 +114,19 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
             <span className="vm-hint">DECIDES WHEN &quot;TODAY&quot; STARTS FOR DUE DATES, LATE FEES, OVERDUE AND REPORTS. ARIZONA DOES NOT OBSERVE DAYLIGHT SAVING TIME.</span>
             {errors.timezone && <span id="timezone-err" className="vm-fielderr">{errors.timezone}</span>}
           </div>
-          {text("salesTaxPercent", "SALES TAX %", { hint: "E.G. 8.6 (0 FOR NONE)", inputMode: "decimal" })}
         </div>
         <p className="vm-hint">FICTIONAL INFORMATION IS PERFECTLY FINE.</p>
       </fieldset>
 
-      <fieldset className="vm-section">
-        <legend>2. STORE ERA</legend>
+      <fieldset className="vm-section" id="sec-tax">
+        <legend>TAX SETTINGS</legend>
+        <div className="vm-grid">
+          {text("salesTaxPercent", "SALES TAX %", { hint: "E.G. 8.6 (0 FOR NONE). APPLIES TO RENTALS AND MERCHANDISE MARKED TAXABLE", inputMode: "decimal" })}
+        </div>
+      </fieldset>
+
+      <fieldset className="vm-section" id="sec-year">
+        <legend>STORE YEAR</legend>
         <div className="vm-grid">
           {text("storeYear", "STORE YEAR (OPTIONAL)", { hint: "E.G. 1996. LEAVE BLANK FOR NONE.", inputMode: "numeric" })}
           <div className="vm-field">
@@ -119,13 +136,13 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
                 onChange={(e) => set("onlyMoviesUpToStoreYear", e.target.checked)} />
               <span>ONLY SHOW MOVIES ON OR BEFORE STORE YEAR</span>
             </label>
-            <span className="vm-hint">USED LATER BY MOVIE SEARCH. MAY BE TURNED OFF ANY TIME.</span>
+            <span className="vm-hint">USED BY MOVIE SEARCH WHEN ADDING TITLES. MAY BE TURNED OFF ANY TIME.</span>
           </div>
         </div>
       </fieldset>
 
-      <fieldset className="vm-section">
-        <legend>3. FORMATS CARRIED</legend>
+      <fieldset className="vm-section" id="sec-formats">
+        <legend>FORMATS CARRIED</legend>
         <div className="vm-checks">
           {FORMAT_OPTIONS.map((f) => (
             <label key={f.value} className="vm-check">
@@ -136,10 +153,28 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
           ))}
         </div>
         {errors.formats && <span className="vm-fielderr">{errors.formats}</span>}
+        {mode === "settings" && savedCategories.length > 0 && v.formats.length > 0 && (
+          <>
+            <hr className="vm-thin-rule" />
+            <p className="vm-hint">DEFAULT RENTAL CATEGORY PER FORMAT: PRESELECTED WHEN YOU ADD COPIES OF THAT FORMAT. TO PRICE A FORMAT DIFFERENTLY, CREATE A CATEGORY BELOW (E.G. &quot;DVD NEW RELEASE&quot;) AND CHOOSE IT HERE.</p>
+            <div className="vm-grid">
+              {FORMAT_OPTIONS.filter((f) => v.formats.includes(f.value)).map((f) => (
+                <div key={f.value} className="vm-field">
+                  <label htmlFor={`fmtdef-${f.value}`}>DEFAULT CATEGORY FOR {f.label}</label>
+                  <select id={`fmtdef-${f.value}`} value={v.formatDefaults[f.value] ?? ""} onChange={(e) => set("formatDefaults", { ...v.formatDefaults, [f.value]: e.target.value })}>
+                    <option value="">(FIRST CATEGORY IN THE LIST)</option>
+                    {savedCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {mode === "setup" && <p className="vm-hint">AFTER SETUP YOU CAN CHOOSE A DEFAULT RENTAL CATEGORY FOR EACH FORMAT IN STORE SETTINGS.</p>}
       </fieldset>
 
-      <fieldset className="vm-section">
-        <legend>4. RENTAL CATEGORIES</legend>
+      <fieldset className="vm-section" id="sec-categories">
+        <legend>RENTAL PRICING, CATEGORIES &amp; LATE FEES</legend>
         <div className="vm-tablewrap">
           <table className="vm-table">
             <thead>
@@ -188,19 +223,26 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
         <p className="vm-hint">PRICES IN THE STORE CURRENCY. LATE FEES ARE CHARGED PER DAY OVERDUE. ALL VALUES CAN BE CHANGED LATER IN STORE SETTINGS.</p>
       </fieldset>
 
-      <fieldset className="vm-section">
-        <legend>5. OPTIONAL FEES</legend>
+      <fieldset className="vm-section" id="sec-fees">
+        <legend>OPTIONAL FEES</legend>
         <div className="vm-grid">
           {text("rewindFee", "REWIND FEE", { hint: "CHARGED AT RETURN IF A VHS IS NOT REWOUND. 0 = NONE", inputMode: "decimal" })}
           {text("damageFee", "DAMAGE FEE", { hint: "SUGGESTED WHEN A VIDEO IS RETURNED DAMAGED. 0 = NONE", inputMode: "decimal" })}
           {text("lostItemFee", "LOST-ITEM FEE", { hint: "ADDED TO THE REPLACEMENT COST WHEN A VIDEO IS LOST. 0 = NONE", inputMode: "decimal" })}
-          {text("replacementFee", "DEFAULT REPLACEMENT COST", { hint: "PREFILLED WHEN YOU ADD NEW COPIES", inputMode: "decimal" })}
         </div>
-        <p className="vm-hint">LATE FEES ARE SET PER RENTAL CATEGORY IN SECTION 4. ALL FEES ARE OPTIONAL AND CAN BE CHANGED ANY TIME.</p>
+        <p className="vm-hint">LATE FEES ARE SET PER RENTAL CATEGORY ABOVE. ALL FEES ARE OPTIONAL AND CAN BE CHANGED ANY TIME.</p>
       </fieldset>
 
-      <fieldset className="vm-section">
-        <legend>6. MEMBERSHIP RULES</legend>
+      <fieldset className="vm-section" id="sec-inventory">
+        <legend>INVENTORY SETTINGS</legend>
+        <div className="vm-grid">
+          {text("replacementFee", "DEFAULT REPLACEMENT COST", { hint: "PREFILLED WHEN YOU ADD NEW COPIES", inputMode: "decimal" })}
+          {text("defaultLowStock", "DEFAULT LOW-STOCK THRESHOLD", { hint: "PREFILLED FOR NEW MERCHANDISE. WARN WHEN ON-HAND IS AT OR BELOW THIS", inputMode: "numeric" })}
+        </div>
+      </fieldset>
+
+      <fieldset className="vm-section" id="sec-membership">
+        <legend>MEMBERSHIP RULES</legend>
         <div className="vm-grid">
           {text("membershipFee", "MEMBERSHIP FEE", { hint: "COLLECTED WHEN A CUSTOMER JOINS AND ON RENEWAL. 0 = FREE", inputMode: "decimal" })}
           {text("membershipTermMonths", "MEMBERSHIP TERM (MONTHS)", { hint: "0 = MEMBERSHIP NEVER EXPIRES", inputMode: "numeric" })}
@@ -208,8 +250,8 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
         </div>
       </fieldset>
 
-      <fieldset className="vm-section">
-        <legend>7. SYSTEM SETTINGS</legend>
+      <fieldset className="vm-section" id="sec-system">
+        <legend>SYSTEM SETTINGS</legend>
         <div className="vm-grid">
           <div className="vm-field">
             <span className="vm-label">KEYBOARD</span>
@@ -224,8 +266,8 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
       </fieldset>
 
       {mode === "setup" && (
-        <fieldset className="vm-section">
-          <legend>8. SAMPLE STORE DATA (OPTIONAL)</legend>
+        <fieldset className="vm-section" id="sec-sample">
+          <legend>SAMPLE STORE DATA (OPTIONAL)</legend>
           <label className="vm-check">
             <input type="checkbox" checked={loadSample} onChange={(e) => setLoadSample(e.target.checked)} />
             <span>LOAD SAMPLE STORE DATA?</span>

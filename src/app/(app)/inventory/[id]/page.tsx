@@ -4,7 +4,7 @@ import { AddCopiesForm } from "@/components/InventoryForms";
 import { Screen } from "@/components/Screen";
 import { db } from "@/lib/db";
 import { FORMAT_LABELS, summarize } from "@/lib/inventory";
-import { categoryOptions, formatOptions } from "@/lib/inventory-options";
+import { categoryOptions, formatDefaultCategories, formatOptions } from "@/lib/inventory-options";
 import { overdueWhere } from "@/lib/overdue";
 import { requireStore } from "@/lib/store-access";
 import { posterUrl } from "@/lib/tmdb";
@@ -34,6 +34,7 @@ export default async function TitlePage({ params, searchParams }: { params: Prom
   const total = sums.reduce((n, s) => n + s.total, 0);
   const formats = formatOptions(store);
   const categories = categoryOptions(store);
+  const formatDefaults = formatDefaultCategories(store);
   const poster = posterUrl(t.posterPath, "w185");
   const price = (name: string | undefined) => store.rentalCategories.find((c) => c.name === name);
 
@@ -107,8 +108,8 @@ export default async function TitlePage({ params, searchParams }: { params: Prom
         <legend>ADD COPIES</legend>
         <p className="vm-hint">CURRENT COPIES: {total}. THIS CREATES NEW INDIVIDUAL COPY RECORDS FOR THIS TITLE — NO DUPLICATE TITLE IS CREATED.</p>
         {formats.length === 0 ? <span className="vm-yellow">NO FORMATS ENABLED. SEE STORE SETTINGS.</span> : (
-          <AddCopiesForm titleId={t.id} formats={formats} categories={categories}
-            initial={{ format: formats[0].value, categoryId: categories[0]?.id ?? "", quantity: "1", replacementCost: store.settings!.replacementFee.toFixed(2) }} />
+          <AddCopiesForm titleId={t.id} formats={formats} categories={categories} formatDefaults={formatDefaults}
+            initial={{ format: formats[0].value, categoryId: formatDefaults[formats[0].value] ?? categories[0]?.id ?? "", quantity: "1", replacementCost: store.settings!.replacementFee.toFixed(2) }} />
         )}
       </fieldset>
     </Screen>

@@ -109,6 +109,11 @@
 - F-key numbering now follows the spec (F1 rent, F2 return, F3 customers, F4 inventory, F5 concessions, F6 reports, F7 overdue, F8 transactions, F9 settings); labels on the menu use one shared map (`lib/function-keys.ts`). Shortcuts are **off by default** (they are browser keys) and, when on, never intercept modified keys (Ctrl/Alt/Cmd/Shift), F10-F12, or anything while a dialog is open. Clicking always works.
 - Verified: OFF does nothing; ON navigates F1/F3/F6/F9; Ctrl+F5 and F12 left alone; F3 ignored with a dialog open; custom message on the receipt. 87 unit tests.
 
+**Polish step 4 — Settings organised by the spec's sections + inventory settings**
+- Store Settings now follows spec §25 with a jump index: Store Information, Tax Settings, Store Year, Formats Carried, Rental Pricing/Categories & Late Fees, Optional Fees, Inventory Settings, Membership Rules, System Settings (+ Sample Data on setup).
+- **Per-format pricing** (spec §10): each carried format can have a *default rental category*; choosing a format when adding copies preselects it (and shows that category's price). To price DVDs differently, create e.g. "DVD NEW RELEASE" and make it DVD's default. Server checks the id belongs to the store's own kept categories (never trusts the browser); FK is `ON DELETE SET NULL`.
+- Inventory settings: default replacement cost (moved here) and default low-stock threshold (prefills new merchandise). DB CHECK keeps the threshold non-negative. 88 unit tests.
+
 ## Current Work
 Nothing in progress.
 

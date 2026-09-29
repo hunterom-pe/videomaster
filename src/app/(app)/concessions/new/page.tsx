@@ -10,7 +10,7 @@ export default async function NewConcessionPage() {
     <Screen title="ADD MERCHANDISE" userEmail={user.email} storeLine={`STORE: ${store.name} #${store.number}`}>
       <h1>NEW MERCHANDISE ITEM</h1>
       <hr className="vm-rule" />
-      <ConcessionForm initial={EMPTY_CONCESSION} />
+      <ConcessionForm initial={{ ...EMPTY_CONCESSION, lowStockThreshold: String(store.settings!.defaultLowStockThreshold) }} />
     </Screen>
   );
 }
