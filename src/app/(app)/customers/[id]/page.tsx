@@ -8,6 +8,8 @@ import { membershipState } from "@/lib/membership";
 import { fmtDate, fmtDateUS, fmtMoney, toCents } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "CUSTOMER ACCOUNT" };
+
 export default async function CustomerPage({
   params,
   searchParams,

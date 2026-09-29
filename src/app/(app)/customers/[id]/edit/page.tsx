@@ -4,6 +4,8 @@ import { Screen } from "@/components/Screen";
 import { db } from "@/lib/db";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "EDIT CUSTOMER" };
+
 export default async function EditCustomerPage({ params }: { params: Promise<{ id: string }> }) {
   const { user, store } = await requireStore();
   const { id } = await params;

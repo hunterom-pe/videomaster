@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { checkout, findRentableCopies, findSaleItems, type CartItem, type SaleItem, type TitleHit } from "@/actions/rentals";
 import { ErrorBox } from "@/components/Screen";
+import { RetroDialog } from "@/components/RetroDialog";
 import { computeTotals, dueDate, fmtDate, fmtMoney } from "@/lib/pricing";
 import { CONCESSION_CATEGORIES, PAYMENT_METHODS } from "@/lib/validation";
 
@@ -161,6 +162,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
               <div className="vm-hint">ONLY MOVIES ALREADY IN YOUR STORE INVENTORY CAN BE RENTED. <Link href="/inventory/add">ADD A TITLE FIRST</Link>.</div>
             </div>
           )}
+          <div aria-live="polite">
           {hits.map((h) => (
             <div key={h.titleId} style={{ marginBottom: 10 }}>
               <div className="vm-cyan">{h.title.toUpperCase()}{h.year ? ` (${h.year})` : ""}</div>
@@ -175,6 +177,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
               ))}
             </div>
           ))}
+        </div>
         </fieldset>
       )}
 
@@ -258,7 +261,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
           </table>
         </div>
         <hr className="vm-thin-rule" />
-        <dl className="vm-kv">
+        <dl className="vm-kv" aria-live="polite" aria-label="Order totals">
           <dt>RENTALS</dt><dd>{fmtMoney(totals.rentalCents)}</dd>
           <dt>MERCHANDISE</dt><dd>{fmtMoney(totals.merchCents)}</dd>
           <dt>TAX ({taxPercent}%)</dt><dd>{fmtMoney(totals.tax)}</dd>
@@ -290,9 +293,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
       </fieldset>
 
       {confirming && (
-        <div role="alertdialog" aria-modal="true" aria-labelledby="dlg" style={{ border: "4px double var(--yellow)", background: "var(--bg)", padding: 16, maxWidth: 420, margin: "16px auto" }}>
-          <h2 id="dlg" className="vm-yellow vm-center">{rentals.length > 0 ? "CONFIRM RENTAL" : "CONFIRM SALE"}</h2>
-          <hr className="vm-thin-rule" />
+        <RetroDialog title={rentals.length > 0 ? "CONFIRM RENTAL" : "CONFIRM SALE"} onCancel={() => setConfirming(false)}>
           <dl className="vm-kv">
             <dt>CUSTOMER</dt><dd>{customerName}</dd>
             <dt>ITEMS</dt><dd>{itemCount}</dd>
@@ -302,9 +303,9 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
           <p className="vm-center">COMPLETE TRANSACTION?</p>
           <div className="vm-actions" style={{ justifyContent: "center" }}>
             <button type="button" className="vm-btn" onClick={complete} disabled={paying}>[ YES ]</button>
-            <button type="button" className="vm-btn" onClick={() => setConfirming(false)}>[ NO ]</button>
+            <button type="button" className="vm-btn" onClick={() => setConfirming(false)} data-autofocus>[ NO ]</button>
           </div>
-        </div>
+        </RetroDialog>
       )}
     </div>
   );

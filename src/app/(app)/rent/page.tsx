@@ -4,6 +4,8 @@ import { searchCustomers } from "@/lib/customers";
 import { effectiveStatus, overdueCounts } from "@/lib/overdue";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "RENT VIDEO" };
+
 export default async function RentPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
   const { user, store } = await requireStore();
   const tz = store.settings!.timezone;

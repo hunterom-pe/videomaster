@@ -2,6 +2,8 @@ import { CustomerForm, EMPTY_CUSTOMER } from "@/components/CustomerForm";
 import { Screen } from "@/components/Screen";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "ADD CUSTOMER" };
+
 export default async function NewCustomerPage() {
   const { user, store } = await requireStore();
   return (

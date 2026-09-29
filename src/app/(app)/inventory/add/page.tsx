@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { requireStore } from "@/lib/store-access";
 import { posterUrl, searchMovies } from "@/lib/tmdb";
 
+export const metadata = { title: "ADD TITLE" };
+
 export default async function AddTitleSearchPage({ searchParams }: { searchParams: Promise<{ q?: string; all?: string }> }) {
   const { user, store } = await requireStore();
   const sp = await searchParams;

@@ -5,7 +5,7 @@
   --fg-dim: #b8b8d8;
   --cyan: #55ffff;
   --yellow: #ffff55;
-  --red: #ff5555;
+  --red: #ff7070; /* 4.98:1 on the blue background */
   --red-bg: #a80000;
   --gray: #c0c0c0;
   --black: #000;
@@ -175,3 +175,21 @@ table.vm-table.rows { min-width: 560px; }
   .vm-report table.vm-table { min-width: 0 !important; font-size: 12px; }
   .vm-report .vm-tablewrap { overflow: visible; }
 }
+
+/* ── Accessibility ── */
+.vm-skip { position: absolute; left: -9999px; top: 0; }
+.vm-skip:focus { left: 8px; top: 8px; z-index: 300; background: var(--yellow); color: var(--black); padding: 10px 14px; font-weight: bold; text-decoration: none; }
+.vm-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+main:focus { outline: none; }
+/* whole-row links show focus on the whole row */
+.vm-rowlink:focus-visible { outline: none; }
+.vm-rowlink:focus-visible::after { outline: 3px solid var(--yellow); outline-offset: -3px; }
+.vm-table.rows tbody tr:hover .vm-red, .vm-table.rows tbody tr:hover .vm-yellow { color: var(--black); }
+.vm-btn:disabled { background: #50509a; color: #f0f0ff; border-color: #7a7ac8 #303080 #303080 #7a7ac8; }
+.vm-btn:disabled { text-decoration: line-through; text-decoration-thickness: 1px; }
+
+/* ── Modal dialog ── */
+.vm-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0, 0, 30, 0.82); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.vm-dialog { border: 4px double var(--yellow); background: var(--bg); padding: 16px; width: 100%; max-width: 460px; max-height: 92vh; overflow: auto; }
+.vm-dialog:focus { outline: none; }
+@media print { .vm-overlay, .vm-skip { display: none !important; } }

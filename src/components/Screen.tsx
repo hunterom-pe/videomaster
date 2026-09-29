@@ -15,8 +15,9 @@ export function Screen({
 }) {
   return (
     <div className="vm-screen">
+      <a className="vm-skip" href="#main">SKIP TO MAIN CONTENT</a>
       <div className="vm-frame">
-        <div className="vm-titlebar">
+        <header className="vm-titlebar">
           <span>VIDEOMASTER V1.0 — {title}</span>
           {userEmail ? (
             <form action={logout}>
@@ -24,12 +25,12 @@ export function Screen({
               <button type="submit" className="vm-btn small">[ LOG OFF ]</button>
             </form>
           ) : null}
-        </div>
-        <div className="vm-body">{children}</div>
-        <div className="vm-statusbar">
+        </header>
+        <main id="main" className="vm-body" tabIndex={-1}>{children}</main>
+        <footer className="vm-statusbar">
           <span>{status} · DATABASE ONLINE</span>
           {storeLine ? <span>{storeLine}</span> : null}
-        </div>
+        </footer>
       </div>
     </div>
   );

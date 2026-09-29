@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { requireStore } from "@/lib/store-access";
 import type { StoreFormValues } from "@/lib/validation";
 
+export const metadata = { title: "STORE SETTINGS" };
+
 export default async function SettingsPage() {
   const { user, store, role } = await requireStore();
   const [customers, titles, items, transactions] = await Promise.all([

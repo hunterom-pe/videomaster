@@ -6,6 +6,8 @@ import { daysLate } from "@/lib/late-fees";
 import { fmtDate } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "RETURN VIDEO" };
+
 const PAGE_SIZE = 25;
 
 export default async function ReturnPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {

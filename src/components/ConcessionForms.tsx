@@ -42,9 +42,9 @@ export function ConcessionForm({ itemId, initial }: { itemId?: string; initial: 
   const text = (k: "sku" | "name" | "retailPrice" | "costPrice" | "quantityOnHand" | "lowStockThreshold" | "barcode", label: string, opts: { hint?: string; disabled?: boolean; mode?: "decimal" | "numeric" } = {}) => (
     <div className="vm-field">
       <label htmlFor={k}>{label}</label>
-      <input id={k} type="text" inputMode={opts.mode} value={v[k]} disabled={opts.disabled} onChange={(e) => set(k, e.target.value)} aria-invalid={!!errors[k]} />
+      <input id={k} type="text" inputMode={opts.mode} value={v[k]} disabled={opts.disabled} onChange={(e) => set(k, e.target.value)} aria-invalid={!!errors[k]} aria-describedby={errors[k] ? `${k}-err` : undefined} />
       {opts.hint && <span className="vm-hint">{opts.hint}</span>}
-      {errors[k] && <span className="vm-fielderr">{errors[k]}</span>}
+      {errors[k] && <span id={`${k}-err`} className="vm-fielderr">{errors[k]}</span>}
     </div>
   );
 
@@ -61,7 +61,7 @@ export function ConcessionForm({ itemId, initial }: { itemId?: string; initial: 
             <select id="category" value={v.category} onChange={(e) => set("category", e.target.value)}>
               {CONCESSION_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
-            {errors.category && <span className="vm-fielderr">{errors.category}</span>}
+            {errors.category && <span id="category-err" className="vm-fielderr">{errors.category}</span>}
           </div>
           {text("barcode", "BARCODE (OPTIONAL)")}
           {text("retailPrice", "RETAIL PRICE", { mode: "decimal" })}

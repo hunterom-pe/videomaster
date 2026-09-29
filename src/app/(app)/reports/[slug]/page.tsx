@@ -11,6 +11,15 @@ import { PAYMENT_LABELS } from "@/lib/transactions";
 import { CONCESSION_CATEGORIES } from "@/lib/validation";
 import type { MediaFormat, PaymentMethod } from "@/generated/prisma/client";
 
+const REPORT_TITLES: Record<string, string> = {
+  daily: "DAILY ACTIVITY", overdue: "OVERDUE RENTALS REPORT", inventory: "INVENTORY REPORT", popular: "POPULAR RENTALS",
+  customers: "CUSTOMER ACTIVITY", merchandise: "MERCHANDISE INVENTORY", revenue: "REVENUE REPORT",
+};
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  return { title: REPORT_TITLES[slug] ?? "REPORTS" };
+}
+
 type SP = { from?: string; to?: string; date?: string };
 const Row = ({ label, value, strong }: { label: string; value: string | number; strong?: boolean }) => (
   <><dt>{label}</dt><dd>{strong ? <strong>{value}</strong> : value}</dd></>

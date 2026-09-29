@@ -9,6 +9,8 @@ import { overdueWhere } from "@/lib/overdue";
 import { requireStore } from "@/lib/store-access";
 import { posterUrl } from "@/lib/tmdb";
 
+export const metadata = { title: "TITLE RECORD" };
+
 const MAX_COPIES_SHOWN = 300;
 
 export default async function TitlePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ added?: string; copy?: string }> }) {

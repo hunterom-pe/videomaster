@@ -89,19 +89,19 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
           {text("slogan", "SLOGAN (OPTIONAL)", { wide: true })}
           <div className="vm-field">
             <label htmlFor="currency">CURRENCY</label>
-            <select id="currency" value={v.currency} onChange={(e) => set("currency", e.target.value)} aria-invalid={!!errors.currency}>
+            <select id="currency" value={v.currency} onChange={(e) => set("currency", e.target.value)} aria-invalid={!!errors.currency} aria-describedby={errors.currency ? "currency-err" : undefined}>
               {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
-            {errors.currency && <span className="vm-fielderr">{errors.currency}</span>}
+            {errors.currency && <span id="currency-err" className="vm-fielderr">{errors.currency}</span>}
           </div>
           <div className="vm-field wide">
             <label htmlFor="timezone">TIME ZONE</label>
-            <select id="timezone" value={v.timezone} onChange={(e) => set("timezone", e.target.value)} aria-invalid={!!errors.timezone}>
+            <select id="timezone" value={v.timezone} onChange={(e) => set("timezone", e.target.value)} aria-invalid={!!errors.timezone} aria-describedby={errors.timezone ? "timezone-err" : undefined}>
               {!TIMEZONES.some((z) => z.value === v.timezone) && <option value={v.timezone}>{v.timezone.toUpperCase()}</option>}
               {TIMEZONES.map((z) => <option key={z.value} value={z.value}>{z.label}</option>)}
             </select>
             <span className="vm-hint">DECIDES WHEN &quot;TODAY&quot; STARTS FOR DUE DATES, LATE FEES, OVERDUE AND REPORTS. ARIZONA DOES NOT OBSERVE DAYLIGHT SAVING TIME.</span>
-            {errors.timezone && <span className="vm-fielderr">{errors.timezone}</span>}
+            {errors.timezone && <span id="timezone-err" className="vm-fielderr">{errors.timezone}</span>}
           </div>
           {text("salesTaxPercent", "SALES TAX %", { hint: "E.G. 8.6 (0 FOR NONE)", inputMode: "decimal" })}
         </div>
@@ -157,8 +157,8 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
                 const cell = (k: "name" | "rentalPrice" | "rentalDays" | "lateFeePerDay", label: string, mode?: "decimal" | "numeric") => (
                   <td>
                     <input aria-label={`${label} FOR CATEGORY ${i + 1}`} value={c[k]} inputMode={mode} type="text"
-                      onChange={(ev) => setCat(i, k, ev.target.value)} aria-invalid={!!e(k)} />
-                    {e(k) && <span className="vm-fielderr">{e(k)}</span>}
+                      onChange={(ev) => setCat(i, k, ev.target.value)} aria-invalid={!!e(k)} aria-describedby={e(k) ? `cat-${i}-${k}-err` : undefined} />
+                    {e(k) && <span id={`cat-${i}-${k}-err`} className="vm-fielderr">{e(k)}</span>}
                   </td>
                 );
                 return (

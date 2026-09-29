@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { completeReturn } from "@/actions/returns";
 import { ErrorBox } from "@/components/Screen";
+import { RetroDialog } from "@/components/RetroDialog";
 import { fmtMoney, toCents } from "@/lib/pricing";
 import { PAYMENT_METHODS, returnSchema, zodErrors } from "@/lib/validation";
 
@@ -118,9 +119,7 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
       </fieldset>
 
       {confirming && (
-        <div role="alertdialog" aria-modal="true" aria-labelledby="dlg" style={{ border: "4px double var(--yellow)", background: "var(--bg)", padding: 16, maxWidth: 420, margin: "16px auto" }}>
-          <h2 id="dlg" className="vm-yellow vm-center">CONFIRM RETURN</h2>
-          <hr className="vm-thin-rule" />
+        <RetroDialog title="CONFIRM RETURN" onCancel={() => setConfirming(false)}>
           <dl className="vm-kv">
             <dt>OUTCOME</dt><dd>{outcome}</dd>
             {rewindCents > 0 && (<><dt>REWIND FEE</dt><dd>{fmtMoney(rewindCents)}</dd></>)}
@@ -130,9 +129,9 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
           <p className="vm-center">COMPLETE RETURN?</p>
           <div className="vm-actions" style={{ justifyContent: "center" }}>
             <button type="button" className="vm-btn" onClick={complete} disabled={pending}>[ YES ]</button>
-            <button type="button" className="vm-btn" onClick={() => setConfirming(false)}>[ NO ]</button>
+            <button type="button" className="vm-btn" onClick={() => setConfirming(false)} data-autofocus>[ NO ]</button>
           </div>
-        </div>
+        </RetroDialog>
       )}
     </div>
   );

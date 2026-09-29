@@ -3,6 +3,8 @@ import { Screen } from "@/components/Screen";
 import { EMPTY_STORE, StoreForm } from "@/components/StoreForm";
 import { requireUser, getUserStore } from "@/lib/store-access";
 
+export const metadata = { title: "STORE CONFIGURATION" };
+
 export default async function SetupPage() {
   const user = await requireUser();
   if (await getUserStore(user.id)) redirect("/menu");

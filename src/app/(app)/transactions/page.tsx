@@ -5,6 +5,8 @@ import { parseDay } from "@/lib/dates";
 import { fmtDateTimeTz, tzAbbrev } from "@/lib/tz";
 import { PAGE_SIZE, PAYMENT_LABELS, TYPE_LABELS, searchTransactions } from "@/lib/transactions";
 
+export const metadata = { title: "TRANSACTIONS" };
+
 type SP = { q?: string; type?: string; payment?: string; from?: string; to?: string; page?: string };
 
 export default async function TransactionsPage({ searchParams }: { searchParams: Promise<SP> }) {

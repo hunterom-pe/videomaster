@@ -6,6 +6,8 @@ import { fmtDateUS } from "@/lib/pricing";
 import { renewedExpiry } from "@/lib/membership";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "RENEW MEMBERSHIP" };
+
 export default async function RenewPage({ params }: { params: Promise<{ id: string }> }) {
   const { user, store } = await requireStore();
   const tz = store.settings!.timezone;

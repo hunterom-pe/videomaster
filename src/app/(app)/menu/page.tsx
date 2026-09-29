@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { overdueWhere } from "@/lib/overdue";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "MAIN MENU" };
+
 export default async function MenuPage({ searchParams }: { searchParams: Promise<{ saved?: string; sample?: string; cleared?: string }> }) {
   const { user, store } = await requireStore();
   const tz = store.settings!.timezone;

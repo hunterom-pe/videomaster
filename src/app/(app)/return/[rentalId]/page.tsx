@@ -8,6 +8,8 @@ import { daysLate, lateFeeCents } from "@/lib/late-fees";
 import { fmtDate, fmtDateUS, fmtMoney, fromCents, toCents } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "RETURN VIDEO" };
+
 export default async function ReturnDetailPage({ params }: { params: Promise<{ rentalId: string }> }) {
   const { user, store } = await requireStore();
   const tz = store.settings!.timezone;

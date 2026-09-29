@@ -3,6 +3,8 @@ import { Screen } from "@/components/Screen";
 import { requireStore } from "@/lib/store-access";
 import { tzAbbrev } from "@/lib/tz";
 
+export const metadata = { title: "REPORTS" };
+
 export const REPORTS = [
   { slug: "daily", title: "DAILY ACTIVITY", desc: "RENTALS, RETURNS, MERCHANDISE SALES, LATE FEES, REVENUE AND TRANSACTIONS FOR ONE DAY" },
   { slug: "overdue", title: "OVERDUE RENTALS", desc: "EVERY OVERDUE VIDEO WITH DAYS OVERDUE AND CURRENT LATE FEE" },

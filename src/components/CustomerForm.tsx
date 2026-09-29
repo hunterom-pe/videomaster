@@ -43,9 +43,9 @@ export function CustomerForm({ customerId, initial, membershipFee }: { customerI
   const field = (key: Exclude<keyof CustomerFormValues, "collectFee">, label: string, opts: { wide?: boolean; type?: string; hint?: string } = {}) => (
     <div className={`vm-field${opts.wide ? " wide" : ""}`}>
       <label htmlFor={key}>{label}</label>
-      <input id={key} type={opts.type ?? "text"} value={v[key] ?? ""} onChange={(e) => set(key, e.target.value)} aria-invalid={!!errors[key]} />
+      <input id={key} type={opts.type ?? "text"} value={v[key] ?? ""} onChange={(e) => set(key, e.target.value)} aria-invalid={!!errors[key]} aria-describedby={errors[key] ? `${key}-err` : undefined} />
       {opts.hint && <span className="vm-hint">{opts.hint}</span>}
-      {errors[key] && <span className="vm-fielderr">{errors[key]}</span>}
+      {errors[key] && <span id={`${key}-err`} className="vm-fielderr">{errors[key]}</span>}
     </div>
   );
 
@@ -69,12 +69,12 @@ export function CustomerForm({ customerId, initial, membershipFee }: { customerI
             <select id="status" value={v.status} onChange={(e) => set("status", e.target.value)}>
               {CUSTOMER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
-            {errors.status && <span className="vm-fielderr">{errors.status}</span>}
+            {errors.status && <span id="status-err" className="vm-fielderr">{errors.status}</span>}
           </div>
           <div className="vm-field wide">
             <label htmlFor="notes">NOTES</label>
-            <textarea id="notes" rows={3} value={v.notes} onChange={(e) => set("notes", e.target.value)} aria-invalid={!!errors.notes} />
-            {errors.notes && <span className="vm-fielderr">{errors.notes}</span>}
+            <textarea id="notes" rows={3} value={v.notes} onChange={(e) => set("notes", e.target.value)} aria-invalid={!!errors.notes} aria-describedby={errors.notes ? "notes-err" : undefined} />
+            {errors.notes && <span id="notes-err" className="vm-fielderr">{errors.notes}</span>}
           </div>
         </div>
       </fieldset>
@@ -96,7 +96,7 @@ export function CustomerForm({ customerId, initial, membershipFee }: { customerI
                 <select id="paymentMethod" value={v.paymentMethod ?? "CASH"} onChange={(e) => set("paymentMethod", e.target.value)}>
                   {PAYMENT_METHODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                 </select>
-                {errors.paymentMethod && <span className="vm-fielderr">{errors.paymentMethod}</span>}
+                {errors.paymentMethod && <span id="paymentMethod-err" className="vm-fielderr">{errors.paymentMethod}</span>}
               </div>
             )}
           </div>

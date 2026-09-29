@@ -4,6 +4,8 @@ import { listOverdue } from "@/lib/overdue";
 import { fmtDate, fmtMoney } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "OVERDUE RENTALS" };
+
 const PAGE_SIZE = 25;
 
 export default async function OverduePage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {

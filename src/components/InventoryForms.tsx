@@ -38,7 +38,7 @@ function useSubmit<T>(schema: ZodType, values: T, action: (v: T) => Promise<Acti
   return { errors, message, pending, submit };
 }
 
-const Err = ({ e }: { e?: string }) => (e ? <span className="vm-fielderr">{e}</span> : null);
+const Err = ({ e, id }: { e?: string; id: string }) => (e ? <span id={`${id}-err`} className="vm-fielderr">{e}</span> : null);
 
 function CopyFields({
   v, set, errors, formats, categories,
@@ -51,29 +51,29 @@ function CopyFields({
     <div className="vm-grid">
       <div className="vm-field">
         <label htmlFor="format">FORMAT</label>
-        <select id="format" value={v.format} onChange={(e) => set("format", e.target.value)} aria-invalid={!!errors.format}>
+        <select id="format" value={v.format} onChange={(e) => set("format", e.target.value)} aria-invalid={!!errors.format} aria-describedby={errors.format ? "format-err" : undefined}>
           {formats.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
         </select>
-        <Err e={errors.format} />
+        <Err id="format" e={errors.format} />
       </div>
       <div className="vm-field">
         <label htmlFor="categoryId">RENTAL CATEGORY</label>
-        <select id="categoryId" value={v.categoryId} onChange={(e) => set("categoryId", e.target.value)} aria-invalid={!!errors.categoryId}>
+        <select id="categoryId" value={v.categoryId} onChange={(e) => set("categoryId", e.target.value)} aria-invalid={!!errors.categoryId} aria-describedby={errors.categoryId ? "categoryId-err" : undefined}>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         {cat && <span className="vm-hint">RENTAL PRICE ${cat.price} · RENTAL PERIOD {cat.days} DAY{cat.days === 1 ? "" : "S"} (SET IN STORE SETTINGS)</span>}
-        <Err e={errors.categoryId} />
+        <Err id="categoryId" e={errors.categoryId} />
       </div>
       <div className="vm-field">
         <label htmlFor="quantity">QUANTITY TO ADD</label>
-        <input id="quantity" type="text" inputMode="numeric" value={v.quantity} onChange={(e) => set("quantity", e.target.value)} aria-invalid={!!errors.quantity} />
+        <input id="quantity" type="text" inputMode="numeric" value={v.quantity} onChange={(e) => set("quantity", e.target.value)} aria-invalid={!!errors.quantity} aria-describedby={errors.quantity ? "quantity-err" : undefined} />
         <span className="vm-hint">ONE INDIVIDUAL COPY RECORD IS CREATED FOR EACH</span>
-        <Err e={errors.quantity} />
+        <Err id="quantity" e={errors.quantity} />
       </div>
       <div className="vm-field">
         <label htmlFor="replacementCost">REPLACEMENT COST (EACH)</label>
-        <input id="replacementCost" type="text" inputMode="decimal" value={v.replacementCost} onChange={(e) => set("replacementCost", e.target.value)} aria-invalid={!!errors.replacementCost} />
-        <Err e={errors.replacementCost} />
+        <input id="replacementCost" type="text" inputMode="decimal" value={v.replacementCost} onChange={(e) => set("replacementCost", e.target.value)} aria-invalid={!!errors.replacementCost} aria-describedby={errors.replacementCost ? "replacementCost-err" : undefined} />
+        <Err id="replacementCost" e={errors.replacementCost} />
       </div>
     </div>
   );
@@ -86,9 +86,9 @@ export function AddTitleForm({ initial, formats, categories }: { initial: AddTit
   const text = (k: keyof AddTitleValues, label: string, wide = false, hint?: string) => (
     <div className={`vm-field${wide ? " wide" : ""}`}>
       <label htmlFor={k}>{label}</label>
-      <input id={k} type="text" value={v[k]} onChange={(e) => set(k, e.target.value)} aria-invalid={!!errors[k]} />
+      <input id={k} type="text" value={v[k]} onChange={(e) => set(k, e.target.value)} aria-invalid={!!errors[k]} aria-describedby={errors[k] ? `${k}-err` : undefined} />
       {hint && <span className="vm-hint">{hint}</span>}
-      <Err e={errors[k]} />
+      <Err id={k} e={errors[k]} />
     </div>
   );
   return (
@@ -107,14 +107,14 @@ export function AddTitleForm({ initial, formats, categories }: { initial: AddTit
           <div className="vm-field wide">
             <label htmlFor="overview">PLOT SUMMARY</label>
             <textarea id="overview" rows={4} value={v.overview} onChange={(e) => set("overview", e.target.value)} />
-            <Err e={errors.overview} />
+            <Err id="overview" e={errors.overview} />
           </div>
         </div>
       </fieldset>
       <fieldset className="vm-section">
         <legend>ADD TITLE TO INVENTORY</legend>
         <CopyFields v={v} set={set} errors={errors} formats={formats} categories={categories} />
-        <Err e={errors.tmdbId ?? errors.posterPath} />
+        <Err id="tmdbId" e={errors.tmdbId ?? errors.posterPath} />
       </fieldset>
       <div className="vm-actions">
         <button type="submit" className="vm-btn" disabled={pending}>{pending ? "ADDING..." : "[ ADD TO STORE ]"}</button>
@@ -153,36 +153,36 @@ export function CopyForm({ copyId, titleId, initial, categories, locked }: { cop
             {EDITABLE_COPY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
           {locked && <span className="vm-hint">COPY IS CURRENTLY RENTED. STATUS CHANGES AFTER IT IS RETURNED.</span>}
-          <Err e={errors.status} />
+          <Err id="status" e={errors.status} />
         </div>
         <div className="vm-field">
           <label htmlFor="condition">CONDITION</label>
           <select id="condition" value={v.condition} onChange={(e) => set("condition", e.target.value)}>
             {COPY_CONDITIONS.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
-          <Err e={errors.condition} />
+          <Err id="condition" e={errors.condition} />
         </div>
         <div className="vm-field">
           <label htmlFor="categoryId">RENTAL CATEGORY</label>
           <select id="categoryId" value={v.categoryId} onChange={(e) => set("categoryId", e.target.value)}>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <Err e={errors.categoryId} />
+          <Err id="categoryId" e={errors.categoryId} />
         </div>
         <div className="vm-field">
           <label htmlFor="barcode">BARCODE (OPTIONAL)</label>
-          <input id="barcode" type="text" value={v.barcode} onChange={(e) => set("barcode", e.target.value)} aria-invalid={!!errors.barcode} />
-          <Err e={errors.barcode} />
+          <input id="barcode" type="text" value={v.barcode} onChange={(e) => set("barcode", e.target.value)} aria-invalid={!!errors.barcode} aria-describedby={errors.barcode ? "barcode-err" : undefined} />
+          <Err id="barcode" e={errors.barcode} />
         </div>
         <div className="vm-field">
           <label htmlFor="replacementCost">REPLACEMENT COST</label>
-          <input id="replacementCost" type="text" inputMode="decimal" value={v.replacementCost} onChange={(e) => set("replacementCost", e.target.value)} aria-invalid={!!errors.replacementCost} />
-          <Err e={errors.replacementCost} />
+          <input id="replacementCost" type="text" inputMode="decimal" value={v.replacementCost} onChange={(e) => set("replacementCost", e.target.value)} aria-invalid={!!errors.replacementCost} aria-describedby={errors.replacementCost ? "replacementCost-err" : undefined} />
+          <Err id="replacementCost" e={errors.replacementCost} />
         </div>
         <div className="vm-field wide">
           <label htmlFor="notes">NOTES</label>
           <textarea id="notes" rows={3} value={v.notes} onChange={(e) => set("notes", e.target.value)} />
-          <Err e={errors.notes} />
+          <Err id="notes" e={errors.notes} />
         </div>
       </div>
       <div className="vm-actions">

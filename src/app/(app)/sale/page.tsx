@@ -3,6 +3,8 @@ import { CheckoutClient } from "@/components/CheckoutClient";
 import { Screen } from "@/components/Screen";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "MERCHANDISE SALE" };
+
 // Walk-in merchandise sale: no customer, no rentals.
 export default async function SalePage() {
   const { user, store } = await requireStore();

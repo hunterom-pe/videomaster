@@ -7,6 +7,8 @@ import { membershipState } from "@/lib/membership";
 import { effectiveStatus, overdueCounts } from "@/lib/overdue";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "CUSTOMER CHECKOUT" };
+
 export default async function CheckoutPage({ params }: { params: Promise<{ customerId: string }> }) {
   const { user, store, role } = await requireStore();
   const tz = store.settings!.timezone;

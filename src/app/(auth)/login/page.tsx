@@ -3,6 +3,8 @@ import { AuthForm } from "@/components/AuthForm";
 import { Screen } from "@/components/Screen";
 import { getCurrentUser } from "@/lib/session";
 
+export const metadata = { title: "OPERATOR LOG ON" };
+
 export default async function LoginPage() {
   if (await getCurrentUser()) redirect("/");
   return (

@@ -2,6 +2,8 @@ import { ConcessionForm, EMPTY_CONCESSION } from "@/components/ConcessionForms";
 import { Screen } from "@/components/Screen";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "ADD MERCHANDISE" };
+
 export default async function NewConcessionPage() {
   const { user, store } = await requireStore();
   return (

@@ -3,6 +3,8 @@ import { AuthForm } from "@/components/AuthForm";
 import { Screen } from "@/components/Screen";
 import { getCurrentUser } from "@/lib/session";
 
+export const metadata = { title: "NEW OPERATOR ACCOUNT" };
+
 export default async function SignupPage() {
   if (await getCurrentUser()) redirect("/");
   return (

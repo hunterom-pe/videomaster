@@ -6,6 +6,8 @@ import { requireStore } from "@/lib/store-access";
 import { CONCESSION_CATEGORIES } from "@/lib/validation";
 import type { ConcessionCategory } from "@/generated/prisma/client";
 
+export const metadata = { title: "CONCESSIONS" };
+
 const PAGE_SIZE = 30;
 const catLabel = (v: string) => CONCESSION_CATEGORIES.find((c) => c.value === v)?.label ?? v;
 

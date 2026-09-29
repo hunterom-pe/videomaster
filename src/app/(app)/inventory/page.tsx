@@ -3,6 +3,8 @@ import { Screen } from "@/components/Screen";
 import { FORMAT_LABELS, searchTitles, summarize } from "@/lib/inventory";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "MOVIE INVENTORY" };
+
 type SP = { q?: string; format?: string; cat?: string; avail?: string; page?: string };
 
 export default async function InventoryPage({ searchParams }: { searchParams: Promise<SP> }) {

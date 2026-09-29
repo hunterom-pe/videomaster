@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { clearData, loadSample } from "@/actions/sample";
 import { ErrorBox } from "@/components/Screen";
+import { RetroDialog } from "@/components/RetroDialog";
 
 export function SamplePanel({ isEmpty, isOwner, canManage }: { isEmpty: boolean; isOwner: boolean; canManage: boolean }) {
   const [confirming, setConfirming] = useState(false);
@@ -46,15 +47,13 @@ export function SamplePanel({ isEmpty, isOwner, canManage }: { isEmpty: boolean;
           </button>
         </div>
         {confirming && (
-          <div role="alertdialog" aria-modal="true" aria-labelledby="sdlg" style={{ border: "4px double var(--yellow)", background: "var(--bg)", padding: 16, maxWidth: 440, margin: "16px auto" }}>
-            <h2 id="sdlg" className="vm-yellow vm-center">LOAD SAMPLE DATA?</h2>
-            <hr className="vm-thin-rule" />
+          <RetroDialog title="LOAD SAMPLE DATA?" onCancel={() => setConfirming(false)}>
             <p className="vm-center">THIS ADDS DEMO CUSTOMERS, MOVIES, MERCHANDISE AND TRANSACTIONS TO YOUR STORE.</p>
             <div className="vm-actions" style={{ justifyContent: "center" }}>
               <button type="button" className="vm-btn" onClick={load}>[ YES ]</button>
-              <button type="button" className="vm-btn" onClick={() => setConfirming(false)}>[ NO ]</button>
+              <button type="button" className="vm-btn" onClick={() => setConfirming(false)} data-autofocus>[ NO ]</button>
             </div>
-          </div>
+          </RetroDialog>
         )}
       </fieldset>
 

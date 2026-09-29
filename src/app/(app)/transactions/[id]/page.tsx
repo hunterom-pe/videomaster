@@ -8,6 +8,8 @@ import { fmtDateTimeTz, tzAbbrev } from "@/lib/tz";
 import { requireStore } from "@/lib/store-access";
 import { PAYMENT_LABELS, TYPE_LABELS } from "@/lib/transactions";
 
+export const metadata = { title: "TRANSACTION DETAIL" };
+
 const rentalInclude = { copy: { include: { movieTitle: true } } } as const;
 
 export default async function TransactionDetailPage({ params }: { params: Promise<{ id: string }> }) {

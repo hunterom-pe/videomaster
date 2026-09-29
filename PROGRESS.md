@@ -93,6 +93,13 @@
 - Contents: 28 classic movies with real TMDB metadata + posters (fetched once by `scripts/fetch-sample-titles.mjs` into `src/lib/sample-titles.json`, so loading works offline), 22 fictional customers (555-01xx phones; one suspended, one lapsed membership when a term is set), 16 merchandise items (with low-stock and out-of-stock examples), VHS copies (plus DVD copies when DVD is enabled), and 3 weeks of deterministic history: ~90 rental transactions, ~130 return transactions (on-time, late, waived/reduced fees, one lost, a few damaged, rewind fees if configured) and walk-in sales — including 3+ currently overdue videos and activity today. All in the store's own time zone.
 - Verified by SQL invariants and an automated database test (`npm run test:db`, uses the spare `videomaster_test` DB; runs the generator in Arizona, Hawaii and New York zones): no double-rented copies, nothing rented after lost/damaged, contiguous transaction numbers, every transaction adds up, rentals + merchandise + fees + tax = total, no negative stock, overdue measured in store-local days, clear + reload works.
 
+**Polish step 1 — Accessibility**
+- Audited all 28 screens with the axe engine (loaded into a live page): findings were red-on-blue contrast (4.26:1), missing landmarks, no heading on receipts. Now **0 violations on every screen**; red raised to `#ff7070` (4.98:1), disabled buttons made legible (and struck through, not colour-only).
+- Landmarks (`header`/`main`/`footer`), "SKIP TO MAIN CONTENT" link, unique per-page titles via Next metadata (`CUSTOMERS — VIDEOMASTER`), sr-only h1 on receipts.
+- Confirmation dialogs are now real modals (`RetroDialog`): overlay, focus moves in (starting on `[ NO ]` so a stray Enter/scanner can't confirm), Tab trapped, Escape cancels, focus restored. Previously they rendered below the fold.
+- Form errors are linked to their fields (`aria-describedby`); live regions for checkout search results and totals; whole-row link focus ring; error/warning colours never the only signal (text/labels always present).
+- Verified with axe re-run, and dialog keyboard behaviour via dispatched key events (the browser pane can't send real keys while hidden).
+
 ## Current Work
 Nothing in progress.
 

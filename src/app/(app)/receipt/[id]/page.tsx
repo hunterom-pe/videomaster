@@ -8,6 +8,8 @@ import { fmtDateUS } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
 import { PAYMENT_LABELS } from "@/lib/transactions";
 
+export const metadata = { title: "RECEIPT" };
+
 const rentalInclude = { copy: { include: { movieTitle: true } } } as const;
 const money = (n: { toFixed(d: number): string } | number) => `$${n.toFixed(2)}`;
 const Row = ({ left, right, strong }: { left: string; right?: string; strong?: boolean }) => (
@@ -33,6 +35,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
 
   return (
     <Screen title="RECEIPT" userEmail={user.email} storeLine={`STORE: ${store.name} #${store.number}`} status={isNew ? "TRANSACTION COMPLETE" : "RECEIPT REPRINT"}>
+      <h1 className="vm-sr-only">RECEIPT FOR TRANSACTION {String(t.number).padStart(6, "0")}</h1>
       {isNew && <div className="vm-notice no-print" role="status">*** TRANSACTION COMPLETE ***</div>}
 
       <article className="vm-receipt" aria-label={`Receipt for transaction ${t.number}`}>

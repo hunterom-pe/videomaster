@@ -7,6 +7,8 @@ import { categoryOptions } from "@/lib/inventory-options";
 import { fmtDateUS } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
 
+export const metadata = { title: "EDIT COPY" };
+
 export default async function CopyPage({ params }: { params: Promise<{ id: string; copyId: string }> }) {
   const { user, store } = await requireStore();
   const { id, copyId } = await params;
