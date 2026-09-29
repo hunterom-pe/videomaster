@@ -17,3 +17,15 @@ export function dueDate(from: Date, days: number): Date {
 
 export const fmtDate = (d: Date): string =>
   d.toLocaleDateString("en-US", { month: "short", day: "2-digit", timeZone: "UTC" }).toUpperCase();
+
+export type PriceLine = { cents: number; taxable: boolean };
+
+/** Rentals and merchandise are taxed together on the sum of taxable lines, rounded once (half-up). */
+export function computeTotals(rentals: PriceLine[], merchandise: PriceLine[], taxPercent: number | string) {
+  const sum = (ls: PriceLine[]) => ls.reduce((n, l) => n + l.cents, 0);
+  const rentalCents = sum(rentals);
+  const merchCents = sum(merchandise);
+  const taxableCents = sum(rentals.filter((l) => l.taxable)) + sum(merchandise.filter((l) => l.taxable));
+  const tax = taxCents(taxableCents, taxPercent);
+  return { rentalCents, merchCents, subtotal: rentalCents + merchCents, tax, total: rentalCents + merchCents + tax };
+}

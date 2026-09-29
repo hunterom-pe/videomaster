@@ -95,6 +95,7 @@ model Store {
   rentals          Rental[]
   transactions     Transaction[]
   concessionItems  ConcessionItem[]
+  transactionItems TransactionItem[]
 }
 
 model StoreSettings {
@@ -303,23 +304,24 @@ enum PaymentMethod {
 }
 
 model Transaction {
-  id              String          @id @default(cuid())
+  id              String            @id @default(cuid())
   storeId         String
   number          Int
-  type            TransactionType @default(RENTAL)
+  type            TransactionType   @default(RENTAL)
   customerId      String?
   createdById     String?
-  subtotal        Decimal         @default(0) @db.Decimal(10, 2)
-  tax             Decimal         @default(0) @db.Decimal(10, 2)
-  total           Decimal         @default(0) @db.Decimal(10, 2)
-  paymentMethod   PaymentMethod   @default(CASH)
+  subtotal        Decimal           @default(0) @db.Decimal(10, 2)
+  tax             Decimal           @default(0) @db.Decimal(10, 2)
+  total           Decimal           @default(0) @db.Decimal(10, 2)
+  paymentMethod   PaymentMethod     @default(CASH)
   notes           String?
-  createdAt       DateTime        @default(now())
-  store           Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  customer        Customer?       @relation(fields: [storeId, customerId], references: [storeId, id])
-  createdBy       User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  rentals         Rental[]        @relation("RentalCheckout")
-  returnedRentals Rental[]        @relation("RentalReturn")
+  createdAt       DateTime          @default(now())
+  store           Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer        Customer?         @relation(fields: [storeId, customerId], references: [storeId, id])
+  createdBy       User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  rentals         Rental[]          @relation("RentalCheckout")
+  returnedRentals Rental[]          @relation("RentalReturn")
+  items           TransactionItem[]
 
   @@unique([storeId, number])
   @@unique([storeId, id])
@@ -352,9 +354,31 @@ model ConcessionItem {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @default(now()) @updatedAt
   store             Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  saleItems         TransactionItem[]
 
   @@unique([storeId, sku])
   @@unique([storeId, barcode])
   @@unique([storeId, id])
   @@index([storeId, category])
+}
+
+// Merchandise lines on a transaction (rentals are linked via Rental.transactionId).
+// Name/SKU/price are snapshots so history survives later edits to the catalog item.
+model TransactionItem {
+  id               String          @id @default(cuid())
+  storeId          String
+  transactionId    String
+  concessionItemId String?
+  sku              String
+  description      String
+  quantity         Int
+  unitPrice        Decimal         @db.Decimal(8, 2)
+  lineTotal        Decimal         @db.Decimal(10, 2)
+  taxable          Boolean
+  store            Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  transaction      Transaction     @relation(fields: [storeId, transactionId], references: [storeId, id], onDelete: Cascade)
+  concessionItem   ConcessionItem? @relation(fields: [storeId, concessionItemId], references: [storeId, id])
+
+  @@index([storeId, transactionId])
+  @@index([storeId, concessionItemId])
 }

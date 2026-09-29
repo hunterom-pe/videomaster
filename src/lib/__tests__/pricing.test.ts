@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dueDate, fmtMoney, taxCents, toCents } from "@/lib/pricing";
+import { computeTotals, dueDate, fmtMoney, taxCents, toCents } from "@/lib/pricing";
 
 describe("pricing", () => {
   it("converts to cents without float drift", () => {
@@ -19,4 +19,25 @@ describe("pricing", () => {
   });
   it("formats money", () => expect(fmtMoney(1080)).toBe("$10.80"));
   it("computes due dates", () => expect(dueDate(new Date("2026-09-29T12:00:00Z"), 2).toISOString()).toBe("2026-10-01T12:00:00.000Z"));
+});
+
+describe("computeTotals", () => {
+  it("combines rentals and merchandise with one tax computation", () => {
+    // spec example shape: rentals 3.99 + 1.99, merchandise 1.49 + 2.49 at 8.6%
+    const t = computeTotals([{ cents: 399, taxable: true }, { cents: 199, taxable: true }], [{ cents: 149, taxable: true }, { cents: 249, taxable: true }], "8.6");
+    expect(t.rentalCents).toBe(598);
+    expect(t.merchCents).toBe(398);
+    expect(t.subtotal).toBe(996);
+    expect(t.tax).toBe(86); // 9.96 * 8.6% = 0.8566 -> 0.86
+    expect(t.total).toBe(1082);
+  });
+  it("excludes non-taxable lines from tax", () => {
+    const t = computeTotals([{ cents: 400, taxable: false }], [{ cents: 100, taxable: true }], "10");
+    expect(t.tax).toBe(10);
+    expect(t.total).toBe(510);
+  });
+  it("handles merchandise only and empty carts", () => {
+    expect(computeTotals([], [{ cents: 149, taxable: true }], "8.6").total).toBe(162);
+    expect(computeTotals([], [], "8.6").total).toBe(0);
+  });
 });

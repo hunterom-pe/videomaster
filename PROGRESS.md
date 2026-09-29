@@ -49,10 +49,18 @@
 - Receive stock via atomic increment. Negative price/quantity blocked in the UI, the server, and by DB CHECK constraints (`quantityOnHand >= 0`, `retailPrice >= 0`).
 - 47 unit tests.
 
+**Milestone 13 — Combined POS transactions**
+- Checkout now takes rentals AND merchandise in one transaction: ADD RENTAL (customer checkouts) + ADD SALE ITEM (clickable category buttons `[ CANDY ]`, `[ POPCORN ]`… or search by name/SKU/barcode; `[ - ]`/`[ + ]` quantity buttons). Totals: RENTALS / MERCHANDISE / TAX / TOTAL. Walk-in merchandise-only sales at `/sale` (no customer; type RETAIL_SALE) from `[ SELL MERCHANDISE ]` on Concessions and `[ SELL MERCHANDISE ONLY ]` on the customer picker.
+- Server-authoritative: prices/tax/due dates from the DB; merchandise stock is decremented atomically with a conditional update (`quantityOnHand >= qty`), so stock can never go negative even with two clerks; any failure (unavailable copy, insufficient stock) rolls back the whole transaction, including rental claims. Verified with simulated races.
+- New `TransactionItem` (snapshot of SKU/name/price/qty/taxable per merchandise line). One tax computation over all taxable lines, rounded half-up.
+- Acceptance scenario verified: T2 10 total / 9 available / 1 rented; Sour Patch Kids 9 on hand; Sarah's active rental; sample receipt math ($7.47 + $0.64 = $8.11).
+- 50 unit tests.
+
 ## Current Work
 Nothing in progress.
 
 ## Known Issues
+- POS: no cash-tendered/change, no voids/refunds yet (Transaction types REFUND/FEE_WAIVER exist in the schema but are unused); a CLOSED customer cannot check out at all (use the walk-in sale for merchandise).
 - Concessions: categories are a fixed list (not yet editable in Store Settings); no stock-adjustment history/audit log; items can't be deleted (deactivate instead). Selling happens in Milestone 13.
 - Dates/lateness use UTC calendar days (consistent with dates shown on screen). A store timezone setting is needed so a rental made in the evening doesn't roll to the next day; add with store settings.
 - Late fees are paid at return time only; no unpaid-balance tracking (`Customer.outstandingFees` is never changed yet), no rewind/membership/damage fee policy settings (damage/lost fees are entered manually).
@@ -76,7 +84,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Milestone 13 — Combined POS transactions: sell concessions (and combine with rentals) in one checkout; decrement stock atomically, never below zero; tax per item.
+Milestone 14 — Transaction history (list/filter/detail of all RENTAL / RETURN / RETAIL_SALE transactions), then 15 — printable receipts.
 
 ## Decisions
 - Browser-based web app only (Next.js/React/HTML/CSS/TS). Never native/Electron/desktop/CLI.

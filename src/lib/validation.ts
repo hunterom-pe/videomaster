@@ -280,17 +280,23 @@ export const PAYMENT_METHODS = [
 ] as const;
 
 export const MAX_RENTALS_PER_CHECKOUT = 20;
+export const MAX_SALE_LINES = 30;
 
-export const checkoutSchema = z.object({
-  copyIds: z
-    .array(z.string().min(1))
-    .min(1, "ADD AT LEAST ONE VIDEO BEFORE TAKING PAYMENT")
-    .max(MAX_RENTALS_PER_CHECKOUT, `MAXIMUM ${MAX_RENTALS_PER_CHECKOUT} VIDEOS PER TRANSACTION`)
-    .refine((ids) => new Set(ids).size === ids.length, "THE SAME COPY WAS ADDED TWICE"),
-  paymentMethod: z.enum(PAYMENT_METHODS.map((p) => p.value) as [string, ...string[]], "SELECT A PAYMENT METHOD"),
-  override: z.boolean(),
-});
-export type CheckoutValues = { copyIds: string[]; paymentMethod: string; override: boolean };
+export const checkoutSchema = z
+  .object({
+    copyIds: z
+      .array(z.string().min(1))
+      .max(MAX_RENTALS_PER_CHECKOUT, `MAXIMUM ${MAX_RENTALS_PER_CHECKOUT} VIDEOS PER TRANSACTION`)
+      .refine((ids) => new Set(ids).size === ids.length, "THE SAME COPY WAS ADDED TWICE"),
+    items: z
+      .array(z.object({ itemId: z.string().min(1), quantity: z.number().int("QUANTITY MUST BE A WHOLE NUMBER").min(1, "QUANTITY MUST BE AT LEAST 1").max(99, "QUANTITY MAY NOT EXCEED 99") }))
+      .max(MAX_SALE_LINES, `MAXIMUM ${MAX_SALE_LINES} MERCHANDISE LINES PER TRANSACTION`)
+      .refine((ls) => new Set(ls.map((l) => l.itemId)).size === ls.length, "THE SAME ITEM APPEARS TWICE"),
+    paymentMethod: z.enum(PAYMENT_METHODS.map((p) => p.value) as [string, ...string[]], "SELECT A PAYMENT METHOD"),
+    override: z.boolean(),
+  })
+  .refine((v) => v.copyIds.length + v.items.length > 0, { message: "ADD AT LEAST ONE ITEM BEFORE TAKING PAYMENT", path: ["copyIds"] });
+export type CheckoutValues = { copyIds: string[]; items: { itemId: string; quantity: number }[]; paymentMethod: string; override: boolean };
 
 // ── Returns ──
 export const RETURN_OUTCOMES = ["RETURNED", "DAMAGED", "LOST"] as const;

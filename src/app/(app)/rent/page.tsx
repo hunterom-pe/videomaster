@@ -16,6 +16,7 @@ export default async function RentPage({ searchParams }: { searchParams: Promise
       <div className="vm-actions" style={{ marginTop: 0, justifyContent: "space-between" }}>
         <h1>SELECT CUSTOMER</h1>
         <span className="vm-actions" style={{ marginTop: 0 }}>
+          <Link href="/sale" className="vm-btn">[ SELL MERCHANDISE ONLY ]</Link>
           <Link href="/customers/new" className="vm-btn">[ NEW CUSTOMER ]</Link>
           <Link href="/menu" className="vm-btn">[ MAIN MENU ]</Link>
         </span>

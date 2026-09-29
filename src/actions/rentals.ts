@@ -2,12 +2,12 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import type { PaymentMethod } from "@/generated/prisma/client";
+import type { ConcessionCategory, PaymentMethod } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { FORMAT_LABELS } from "@/lib/inventory";
-import { dueDate, fromCents, taxCents, toCents } from "@/lib/pricing";
+import { computeTotals, dueDate, fromCents, toCents } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
-import { checkoutSchema, zodErrors, type ActionState, type CheckoutValues } from "@/lib/validation";
+import { CONCESSION_CATEGORIES, checkoutSchema, zodErrors, type ActionState, type CheckoutValues } from "@/lib/validation";
 
 export type CartItem = {
   copyId: string;
@@ -95,65 +95,134 @@ export async function findRentableCopies(query: string, excludeIds: string[]): P
   return { hits, message: hits.length === 0 ? `NO TITLE MATCHES "${q.toUpperCase()}"` : undefined };
 }
 
+export type SaleItem = {
+  itemId: string;
+  sku: string;
+  name: string;
+  category: string;
+  priceCents: number;
+  taxable: boolean;
+  onHand: number;
+};
+
+/** Sellable merchandise (active, in stock). Scoped to the session's store. Empty query lists by category or all. */
+export async function findSaleItems(query: string, category: string): Promise<{ items: SaleItem[]; message?: string }> {
+  const { store } = await requireStore();
+  const q = query.trim().slice(0, 100);
+  const cat = CONCESSION_CATEGORIES.find((c) => c.value === category);
+  const terms = q.split(/\s+/).filter(Boolean).slice(0, 5);
+  const rows = await db.concessionItem.findMany({
+    where: {
+      storeId: store.id,
+      active: true,
+      quantityOnHand: { gt: 0 },
+      ...(cat ? { category: cat.value as ConcessionCategory } : {}),
+      AND: terms.map((t) => ({ OR: [{ name: { contains: t, mode: "insensitive" as const } }, { sku: { contains: t, mode: "insensitive" as const } }, { barcode: t }] })),
+    },
+    orderBy: [{ category: "asc" }, { name: "asc" }],
+    take: 30,
+  });
+  const items = rows.map((r) => ({
+    itemId: r.id, sku: r.sku, name: r.name, category: CONCESSION_CATEGORIES.find((c) => c.value === r.category)?.label ?? r.category,
+    priceCents: toCents(r.retailPrice), taxable: r.taxable, onHand: r.quantityOnHand,
+  }));
+  return { items, message: items.length === 0 ? "NO IN-STOCK MERCHANDISE MATCHES. CHECK THE CONCESSIONS SCREEN FOR STOCK LEVELS." : undefined };
+}
+
 class CheckoutError extends Error {}
 
-/** Completes a rental transaction. Everything is re-verified server-side; the client cart is only a list of copy IDs. */
-export async function checkout(customerId: string, input: CheckoutValues): Promise<ActionState> {
+/**
+ * Completes a transaction with rentals and/or merchandise. Everything is re-verified server-side; the client cart is
+ * only copy IDs and (itemId, quantity) pairs. `customerId` may be null for a walk-in merchandise-only sale.
+ */
+export async function checkout(customerId: string | null, input: CheckoutValues): Promise<ActionState> {
   const { store, user, role } = await requireStore();
   const parsed = checkoutSchema.safeParse(input);
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error), message: "PLEASE CORRECT THE FOLLOWING" };
-  const { copyIds, paymentMethod, override } = parsed.data;
+  const { copyIds, items, paymentMethod, override } = parsed.data;
 
-  const customer = await db.customer.findFirst({ where: { id: customerId, storeId: store.id } });
-  if (!customer) return { ok: false, errors: {}, message: "CUSTOMER NOT FOUND" };
-  if (customer.status === "CLOSED") return { ok: false, errors: {}, message: "*** CUSTOMER ACCOUNT CLOSED *** NO RENTALS ARE ALLOWED ON A CLOSED ACCOUNT." };
-  if (customer.status !== "GOOD") {
-    if (role === "EMPLOYEE") return { ok: false, errors: {}, message: `*** ACCOUNT ${customer.status} *** MANAGER OVERRIDE REQUIRED.` };
-    if (!override) return { ok: false, errors: {}, message: `*** ACCOUNT ${customer.status} *** CHECK "MANAGER OVERRIDE" TO CONTINUE.` };
+  if (copyIds.length > 0 && !customerId) return { ok: false, errors: {}, message: "SELECT A CUSTOMER BEFORE RENTING VIDEOS." };
+
+  let customer = null;
+  if (customerId) {
+    customer = await db.customer.findFirst({ where: { id: customerId, storeId: store.id } });
+    if (!customer) return { ok: false, errors: {}, message: "CUSTOMER NOT FOUND" };
+    // Account restrictions apply to rentals; a merchandise-only purchase is always allowed.
+    if (copyIds.length > 0) {
+      if (customer.status === "CLOSED") return { ok: false, errors: {}, message: "*** CUSTOMER ACCOUNT CLOSED *** NO RENTALS ARE ALLOWED ON A CLOSED ACCOUNT." };
+      if (customer.status !== "GOOD") {
+        if (role === "EMPLOYEE") return { ok: false, errors: {}, message: `*** ACCOUNT ${customer.status} *** MANAGER OVERRIDE REQUIRED.` };
+        if (!override) return { ok: false, errors: {}, message: `*** ACCOUNT ${customer.status} *** CHECK "MANAGER OVERRIDE" TO CONTINUE.` };
+      }
+    }
   }
 
   const taxPercent = store.settings!.salesTaxPercent;
   let transactionId: string;
   try {
     transactionId = await db.$transaction(async (tx) => {
-      const copies = await tx.inventoryCopy.findMany({ where: { id: { in: copyIds }, storeId: store.id }, include: { rentalCategory: true } });
+      const now = new Date();
+
+      // ── Rentals: verify copies, claim atomically ──
+      const copies = copyIds.length ? await tx.inventoryCopy.findMany({ where: { id: { in: copyIds }, storeId: store.id }, include: { rentalCategory: true } }) : [];
       if (copies.length !== copyIds.length) throw new CheckoutError("ONE OR MORE COPIES WERE NOT FOUND IN THIS STORE.");
       const missing = copies.find((c) => !c.rentalCategory);
       if (missing) throw new CheckoutError(`COPY ${missing.copyNumber} HAS NO RENTAL CATEGORY.`);
-
       const unavailable = copies.filter((c) => c.status !== "AVAILABLE").map((c) => c.copyNumber);
       if (unavailable.length) throw new CheckoutError(`*** NO AVAILABLE COPIES *** ${unavailable.join(", ")} IS NOT AVAILABLE. REMOVE IT AND TRY AGAIN.`);
+      if (copyIds.length) {
+        // Only flips copies that are still AVAILABLE, so two clerks can never rent the same tape.
+        const claimed = await tx.inventoryCopy.updateMany({ where: { id: { in: copyIds }, storeId: store.id, status: "AVAILABLE" }, data: { status: "RENTED" } });
+        if (claimed.count !== copyIds.length) throw new CheckoutError("*** NO AVAILABLE COPIES *** A COPY WAS JUST RENTED BY ANOTHER CLERK. RELOAD AND TRY AGAIN.");
+      }
 
-      // Atomic claim: only flips copies that are still AVAILABLE, so two clerks can never rent the same tape.
-      const claimed = await tx.inventoryCopy.updateMany({
-        where: { id: { in: copyIds }, storeId: store.id, status: "AVAILABLE" },
-        data: { status: "RENTED" },
-      });
-      if (claimed.count !== copyIds.length)
-        throw new CheckoutError("*** NO AVAILABLE COPIES *** A COPY WAS JUST RENTED BY ANOTHER CLERK. RELOAD AND TRY AGAIN.");
+      // ── Merchandise: verify, then decrement stock atomically (never below zero) ──
+      const catalog = items.length ? await tx.concessionItem.findMany({ where: { id: { in: items.map((i) => i.itemId) }, storeId: store.id } }) : [];
+      if (catalog.length !== items.length) throw new CheckoutError("ONE OR MORE MERCHANDISE ITEMS WERE NOT FOUND IN THIS STORE.");
+      const lines = items.map((i) => ({ line: i, item: catalog.find((c) => c.id === i.itemId)! }));
+      const inactive = lines.find((l) => !l.item.active);
+      if (inactive) throw new CheckoutError(`${inactive.item.name.toUpperCase()} IS INACTIVE AND CANNOT BE SOLD.`);
+      for (const { line, item } of lines) {
+        const r = await tx.concessionItem.updateMany({
+          where: { id: item.id, storeId: store.id, active: true, quantityOnHand: { gte: line.quantity } },
+          data: { quantityOnHand: { decrement: line.quantity } },
+        });
+        if (r.count !== 1) {
+          const fresh = await tx.concessionItem.findFirst({ where: { id: item.id, storeId: store.id }, select: { quantityOnHand: true } });
+          throw new CheckoutError(`*** NOT ENOUGH STOCK *** ${item.name.toUpperCase()}: ${line.quantity} REQUESTED, ${fresh?.quantityOnHand ?? 0} ON HAND.`);
+        }
+      }
 
-      const now = new Date();
-      const priced = copies.map((c) => ({ copy: c, cat: c.rentalCategory!, cents: toCents(c.rentalCategory!.rentalPrice) }));
-      const subtotal = priced.reduce((n, p) => n + p.cents, 0);
-      const tax = taxCents(priced.filter((p) => p.cat.taxable).reduce((n, p) => n + p.cents, 0), taxPercent.toString());
+      // ── Pricing: from the database, never from the browser ──
+      const rentalLines = copies.map((c) => ({ copy: c, cat: c.rentalCategory!, cents: toCents(c.rentalCategory!.rentalPrice) }));
+      const merchLines = lines.map(({ line, item }) => ({ item, qty: line.quantity, unit: toCents(item.retailPrice), cents: toCents(item.retailPrice) * line.quantity }));
+      const totals = computeTotals(
+        rentalLines.map((r) => ({ cents: r.cents, taxable: r.cat.taxable })),
+        merchLines.map((m) => ({ cents: m.cents, taxable: m.item.taxable })),
+        taxPercent.toString(),
+      );
 
-      const { nextTransactionNumber } = await tx.store.update({
-        where: { id: store.id },
-        data: { nextTransactionNumber: { increment: 1 } },
-        select: { nextTransactionNumber: true },
-      });
+      const { nextTransactionNumber } = await tx.store.update({ where: { id: store.id }, data: { nextTransactionNumber: { increment: 1 } }, select: { nextTransactionNumber: true } });
       const transaction = await tx.transaction.create({
         data: {
-          storeId: store.id, number: nextTransactionNumber - 1, type: "RENTAL", customerId: customer.id, createdById: user.id,
-          subtotal: fromCents(subtotal), tax: fromCents(tax), total: fromCents(subtotal + tax), paymentMethod: paymentMethod as PaymentMethod,
+          storeId: store.id, number: nextTransactionNumber - 1, type: copies.length ? "RENTAL" : "RETAIL_SALE", customerId: customer?.id ?? null, createdById: user.id,
+          subtotal: fromCents(totals.subtotal), tax: fromCents(totals.tax), total: fromCents(totals.total), paymentMethod: paymentMethod as PaymentMethod,
         },
       });
-      await tx.rental.createMany({
-        data: priced.map((p) => ({
-          storeId: store.id, customerId: customer.id, copyId: p.copy.id, transactionId: transaction.id,
-          price: fromCents(p.cents), rentedAt: now, dueAt: dueDate(now, p.cat.rentalDays),
-        })),
-      });
+      if (rentalLines.length)
+        await tx.rental.createMany({
+          data: rentalLines.map((p) => ({
+            storeId: store.id, customerId: customer!.id, copyId: p.copy.id, transactionId: transaction.id,
+            price: fromCents(p.cents), rentedAt: now, dueAt: dueDate(now, p.cat.rentalDays),
+          })),
+        });
+      if (merchLines.length)
+        await tx.transactionItem.createMany({
+          data: merchLines.map((m) => ({
+            storeId: store.id, transactionId: transaction.id, concessionItemId: m.item.id, sku: m.item.sku, description: m.item.name,
+            quantity: m.qty, unitPrice: fromCents(m.unit), lineTotal: fromCents(m.cents), taxable: m.item.taxable,
+          })),
+        });
       return transaction.id;
     });
   } catch (e) {
@@ -162,5 +231,7 @@ export async function checkout(customerId: string, input: CheckoutValues): Promi
   }
   revalidatePath("/inventory");
   revalidatePath("/customers");
+  revalidatePath("/concessions");
+  revalidatePath("/menu");
   redirect(`/rent/done/${transactionId}`);
 }

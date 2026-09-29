@@ -41,6 +41,7 @@ export default async function ConcessionsPage({ searchParams }: { searchParams: 
       <div className="vm-actions" style={{ marginTop: 0, justifyContent: "space-between" }}>
         <h1>CONCESSIONS / MERCHANDISE</h1>
         <span className="vm-actions" style={{ marginTop: 0 }}>
+          <Link href="/sale" className="vm-btn">[ SELL MERCHANDISE ]</Link>
           <Link href="/concessions/new" className="vm-btn">[ ADD ITEM ]</Link>
           <Link href="/menu" className="vm-btn">[ MAIN MENU ]</Link>
         </span>
