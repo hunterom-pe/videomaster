@@ -268,3 +268,26 @@ export type AddTitleValues = AddCopiesValues & {
 export type CopyEditValues = {
   status: string; condition: string; categoryId: string; barcode: string; replacementCost: string; notes: string;
 };
+
+// ── Rentals / checkout ──
+export const PAYMENT_METHODS = [
+  { value: "CASH", label: "CASH" },
+  { value: "CREDIT_CARD", label: "CREDIT CARD" },
+  { value: "DEBIT", label: "DEBIT" },
+  { value: "CHECK", label: "CHECK" },
+  { value: "STORE_CREDIT", label: "STORE CREDIT" },
+  { value: "OTHER", label: "OTHER" },
+] as const;
+
+export const MAX_RENTALS_PER_CHECKOUT = 20;
+
+export const checkoutSchema = z.object({
+  copyIds: z
+    .array(z.string().min(1))
+    .min(1, "ADD AT LEAST ONE VIDEO BEFORE TAKING PAYMENT")
+    .max(MAX_RENTALS_PER_CHECKOUT, `MAXIMUM ${MAX_RENTALS_PER_CHECKOUT} VIDEOS PER TRANSACTION`)
+    .refine((ids) => new Set(ids).size === ids.length, "THE SAME COPY WAS ADDED TWICE"),
+  paymentMethod: z.enum(PAYMENT_METHODS.map((p) => p.value) as [string, ...string[]], "SELECT A PAYMENT METHOD"),
+  override: z.boolean(),
+});
+export type CheckoutValues = { copyIds: string[]; paymentMethod: string; override: boolean };

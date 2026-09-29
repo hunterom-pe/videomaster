@@ -28,10 +28,20 @@
 - Inventory search: title, year, director, actor, genre, copy ID, barcode + format/category/availability filters, paginated.
 - 30 unit tests total. Verified end-to-end against live TMDB.
 
+**Milestone 9 — Rental checkout**
+- RENT VIDEO: pick customer → checkout screen (customer + account status, cart, rentals/tax/total, due dates) → retro CONFIRM RENTAL dialog → TRANSACTION COMPLETE screen.
+- Add rentals by title search (auto-picks first available copy, or pick a specific copy) or by exact copy ID / barcode.
+- Server re-verifies everything (client sends only copy IDs + payment method): store ownership, customer status, price/due date from the copy's rental category, tax (integer cents, half-up, per-category taxable flag). Copies are claimed with a conditional `AVAILABLE → RENTED` update inside one DB transaction, so two clerks can't rent the same copy; failures roll back cleanly.
+- Customer status rules: CLOSED = no rentals; BLOCKED/SUSPENDED/OVERDUE = manager override (owner/manager role only) with an explicit checkbox.
+- New `Transaction` (per-store numbering, type/payment method/subtotal/tax/total) and `Rental.price`. Active rentals now show on the customer account. Simulated payment methods only.
+- 34 unit tests. Verified in browser incl. override refusal and a simulated race.
+
 ## Current Work
 Nothing in progress.
 
 ## Known Issues
+- Checkout: no cash-tendered/change calculation yet; no rental limits per customer; outstanding fees warn but don't block. Due date = rental time + N days (a timestamp; day-boundary rules to be decided with late fees).
+- Rentals stay RENTED until returns exist (M10); OVERDUE status is not computed yet (M11/M16).
 - Title metadata cannot be edited after adding (only copies); spec's title [ EDIT ] / [ RETIRE COPY ] buttons: retire is done via copy status, title edit is not built.
 - Rental price/period come from the rental category; no per-copy or per-format price override yet.
 - Inventory reports/rental counts on the title page await rentals (RENT button is disabled).
@@ -48,7 +58,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Milestone 9 — Rental checkout (customer → rental → physical copy, due dates from category policy).
+Milestone 10 — Returns (return by copy ID/barcode/title/customer, set copy AVAILABLE or DAMAGED/LOST), then 11 — late fees.
 
 ## Decisions
 - Browser-based web app only (Next.js/React/HTML/CSS/TS). Never native/Electron/desktop/CLI.

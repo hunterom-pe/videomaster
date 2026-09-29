@@ -1,0 +1,19 @@
+// Money is handled in integer cents to avoid floating-point drift. Pure functions, safe on client and server.
+
+export const toCents = (amount: number | string | { toString(): string }): number => Math.round(Number(amount.toString()) * 100);
+export const fromCents = (cents: number): string => (cents / 100).toFixed(2);
+export const fmtMoney = (cents: number): string => `$${fromCents(cents)}`;
+
+/** Sales tax on a taxable amount, rounded half-up to the cent. `percent` may have up to 3 decimals (e.g. 8.625). */
+export function taxCents(taxableCents: number, percent: number | string): number {
+  const milli = Math.round(Number(percent) * 1000); // percent in thousandths
+  return Math.floor((taxableCents * milli + 50_000) / 100_000);
+}
+
+/** Due date = rental moment plus N days. */
+export function dueDate(from: Date, days: number): Date {
+  return new Date(from.getTime() + days * 86_400_000);
+}
+
+export const fmtDate = (d: Date): string =>
+  d.toLocaleDateString("en-US", { month: "short", day: "2-digit", timeZone: "UTC" }).toUpperCase();

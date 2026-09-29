@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Screen } from "@/components/Screen";
 import { db } from "@/lib/db";
+import { fmtDate } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
 
 export default async function CustomerPage({
@@ -17,7 +18,11 @@ export default async function CustomerPage({
   const c = await db.customer.findFirst({ where: { id, storeId: store.id } });
   if (!c) notFound();
   const { saved } = await searchParams;
-  const activeRentals = await db.rental.count({ where: { storeId: store.id, customerId: c.id, returnedAt: null } });
+  const activeRentals = await db.rental.findMany({
+    where: { storeId: store.id, customerId: c.id, returnedAt: null },
+    orderBy: { dueAt: "asc" },
+    include: { copy: { include: { movieTitle: true } } },
+  });
   const fees = Number(c.outstandingFees);
   const address = [c.address, [c.city, c.region].filter(Boolean).join(", "), c.postalCode].filter(Boolean).join(" · ");
 
@@ -26,6 +31,7 @@ export default async function CustomerPage({
       <div className="vm-actions" style={{ marginTop: 0, justifyContent: "space-between" }}>
         <h1>{c.lastName.toUpperCase()}, {c.firstName.toUpperCase()}</h1>
         <span className="vm-actions" style={{ marginTop: 0 }}>
+          <Link href={`/rent/${c.id}`} className="vm-btn">[ RENT VIDEO ]</Link>
           <Link href={`/customers/${c.id}/edit`} className="vm-btn">[ EDIT ]</Link>
           <Link href="/customers" className="vm-btn">[ CUSTOMER SEARCH ]</Link>
         </span>
@@ -55,8 +61,26 @@ export default async function CustomerPage({
       </fieldset>
       <fieldset className="vm-section">
         <legend>ACTIVE RENTALS</legend>
-        {activeRentals === 0 ? <span className="vm-dim">NO ACTIVE RENTALS</span> : <span>{activeRentals} VIDEO(S) OUT</span>}
-        <div className="vm-hint">RENTAL AND PURCHASE HISTORY WILL APPEAR HERE ONCE RENTALS ARE INSTALLED.</div>
+        {activeRentals.length === 0 ? (
+          <span className="vm-dim">NO ACTIVE RENTALS</span>
+        ) : (
+          <div className="vm-tablewrap">
+            <table className="vm-table" style={{ minWidth: 480 }}>
+              <thead><tr><th scope="col">TITLE</th><th scope="col">COPY</th><th scope="col">RENTED</th><th scope="col">DUE</th></tr></thead>
+              <tbody>
+                {activeRentals.map((r) => (
+                  <tr key={r.id}>
+                    <td><Link href={`/inventory/${r.copy.movieTitleId}`}>{r.copy.movieTitle.title.toUpperCase()}</Link></td>
+                    <td>{r.copy.copyNumber}</td>
+                    <td>{fmtDate(r.rentedAt)}</td>
+                    <td>{fmtDate(r.dueAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className="vm-hint">RETURNS AND FULL RENTAL HISTORY ARE NOT INSTALLED YET.</div>
       </fieldset>
     </Screen>
   );
