@@ -120,6 +120,9 @@
 - Sale-screen category buttons, concessions filters/lists, forms, reports and the sample-data generator all use the store's categories.
 - Bug found and fixed during verification: blank-form constants exported from client component files were being *spread* by a server page (arrived empty) and broke saving new merchandise — introduced in step 4. Defaults now live in `lib/form-defaults.ts` (a plain module) with a regression test. 92 unit tests + 6 DB tests.
 
+**Polish step 6 — Detailed README**
+- README rewritten: overview, feature list, prerequisites/quick start (incl. Homebrew Postgres), configuration table, screens/routes table, workflows, sample demo store, keyboard shortcuts, business rules, architecture, data model, security model, project structure, scripts, testing/quality, Netlify deployment, development gotchas (restart after schema changes, hand-written migrations, second dev server, Prisma pin, Next 16 differences, client-module constants), design principles, known limitations, credits (TMDB attribution).
+
 ## Current Work
 Nothing in progress.
 
