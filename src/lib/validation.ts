@@ -158,3 +158,47 @@ export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email("ENTER A VALID E-MAIL ADDRESS"),
   password: z.string().min(1, "ENTER YOUR PASSWORD").max(128),
 });
+
+// ── Customers ──
+export const CUSTOMER_STATUSES = ["GOOD", "OVERDUE", "BLOCKED", "SUSPENDED", "CLOSED"] as const;
+
+const optionalText = (label: string, max: number) =>
+  z.string().trim().max(max, `${label} MUST BE ${max} CHARACTERS OR FEWER`);
+
+export const customerSchema = z.object({
+  firstName: text("FIRST NAME", 40),
+  lastName: text("LAST NAME", 40),
+  phone: z
+    .string()
+    .trim()
+    .max(30, "PHONE NUMBER IS TOO LONG")
+    .regex(/^[0-9()+\-.\sx]*$/i, "PHONE NUMBER MAY ONLY CONTAIN DIGITS AND ( ) + - . x"),
+  email: z.string().trim().max(200, "E-MAIL IS TOO LONG").refine((v) => v === "" || z.email().safeParse(v).success, "ENTER A VALID E-MAIL ADDRESS OR LEAVE BLANK"),
+  address: optionalText("ADDRESS", 100),
+  city: optionalText("CITY", 60),
+  region: optionalText("STATE", 40),
+  postalCode: optionalText("POSTAL CODE", 12),
+  dateOfBirth: z
+    .string()
+    .trim()
+    .transform((raw, ctx) => {
+      if (raw === "") return null;
+      const d = new Date(`${raw}T00:00:00Z`);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(raw) || Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== raw) {
+        ctx.addIssue({ code: "custom", message: "DATE OF BIRTH MUST BE A VALID DATE (YYYY-MM-DD) OR BLANK" });
+        return z.NEVER;
+      }
+      if (d.getUTCFullYear() < 1900 || d > new Date()) {
+        ctx.addIssue({ code: "custom", message: "DATE OF BIRTH MUST BE BETWEEN 1900 AND TODAY" });
+        return z.NEVER;
+      }
+      return d;
+    }),
+  status: z.enum(CUSTOMER_STATUSES, "SELECT AN ACCOUNT STATUS"),
+  notes: optionalText("NOTES", 1000),
+});
+
+export type CustomerFormValues = {
+  firstName: string; lastName: string; phone: string; email: string; address: string; city: string;
+  region: string; postalCode: string; dateOfBirth: string; status: string; notes: string;
+};

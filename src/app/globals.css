@@ -108,3 +108,30 @@ table.vm-table { border-collapse: collapse; width: 100%; min-width: 640px; }
 .vm-table td input { min-width: 70px; }
 
 .vm-login { max-width: 520px; margin: 24px auto; }
+
+textarea {
+  font: inherit; color: var(--fg); background: var(--bg-field);
+  border: 2px solid var(--gray); padding: 6px 8px; width: 100%; resize: vertical;
+}
+textarea:focus { outline: 3px solid var(--yellow); outline-offset: 1px; }
+textarea[aria-invalid="true"] { border-color: var(--red); }
+
+/* ── Data tables with clickable rows ── */
+table.vm-table.rows { min-width: 560px; }
+.vm-table.rows tbody tr { position: relative; border-bottom: 1px solid #3030c0; }
+.vm-table.rows tbody tr:hover { background: var(--cyan); color: var(--black); }
+.vm-table.rows tbody tr:hover a { color: var(--black); }
+.vm-rowlink { text-decoration: none; font-weight: bold; }
+.vm-rowlink::after { content: ""; position: absolute; inset: 0; }
+.vm-status { font-weight: bold; }
+.vm-status.GOOD { color: var(--cyan); }
+.vm-status.OVERDUE, .vm-status.BLOCKED { color: var(--red); }
+.vm-status.SUSPENDED { color: var(--yellow); }
+.vm-status.CLOSED { color: var(--fg-dim); }
+.vm-table.rows tbody tr:hover .vm-status { color: var(--black); }
+.vm-searchbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+.vm-searchbar .vm-field { flex: 1 1 260px; }
+.vm-kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; }
+.vm-kv dt { color: var(--cyan); }
+.vm-kv dd { margin: 0; }
+.vm-pager { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px; }

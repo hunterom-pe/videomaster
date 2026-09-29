@@ -13,10 +13,19 @@
 - Tests: 14 unit tests (validation, password hashing). Manual end-to-end pass of the full
   signup → setup → menu → settings edit → log off → log on flow, plus two-account isolation check.
 
+**Milestone 5 — Customers**
+- Customers list with forgiving multi-term search (first/last name, phone incl. digits-only, membership #, ID), 25/page pagination, clickable rows.
+- Add / view / edit customer; account status (GOOD/OVERDUE/BLOCKED/SUSPENDED/CLOSED) with warning banners; outstanding fees display.
+- Per-store atomic membership numbers (`Store.nextMembershipNumber`, 6-digit zero-padded).
+- All customer reads/writes scoped by the session's store; other stores' IDs 404. Verified with two accounts.
+- Main menu CUSTOMERS is live. 19 unit tests total.
+
 ## Current Work
 Nothing in progress.
 
 ## Known Issues
+- Customers: no delete (use status CLOSED); rental/purchase history and configurable warnings await rentals; no duplicate-customer detection.
+- `Customer.phoneDigits` is maintained by the create/update actions only — any future import path must set it too.
 - No password reset yet (spec §32) — needs an e-mail provider.
 - Setup is one scrolling form, not a multi-step wizard.
 - Only VHS/other format toggles are stored; per-format pricing is not modelled yet.
@@ -27,7 +36,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Milestone 5 — Customers (list, search, add/edit, membership numbers, account status).
+Milestone 6 — Movie metadata search (TMDB, server-side API key via env var).
 
 ## Decisions
 - Browser-based web app only (Next.js/React/HTML/CSS/TS). Never native/Electron/desktop/CLI.

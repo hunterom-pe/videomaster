@@ -68,18 +68,19 @@ model StoreMember {
 // ───────────────────────── Store ─────────────────────────
 
 model Store {
-  id          String   @id @default(cuid())
-  name        String
-  number      String
-  address     String
-  city        String
-  region      String
-  postalCode  String
-  phone       String
-  managerName String
-  slogan      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  name                 String
+  number               String
+  address              String
+  city                 String
+  region               String
+  postalCode           String
+  phone                String
+  managerName          String
+  slogan               String?
+  nextMembershipNumber Int      @default(1)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   members          StoreMember[]
   settings         StoreSettings?
@@ -149,19 +150,39 @@ model RentalCategory {
 
 // ───────────── Skeletons for later milestones (kept minimal) ─────────────
 
+enum CustomerStatus {
+  GOOD
+  OVERDUE
+  BLOCKED
+  SUSPENDED
+  CLOSED
+}
+
 model Customer {
-  id               String   @id @default(cuid())
+  id               String         @id @default(cuid())
   storeId          String
   membershipNumber String
   firstName        String
   lastName         String
   phone            String?
-  createdAt        DateTime @default(now())
-  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  phoneDigits      String? // digits-only copy of phone, for search
+  email            String?
+  address          String?
+  city             String?
+  region           String?
+  postalCode       String?
+  dateOfBirth      DateTime?      @db.Date
+  status           CustomerStatus @default(GOOD)
+  notes            String?
+  outstandingFees  Decimal        @default(0) @db.Decimal(8, 2)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  store            Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
   rentals          Rental[]
 
   @@unique([storeId, id])
   @@unique([storeId, membershipNumber])
+  @@index([storeId, lastName, firstName])
 }
 
 model MovieTitle {
