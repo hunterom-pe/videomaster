@@ -301,3 +301,43 @@ export const returnSchema = z.object({
   paymentMethod: z.enum(PAYMENT_METHODS.map((p) => p.value) as [string, ...string[]], "SELECT A PAYMENT METHOD"),
 });
 export type ReturnValues = { outcome: string; lateFee: string; otherFee: string; paymentMethod: string };
+
+// ── Concessions ──
+export const CONCESSION_CATEGORIES = [
+  { value: "CANDY", label: "CANDY", prefix: "C" },
+  { value: "POPCORN", label: "POPCORN", prefix: "P" },
+  { value: "DRINKS", label: "DRINKS", prefix: "D" },
+  { value: "SNACKS", label: "SNACKS", prefix: "S" },
+  { value: "ACCESSORIES", label: "VIDEO ACCESSORIES", prefix: "A" },
+  { value: "OTHER", label: "OTHER", prefix: "O" },
+] as const;
+
+export const concessionSchema = z.object({
+  sku: z.string().trim().toUpperCase().regex(/^([A-Z0-9-]{1,12})?$/, "SKU MAY ONLY CONTAIN LETTERS, DIGITS AND - (MAX 12)"),
+  name: text("ITEM NAME", 60),
+  category: z.enum(CONCESSION_CATEGORIES.map((c) => c.value) as [string, ...string[]], "SELECT A CATEGORY"),
+  retailPrice: numberField("RETAIL PRICE", { min: 0, max: 999.99, decimals: 2 }),
+  costPrice: z
+    .string()
+    .trim()
+    .transform((raw, ctx) => {
+      if (raw === "") return null;
+      const r = numberField("COST", { min: 0, max: 999.99, decimals: 2 }).safeParse(raw);
+      if (!r.success) {
+        ctx.addIssue({ code: "custom", message: r.error.issues[0].message });
+        return z.NEVER;
+      }
+      return r.data;
+    }),
+  quantityOnHand: numberField("QUANTITY ON HAND", { min: 0, max: 99999, decimals: 0, integer: true }),
+  lowStockThreshold: numberField("LOW-STOCK THRESHOLD", { min: 0, max: 9999, decimals: 0, integer: true }),
+  taxable: z.boolean(),
+  active: z.boolean(),
+  barcode: z.string().trim().max(40, "BARCODE IS TOO LONG").regex(/^[\w-]*$/, "BARCODE MAY ONLY CONTAIN LETTERS, DIGITS, - AND _"),
+});
+export type ConcessionFormValues = {
+  sku: string; name: string; category: string; retailPrice: string; costPrice: string; quantityOnHand: string;
+  lowStockThreshold: string; taxable: boolean; active: boolean; barcode: string;
+};
+
+export const addStockSchema = z.object({ amount: numberField("AMOUNT", { min: 1, max: 99999, decimals: 0, integer: true }) });

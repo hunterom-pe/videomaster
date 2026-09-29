@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { requireStore } from "@/lib/store-access";
 
 const ITEMS = [
-  { key: "F5", label: "CONCESSIONS" },
   { key: "F6", label: "OVERDUE RENTALS" },
   { key: "F7", label: "TRANSACTIONS" },
   { key: "F8", label: "REPORTS" },
@@ -13,10 +12,12 @@ const ITEMS = [
 export default async function MenuPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   const { user, store } = await requireStore();
   const { saved } = await searchParams;
-  const [videosOut, customers] = await Promise.all([
+  const [videosOut, customers, lowStock] = await Promise.all([
     db.rental.count({ where: { storeId: store.id, returnedAt: null } }),
     db.customer.count({ where: { storeId: store.id } }),
+    db.$queryRaw<{ n: bigint }[]>`SELECT count(*) AS n FROM "ConcessionItem" WHERE "storeId" = ${store.id} AND active AND "quantityOnHand" <= "lowStockThreshold"`,
   ]);
+  const lowCount = Number(lowStock[0]?.n ?? 0);
 
   return (
     <Screen title="MAIN MENU" userEmail={user.email} storeLine={`STORE #${store.number}`}>
@@ -44,6 +45,10 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
           <span className="fkey">[F2]</span>RETURN VIDEO
           <small>RETURN A RENTED VIDEO, LATE FEES</small>
         </Link>
+        <Link href="/concessions" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
+          <span className="fkey">[F5]</span>CONCESSIONS
+          <small>CANDY, POPCORN, DRINKS AND STOCK</small>
+        </Link>
         <Link href="/customers" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
           <span className="fkey">[F3]</span>CUSTOMERS
           <small>SEARCH, ADD AND EDIT MEMBERS</small>
@@ -61,6 +66,11 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
       <div className="vm-cyan">
         VIDEOS OUT: {videosOut} &nbsp;&nbsp; CUSTOMERS: {customers}
       </div>
+      {lowCount > 0 && (
+        <div className="vm-yellow" style={{ marginTop: 6 }}>
+          <Link href="/concessions" style={{ color: "inherit" }}>*** LOW INVENTORY: {lowCount} MERCHANDISE ITEM{lowCount === 1 ? "" : "S"} NEED RESTOCKING ***</Link>
+        </div>
+      )}
     </Screen>
   );
 }

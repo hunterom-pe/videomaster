@@ -43,10 +43,17 @@
 - Concurrency-safe: guarded close (`returnedAt IS NULL`), all writes in one DB transaction; already-returned rentals show a notice.
 - 41 unit tests. Verified in browser: 3-days-late reduced fee, lost item, on-time return.
 
+**Milestone 12 — Concessions (merchandise inventory)**
+- CONCESSIONS screen: searchable/filterable catalog (name, SKU, barcode; category; show-inactive), paginated. Add / edit item: SKU (auto `C001`/`P001`/`D001`… numbered per category letter, or manual; fixed after creation), name, category, retail price, optional cost, taxable, quantity on hand, low-stock threshold, active, optional barcode.
+- Low-stock warnings: `*** C003 TWIZZLERS: LOW STOCK (4 ON HAND) ***` banner on the concessions screen (whole active catalog) plus a line on the main menu; OUT OF STOCK highlighted.
+- Receive stock via atomic increment. Negative price/quantity blocked in the UI, the server, and by DB CHECK constraints (`quantityOnHand >= 0`, `retailPrice >= 0`).
+- 47 unit tests.
+
 ## Current Work
 Nothing in progress.
 
 ## Known Issues
+- Concessions: categories are a fixed list (not yet editable in Store Settings); no stock-adjustment history/audit log; items can't be deleted (deactivate instead). Selling happens in Milestone 13.
 - Dates/lateness use UTC calendar days (consistent with dates shown on screen). A store timezone setting is needed so a rental made in the evening doesn't roll to the next day; add with store settings.
 - Late fees are paid at return time only; no unpaid-balance tracking (`Customer.outstandingFees` is never changed yet), no rewind/membership/damage fee policy settings (damage/lost fees are entered manually).
 - OVERDUE copy/customer status is not auto-computed yet (Milestone 16); RENTED copies past due still show RENTED.
@@ -69,7 +76,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Milestone 12 — Concessions (merchandise inventory, low-stock warnings), then 13 — combined POS transactions.
+Milestone 13 — Combined POS transactions: sell concessions (and combine with rentals) in one checkout; decrement stock atomically, never below zero; tax per item.
 
 ## Decisions
 - Browser-based web app only (Next.js/React/HTML/CSS/TS). Never native/Electron/desktop/CLI.

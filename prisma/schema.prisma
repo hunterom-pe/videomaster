@@ -326,15 +326,35 @@ model Transaction {
   @@index([storeId, createdAt])
 }
 
+enum ConcessionCategory {
+  CANDY
+  POPCORN
+  DRINKS
+  SNACKS
+  ACCESSORIES
+  OTHER
+}
+
+// Retail merchandise (not rental inventory). quantityOnHand >= 0 is enforced by a DB CHECK constraint.
 model ConcessionItem {
-  id             String  @id @default(cuid())
-  storeId        String
-  sku            String
-  name           String
-  retailPrice    Decimal @db.Decimal(8, 2)
-  quantityOnHand Int     @default(0)
-  active         Boolean @default(true)
-  store          Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  id                String             @id @default(cuid())
+  storeId           String
+  sku               String
+  name              String
+  category          ConcessionCategory @default(OTHER)
+  retailPrice       Decimal            @db.Decimal(8, 2)
+  costPrice         Decimal?           @db.Decimal(8, 2)
+  taxable           Boolean            @default(true)
+  quantityOnHand    Int                @default(0)
+  lowStockThreshold Int                @default(5)
+  active            Boolean            @default(true)
+  barcode           String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @default(now()) @updatedAt
+  store             Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([storeId, sku])
+  @@unique([storeId, barcode])
+  @@unique([storeId, id])
+  @@index([storeId, category])
 }
