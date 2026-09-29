@@ -16,5 +16,13 @@ Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
 
 ## Deploying to Netlify
 
-Set `DATABASE_URL` (hosted PostgreSQL, e.g. Neon/Supabase, pooled connection) in Netlify site
-environment variables and run `npx prisma migrate deploy` against it before first use.
+1. **Database:** create a hosted PostgreSQL database (e.g. Neon or Supabase).
+2. **Site:** in Netlify choose *Add new site → Import from Git* and select this repo.
+   `netlify.toml` already sets the build command and Node version.
+3. **Environment variables** (Site configuration → Environment variables):
+   - `DATABASE_URL` — the host's pooled connection string (used by the running app).
+   - `MIGRATE_DATABASE_URL` — the direct (non-pooled) connection string (used for migrations).
+4. Deploy. Production builds run `prisma migrate deploy` automatically before `next build`.
+   Deploy previews do not run migrations.
+
+Later milestones add `TMDB_API_KEY` (server-side only).

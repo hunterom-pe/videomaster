@@ -1,2 +1,10 @@
 [build]
   command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Apply pending database migrations only on production deploys
+# (deploy previews must never migrate the production database).
+[context.production]
+  command = "npx prisma migrate deploy && npm run build"
