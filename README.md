@@ -12,6 +12,8 @@ npx prisma migrate deploy     # apply migrations (use `migrate dev` while changi
 npm run dev                   # http://localhost:3000
 ```
 
+**After pulling changes or changing `prisma/schema.prisma`:** run `npx prisma migrate deploy`, then **restart** `npm run dev` (it regenerates the Prisma client on start; a running dev server keeps the old client and will show "This page couldn't load").
+
 Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
 
 ## Deploying to Netlify
