@@ -56,10 +56,16 @@
 - Acceptance scenario verified: T2 10 total / 9 available / 1 rented; Sour Patch Kids 9 on hand; Sarah's active rental; sample receipt math ($7.47 + $0.64 = $8.11).
 - 50 unit tests.
 
+**Milestone 14 — Transaction history**
+- TRANSACTIONS screen: newest-first list with filters (transaction # / customer name / member # / "walk-in", type, payment method, from/to date), pagination, and a count + total-collected summary for the filtered set. Rows are clickable.
+- Transaction detail: type, date/time, customer link, employee (user who rang it), payment, notes, rentals (with current status), returned items (outcome, calculated vs charged late fee, other fees), merchandise lines, subtotal/tax/total.
+- Store-scoped queries; junk filter values are ignored. 53 unit tests.
+
 ## Current Work
 Nothing in progress.
 
 ## Known Issues
+- Transaction history shows times in UTC (no store timezone yet); the list total is money collected across all types (fees on returns included).
 - POS: no cash-tendered/change, no voids/refunds yet (Transaction types REFUND/FEE_WAIVER exist in the schema but are unused); a CLOSED customer cannot check out at all (use the walk-in sale for merchandise).
 - Concessions: categories are a fixed list (not yet editable in Store Settings); no stock-adjustment history/audit log; items can't be deleted (deactivate instead). Selling happens in Milestone 13.
 - Dates/lateness use UTC calendar days (consistent with dates shown on screen). A store timezone setting is needed so a rental made in the evening doesn't roll to the next day; add with store settings.
@@ -84,7 +90,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Milestone 14 — Transaction history (list/filter/detail of all RENTAL / RETURN / RETAIL_SALE transactions), then 15 — printable receipts.
+Milestone 15 — Receipts: retro on-screen receipt after checkout/return (spec §26) with [ PRINT ] via browser printing and [ CLOSE ]; reachable from transaction detail too.
 
 ## Decisions
 - Browser-based web app only (Next.js/React/HTML/CSS/TS). Never native/Electron/desktop/CLI.

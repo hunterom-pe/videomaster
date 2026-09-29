@@ -5,7 +5,6 @@ import { requireStore } from "@/lib/store-access";
 
 const ITEMS = [
   { key: "F6", label: "OVERDUE RENTALS" },
-  { key: "F7", label: "TRANSACTIONS" },
   { key: "F8", label: "REPORTS" },
 ];
 
@@ -48,6 +47,10 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
         <Link href="/concessions" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
           <span className="fkey">[F5]</span>CONCESSIONS
           <small>CANDY, POPCORN, DRINKS AND STOCK</small>
+        </Link>
+        <Link href="/transactions" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
+          <span className="fkey">[F7]</span>TRANSACTIONS
+          <small>RENTALS, RETURNS AND SALES HISTORY</small>
         </Link>
         <Link href="/customers" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
           <span className="fkey">[F3]</span>CUSTOMERS
