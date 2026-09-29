@@ -10,9 +10,9 @@ VideoMaster is a multi-user web application that simulates a fully functional in
 
 The complete product specification is located in:
 
-`PRODUCT_SPEC.md`
+`docs/videomaster_spec.md`
 
-Read `PRODUCT_SPEC.md` before making significant architectural, database, or UI decisions.
+Read `docs/videomaster_spec.md` before making significant architectural, database, or UI decisions.
 
 Treat that document as the source of truth for product behavior.
 

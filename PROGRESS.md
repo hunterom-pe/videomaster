@@ -37,4 +37,4 @@ Milestone 5 — Customers (list, search, add/edit, membership numbers, account s
 - Schema has composite `(storeId, id)` FKs on store-owned children so the DB blocks cross-store references. Money = `Decimal`. Copies are rows, never a quantity column.
 - Store number stored as zero-padded 4+ digit string. Tax % is `Decimal(6,3)` (0–30).
 - Prisma pinned to 7.x (npm resolved an 8.0 RC; do not upgrade until stable). Generated client is gitignored (`src/generated`).
-- Spec file is `docs/videomaster_spec.md` (CLAUDE.md refers to `PRODUCT_SPEC.md`).
+- Product spec: `docs/videomaster_spec.md` (referenced by CLAUDE.md).
