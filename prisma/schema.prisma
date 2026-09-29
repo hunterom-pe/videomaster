@@ -1,0 +1,252 @@
+// VideoMaster schema. Every store-owned table carries storeId; child tables
+// that reference other store-owned rows use composite (storeId, id) foreign
+// keys so the database itself prevents cross-store references.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────── Auth & ownership ─────────────────────────
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  createdAt     DateTime       @default(now())
+  sessions      Session[]
+  memberships   StoreMember[]
+  loginAttempts LoginAttempt[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique // sha256 of the cookie token; raw token is never stored
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Failed-login log used for rate limiting (works across serverless instances).
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  key       String // normalized email or ip
+  createdAt DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([key, createdAt])
+}
+
+enum StoreRole {
+  OWNER
+  MANAGER
+  EMPLOYEE
+}
+
+// A user may access a store only through a membership row.
+model StoreMember {
+  id        String    @id @default(cuid())
+  userId    String
+  storeId   String
+  role      StoreRole @default(OWNER)
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, storeId])
+  @@index([storeId])
+}
+
+// ───────────────────────── Store ─────────────────────────
+
+model Store {
+  id          String   @id @default(cuid())
+  name        String
+  number      String
+  address     String
+  city        String
+  region      String
+  postalCode  String
+  phone       String
+  managerName String
+  slogan      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members          StoreMember[]
+  settings         StoreSettings?
+  formats          StoreFormat[]
+  rentalCategories RentalCategory[]
+  customers        Customer[]
+  movieTitles      MovieTitle[]
+  inventoryCopies  InventoryCopy[]
+  rentals          Rental[]
+  transactions     Transaction[]
+  concessionItems  ConcessionItem[]
+}
+
+model StoreSettings {
+  storeId                 String   @id
+  currency                String   @default("USD")
+  salesTaxPercent         Decimal  @db.Decimal(6, 3)
+  storeYear               Int?
+  onlyMoviesUpToStoreYear Boolean  @default(false)
+  updatedAt               DateTime @updatedAt
+  store                   Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+}
+
+enum MediaFormat {
+  VHS
+  DVD
+  BLURAY
+  LASERDISC
+  VIDEO_GAME
+  OTHER
+}
+
+model StoreFormat {
+  id      String      @id @default(cuid())
+  storeId String
+  format  MediaFormat
+  enabled Boolean     @default(false)
+  store   Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, format])
+}
+
+enum ReplacementBehavior {
+  NONE
+  ITEM_COST
+  FLAT_FEE
+}
+
+model RentalCategory {
+  id                  String              @id @default(cuid())
+  storeId             String
+  name                String
+  rentalPrice         Decimal             @db.Decimal(8, 2)
+  rentalDays          Int
+  lateFeePerDay       Decimal             @db.Decimal(8, 2)
+  maxLateFee          Decimal?            @db.Decimal(8, 2)
+  replacementBehavior ReplacementBehavior @default(ITEM_COST)
+  taxable             Boolean             @default(true)
+  active              Boolean             @default(true)
+  sortOrder           Int                 @default(0)
+  store               Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  inventoryCopies     InventoryCopy[]
+
+  @@unique([storeId, id])
+  @@index([storeId])
+}
+
+// ───────────── Skeletons for later milestones (kept minimal) ─────────────
+
+model Customer {
+  id               String   @id @default(cuid())
+  storeId          String
+  membershipNumber String
+  firstName        String
+  lastName         String
+  phone            String?
+  createdAt        DateTime @default(now())
+  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  rentals          Rental[]
+
+  @@unique([storeId, id])
+  @@unique([storeId, membershipNumber])
+}
+
+model MovieTitle {
+  id        String          @id @default(cuid())
+  storeId   String
+  title     String
+  year      Int?
+  tmdbId    Int?
+  createdAt DateTime        @default(now())
+  store     Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  copies    InventoryCopy[]
+
+  @@unique([storeId, id])
+  @@unique([storeId, tmdbId, id])
+}
+
+enum CopyStatus {
+  AVAILABLE
+  RENTED
+  OVERDUE
+  LOST
+  DAMAGED
+  REPAIR
+  RETIRED
+}
+
+// One row per physical copy — never a quantity column.
+model InventoryCopy {
+  id               String          @id @default(cuid())
+  storeId          String
+  movieTitleId     String
+  copyNumber       String // e.g. T2-0001
+  format           MediaFormat
+  status           CopyStatus      @default(AVAILABLE)
+  condition        String?
+  barcode          String?
+  notes            String?
+  replacementCost  Decimal?        @db.Decimal(8, 2)
+  rentalCategoryId String?
+  acquiredAt       DateTime        @default(now())
+  store            Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  movieTitle       MovieTitle      @relation(fields: [storeId, movieTitleId], references: [storeId, id], onDelete: Cascade)
+  rentalCategory   RentalCategory? @relation(fields: [storeId, rentalCategoryId], references: [storeId, id])
+  rentals          Rental[]
+
+  @@unique([storeId, id])
+  @@unique([storeId, copyNumber])
+  @@index([storeId, movieTitleId])
+}
+
+model Rental {
+  id         String        @id @default(cuid())
+  storeId    String
+  customerId String
+  copyId     String
+  rentedAt   DateTime      @default(now())
+  dueAt      DateTime
+  returnedAt DateTime?
+  store      Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer   Customer      @relation(fields: [storeId, customerId], references: [storeId, id])
+  copy       InventoryCopy @relation(fields: [storeId, copyId], references: [storeId, id])
+
+  @@index([storeId, customerId])
+  @@index([storeId, copyId])
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  storeId   String
+  number    Int
+  createdAt DateTime @default(now())
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, number])
+}
+
+model ConcessionItem {
+  id             String  @id @default(cuid())
+  storeId        String
+  sku            String
+  name           String
+  retailPrice    Decimal @db.Decimal(8, 2)
+  quantityOnHand Int     @default(0)
+  active         Boolean @default(true)
+  store          Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, sku])
+}
