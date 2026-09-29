@@ -131,9 +131,10 @@ table.vm-table.rows { min-width: 560px; }
 .vm-table.rows tbody tr:hover .vm-status { color: var(--black); }
 .vm-searchbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
 .vm-searchbar .vm-field { flex: 1 1 260px; }
-.vm-kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; }
+.vm-kv { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 4px 16px; }
 .vm-kv dt { color: var(--cyan); }
 .vm-kv dd { margin: 0; }
+.vm-kv dt, .vm-kv dd { overflow-wrap: anywhere; }
 .vm-pager { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
 
 /* ── Receipt (thermal-paper look on screen; plain black-on-white when printed) ── */
@@ -193,3 +194,12 @@ main:focus { outline: none; }
 .vm-dialog { border: 4px double var(--yellow); background: var(--bg); padding: 16px; width: 100%; max-width: 460px; max-height: 92vh; overflow: auto; }
 .vm-dialog:focus { outline: none; }
 @media print { .vm-overlay, .vm-skip { display: none !important; } }
+
+/* ── Phones: stack label above value; keep everything inside the viewport ── */
+@media (max-width: 520px) {
+  .vm-kv { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .vm-kv dd { margin-bottom: 8px; }
+  .vm-screen { padding: 8px; }
+  .vm-body { padding: 12px; }
+  h1.vm-brand { font-size: 24px; letter-spacing: 4px; }
+}

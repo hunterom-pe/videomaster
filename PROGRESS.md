@@ -100,6 +100,10 @@
 - Form errors are linked to their fields (`aria-describedby`); live regions for checkout search results and totals; whole-row link focus ring; error/warning colours never the only signal (text/labels always present).
 - Verified with axe re-run, and dialog keyboard behaviour via dispatched key events (the browser pane can't send real keys while hidden).
 
+**Polish step 2 — Phone-width / responsive**
+- Measured all screens in 375px frames (and key screens at 320px): sideways page scroll, overflowing elements outside scroll containers, and tap targets under 32px. Found two overflows (customer account, revenue report — long label/value rows); fixed globally: label/value grids shrink and wrap, and stack (label above value) under 520px; tighter padding on phones. Now zero overflow on every screen at 375px and on key screens at 320px; no undersized tap targets (buttons ≥34px tall). Wide tables scroll inside their own container (as the spec requires) instead of scrolling the page.
+- Not verified visually (browser pane could not render screenshots in this environment) — measurements only.
+
 ## Current Work
 Nothing in progress.
 
