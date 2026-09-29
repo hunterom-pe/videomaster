@@ -20,10 +20,22 @@
 - All customer reads/writes scoped by the session's store; other stores' IDs 404. Verified with two accounts.
 - Main menu CUSTOMERS is live. 19 unit tests total.
 
+**Milestones 6–8 — Movie search, inventory, individual copies**
+- TMDB search (server-side only; accepts `TMDB_READ_ACCESS_TOKEN` or `TMDB_API_KEY`), 6s timeout, graceful "unavailable / not configured" state with manual-entry fallback. Optional store-year filter (with SHOW ALL YEARS toggle).
+- Add title from TMDB (prefills director, runtime, genres, cast, MPAA rating, plot, poster) or manually; all fields editable. Metadata is stored locally; poster is the only thing loaded from TMDB at view time.
+- Adding N copies creates N `InventoryCopy` rows (`VHS-000001` style IDs from a per-store counter). Re-adding an existing movie adds copies to the existing title — never a duplicate.
+- Title page: per-format totals/available/rented/damaged/lost, per-copy list, ADD COPIES. Copy page: status, condition, category, barcode (unique per store), replacement cost, notes; RETIRED copies excluded from totals; status locked while RENTED/OVERDUE.
+- Inventory search: title, year, director, actor, genre, copy ID, barcode + format/category/availability filters, paginated.
+- 30 unit tests total. Verified end-to-end against live TMDB.
+
 ## Current Work
 Nothing in progress.
 
 ## Known Issues
+- Title metadata cannot be edited after adding (only copies); spec's title [ EDIT ] / [ RETIRE COPY ] buttons: retire is done via copy status, title edit is not built.
+- Rental price/period come from the rental category; no per-copy or per-format price override yet.
+- Inventory reports/rental counts on the title page await rentals (RENT button is disabled).
+- Cross-store isolation for inventory was verified by code path (all queries scoped by session store), not re-tested in the browser with two stores.
 - Customers: no delete (use status CLOSED); rental/purchase history and configurable warnings await rentals; no duplicate-customer detection.
 - `Customer.phoneDigits` is maintained by the create/update actions only — any future import path must set it too.
 - No password reset yet (spec §32) — needs an e-mail provider.
@@ -36,7 +48,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Milestone 6 — Movie metadata search (TMDB, server-side API key via env var).
+Milestone 9 — Rental checkout (customer → rental → physical copy, due dates from category policy).
 
 ## Decisions
 - Browser-based web app only (Next.js/React/HTML/CSS/TS). Never native/Electron/desktop/CLI.

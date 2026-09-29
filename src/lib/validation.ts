@@ -202,3 +202,69 @@ export type CustomerFormValues = {
   firstName: string; lastName: string; phone: string; email: string; address: string; city: string;
   region: string; postalCode: string; dateOfBirth: string; status: string; notes: string;
 };
+
+// ── Inventory ──
+export const COPY_CONDITIONS = ["NEW", "EXCELLENT", "GOOD", "FAIR", "POOR"] as const;
+export const EDITABLE_COPY_STATUSES = ["AVAILABLE", "DAMAGED", "REPAIR", "LOST", "RETIRED"] as const;
+
+const quantityField = numberField("QUANTITY", { min: 1, max: 100, decimals: 0, integer: true });
+const costField = numberField("REPLACEMENT COST", { min: 0, max: 999.99, decimals: 2 });
+
+export const addCopiesSchema = z.object({
+  format: z.enum(FORMAT_VALUES, "SELECT A FORMAT"),
+  categoryId: z.string().min(1, "SELECT A RENTAL CATEGORY"),
+  quantity: quantityField,
+  replacementCost: costField,
+});
+
+export const addTitleSchema = addCopiesSchema.extend({
+  title: text("TITLE", 150),
+  year: z
+    .string()
+    .trim()
+    .transform((raw, ctx) => {
+      if (raw === "") return null;
+      if (!/^\d{4}$/.test(raw) || Number(raw) < 1880 || Number(raw) > 2100) {
+        ctx.addIssue({ code: "custom", message: "YEAR MUST BE A 4-DIGIT YEAR (1880-2100) OR BLANK" });
+        return z.NEVER;
+      }
+      return Number(raw);
+    }),
+  director: optionalText("DIRECTOR", 100),
+  runtime: z
+    .string()
+    .trim()
+    .transform((raw, ctx) => {
+      if (raw === "") return null;
+      const n = Number(raw);
+      if (!Number.isInteger(n) || n < 1 || n > 1000) {
+        ctx.addIssue({ code: "custom", message: "RUNTIME MUST BE 1-1000 WHOLE MINUTES OR BLANK" });
+        return z.NEVER;
+      }
+      return n;
+    }),
+  genres: optionalText("GENRES", 200),
+  cast: optionalText("CAST", 400),
+  rating: optionalText("RATING", 10),
+  overview: optionalText("PLOT SUMMARY", 2000),
+  tmdbId: z.string().trim().regex(/^\d{0,10}$/, "INVALID MOVIE DATABASE ID"),
+  posterPath: z.string().trim().refine((v) => v === "" || /^\/[\w.-]{1,100}$/.test(v), "INVALID POSTER PATH"),
+});
+
+export const copyEditSchema = z.object({
+  status: z.enum(EDITABLE_COPY_STATUSES, "SELECT A STATUS"),
+  condition: z.enum(COPY_CONDITIONS, "SELECT A CONDITION"),
+  categoryId: z.string().min(1, "SELECT A RENTAL CATEGORY"),
+  barcode: z.string().trim().max(40, "BARCODE IS TOO LONG").regex(/^[\w-]*$/, "BARCODE MAY ONLY CONTAIN LETTERS, DIGITS, - AND _"),
+  replacementCost: costField,
+  notes: optionalText("NOTES", 500),
+});
+
+export type AddCopiesValues = { format: string; categoryId: string; quantity: string; replacementCost: string };
+export type AddTitleValues = AddCopiesValues & {
+  title: string; year: string; director: string; runtime: string; genres: string; cast: string;
+  rating: string; overview: string; tmdbId: string; posterPath: string;
+};
+export type CopyEditValues = {
+  status: string; condition: string; categoryId: string; barcode: string; replacementCost: string; notes: string;
+};

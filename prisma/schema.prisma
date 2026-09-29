@@ -79,6 +79,7 @@ model Store {
   managerName          String
   slogan               String?
   nextMembershipNumber Int      @default(1)
+  nextCopyNumber       Int      @default(1)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
@@ -186,17 +187,27 @@ model Customer {
 }
 
 model MovieTitle {
-  id        String          @id @default(cuid())
-  storeId   String
-  title     String
-  year      Int?
-  tmdbId    Int?
-  createdAt DateTime        @default(now())
-  store     Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  copies    InventoryCopy[]
+  id             String          @id @default(cuid())
+  storeId        String
+  title          String
+  year           Int?
+  tmdbId         Int? // external metadata id; stored so a movie is never duplicated in a store
+  overview       String?
+  posterPath     String? // TMDB-relative path, e.g. /abc.jpg
+  director       String?
+  runtimeMinutes Int?
+  genres         String[]
+  cast           String[]
+  rating         String? // e.g. PG-13
+  searchText     String          @default("") // lowercase director/genres/cast for search
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  store          Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  copies         InventoryCopy[]
 
   @@unique([storeId, id])
-  @@unique([storeId, tmdbId, id])
+  @@unique([storeId, tmdbId])
+  @@index([storeId, title])
 }
 
 enum CopyStatus {
@@ -230,6 +241,7 @@ model InventoryCopy {
 
   @@unique([storeId, id])
   @@unique([storeId, copyNumber])
+  @@unique([storeId, barcode])
   @@index([storeId, movieTitleId])
 }
 

@@ -6,7 +6,6 @@ import { requireStore } from "@/lib/store-access";
 const ITEMS = [
   { key: "F1", label: "RENT VIDEO" },
   { key: "F2", label: "RETURN VIDEO" },
-  { key: "F4", label: "MOVIE INVENTORY" },
   { key: "F5", label: "CONCESSIONS" },
   { key: "F6", label: "OVERDUE RENTALS" },
   { key: "F7", label: "TRANSACTIONS" },
@@ -42,6 +41,10 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
         <Link href="/customers" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
           <span className="fkey">[F3]</span>CUSTOMERS
           <small>SEARCH, ADD AND EDIT MEMBERS</small>
+        </Link>
+        <Link href="/inventory" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
+          <span className="fkey">[F4]</span>MOVIE INVENTORY
+          <small>TITLES, COPIES AND MOVIE SEARCH</small>
         </Link>
         <Link href="/settings" className="vm-btn" style={{ minHeight: 52, fontSize: 17 }}>
           <span className="fkey">[F9]</span>STORE SETTINGS
