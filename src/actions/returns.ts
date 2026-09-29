@@ -114,5 +114,5 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
   revalidatePath("/inventory");
   revalidatePath("/customers");
   revalidatePath("/return");
-  redirect(`/return/done/${transactionId}`);
+  redirect(`/receipt/${transactionId}?new=1`);
 }

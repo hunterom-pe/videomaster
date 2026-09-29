@@ -29,7 +29,10 @@ export default async function TransactionDetailPage({ params }: { params: Promis
     <Screen title="TRANSACTION DETAIL" userEmail={user.email} storeLine={`STORE: ${store.name} #${store.number}`}>
       <div className="vm-actions" style={{ marginTop: 0, justifyContent: "space-between" }}>
         <h1>TRANSACTION #{number}</h1>
-        <Link href="/transactions" className="vm-btn">[ TRANSACTION HISTORY ]</Link>
+        <span className="vm-actions" style={{ marginTop: 0 }}>
+          <Link href={`/receipt/${t.id}`} className="vm-btn">[ RECEIPT ]</Link>
+          <Link href="/transactions" className="vm-btn">[ TRANSACTION HISTORY ]</Link>
+        </span>
       </div>
       <hr className="vm-rule" />
       <fieldset className="vm-section">

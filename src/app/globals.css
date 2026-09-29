@@ -135,3 +135,26 @@ table.vm-table.rows { min-width: 560px; }
 .vm-kv dt { color: var(--cyan); }
 .vm-kv dd { margin: 0; }
 .vm-pager { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+
+/* ── Receipt (thermal-paper look on screen; plain black-on-white when printed) ── */
+.vm-receipt {
+  background: #f4f4ea; color: #111; font-family: var(--font); font-size: 15px; line-height: 1.35;
+  width: 100%; max-width: 38ch; margin: 0 auto 16px; padding: 18px 16px; border: 1px solid #999;
+}
+.vm-receipt .center { text-align: center; }
+.vm-receipt .rule { border: 0; border-top: 1px dashed #111; margin: 10px 0; }
+.vm-receipt .row { display: flex; justify-content: space-between; gap: 12px; }
+.vm-receipt .row span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.vm-receipt .row span:last-child { white-space: nowrap; }
+.vm-receipt .sub { padding-left: 2ch; color: #333; }
+.vm-receipt .strong { font-weight: bold; }
+.vm-receipt .item { margin-bottom: 8px; }
+
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .vm-screen { padding: 0; max-width: none; }
+  .vm-frame { border: 0 !important; background: #fff !important; }
+  .vm-titlebar, .vm-statusbar, .no-print { display: none !important; }
+  .vm-body { padding: 0 !important; }
+  .vm-receipt { border: 0; background: #fff; max-width: 38ch; margin: 0; padding: 0; }
+}

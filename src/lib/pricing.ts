@@ -29,3 +29,6 @@ export function computeTotals(rentals: PriceLine[], merchandise: PriceLine[], ta
   const tax = taxCents(taxableCents, taxPercent);
   return { rentalCents, merchCents, subtotal: rentalCents + merchCents, tax, total: rentalCents + merchCents + tax };
 }
+
+/** MM/DD/YYYY (UTC calendar date, consistent with the rest of the app). */
+export const fmtDateUS = (d: Date): string => `${String(d.getUTCMonth() + 1).padStart(2, "0")}/${String(d.getUTCDate()).padStart(2, "0")}/${d.getUTCFullYear()}`;

@@ -61,10 +61,16 @@
 - Transaction detail: type, date/time, customer link, employee (user who rang it), payment, notes, rentals (with current status), returned items (outcome, calculated vs charged late fee, other fees), merchandise lines, subtotal/tax/total.
 - Store-scoped queries; junk filter values are ignored. 53 unit tests.
 
+**Milestone 15 — Receipts**
+- Retro receipt screen (`/receipt/[id]`): store header (name/number/address/phone/slogan), date (MM/DD/YYYY), transaction #, customer, line items (rentals, merchandise with qty, returned items with late/damage/lost fees and WAIVED/REDUCED labels), subtotal/tax/total, payment method, per-title DUE dates and "PLEASE REWIND" for rentals, "THANK YOU!".
+- Shown automatically after every checkout and return (replaces the old completion screens; `/rent/done/*` and `/return/done/*` redirect to it). `[ PRINT ]` uses the browser's print dialog; print CSS hides the app chrome and prints black-on-white. `[ RECEIPT ]` on any transaction detail reprints it (marked `** REPRINT **`).
+- 54 unit tests.
+
 ## Current Work
 Nothing in progress.
 
 ## Known Issues
+- Receipts: no cash-tendered/change lines (no cash-handling yet); print layout not verified on a physical/thermal printer (uses standard browser printing, ~38 char wide).
 - Transaction history shows times in UTC (no store timezone yet); the list total is money collected across all types (fees on returns included).
 - POS: no cash-tendered/change, no voids/refunds yet (Transaction types REFUND/FEE_WAIVER exist in the schema but are unused); a CLOSED customer cannot check out at all (use the walk-in sale for merchandise).
 - Concessions: categories are a fixed list (not yet editable in Store Settings); no stock-adjustment history/audit log; items can't be deleted (deactivate instead). Selling happens in Milestone 13.
@@ -90,7 +96,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Milestone 15 — Receipts: retro on-screen receipt after checkout/return (spec §26) with [ PRINT ] via browser printing and [ CLOSE ]; reachable from transaction detail too.
+Milestone 16 — Overdue management: compute OVERDUE (copies + customer status), dedicated OVERDUE RENTALS screen (customer, phone, title, copy, due date, days late, balance; clickable rows), running late-fee display.
 
 ## Decisions
 - Browser-based web app only (Next.js/React/HTML/CSS/TS). Never native/Electron/desktop/CLI.

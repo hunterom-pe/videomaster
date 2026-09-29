@@ -1,0 +1,109 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { PrintButton } from "@/components/PrintButton";
+import { Screen } from "@/components/Screen";
+import { db } from "@/lib/db";
+import { FORMAT_LABELS } from "@/lib/inventory";
+import { fmtDateUS } from "@/lib/pricing";
+import { requireStore } from "@/lib/store-access";
+import { PAYMENT_LABELS } from "@/lib/transactions";
+
+const rentalInclude = { copy: { include: { movieTitle: true } } } as const;
+const money = (n: { toFixed(d: number): string } | number) => `$${n.toFixed(2)}`;
+const Row = ({ left, right, strong }: { left: string; right?: string; strong?: boolean }) => (
+  <div className={`row${strong ? " strong" : ""}`}><span>{left}</span><span>{right}</span></div>
+);
+
+export default async function ReceiptPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string }> }) {
+  const { user, store } = await requireStore();
+  const { id } = await params;
+  const { new: isNew } = await searchParams;
+  const t = await db.transaction.findFirst({
+    where: { id, storeId: store.id },
+    include: {
+      customer: true,
+      items: { orderBy: { description: "asc" } },
+      rentals: { orderBy: { rentedAt: "asc" }, include: rentalInclude },
+      returnedRentals: { orderBy: { returnedAt: "asc" }, include: rentalInclude },
+    },
+  });
+  if (!t) notFound();
+  const name = (n: string) => n.toUpperCase();
+
+  return (
+    <Screen title="RECEIPT" userEmail={user.email} storeLine={`STORE: ${store.name} #${store.number}`} status={isNew ? "TRANSACTION COMPLETE" : "RECEIPT REPRINT"}>
+      {isNew && <div className="vm-notice no-print" role="status">*** TRANSACTION COMPLETE ***</div>}
+
+      <article className="vm-receipt" aria-label={`Receipt for transaction ${t.number}`}>
+        <div className="center strong">{name(store.name)} #{store.number}</div>
+        <div className="center">{name(store.address)}</div>
+        <div className="center">{name(store.city)}, {name(store.region)} {name(store.postalCode)}</div>
+        <div className="center">{store.phone}</div>
+        {store.slogan && <div className="center">&quot;{name(store.slogan)}&quot;</div>}
+        <hr className="rule" />
+        <Row left={fmtDateUS(t.createdAt)} right={t.type === "RETURN" ? "RETURN" : t.type === "RETAIL_SALE" ? "SALE" : "RENTAL"} />
+        <Row left={`TRANSACTION #${String(t.number).padStart(6, "0")}`} />
+        {t.customer ? <div>CUSTOMER: {name(t.customer.firstName)} {name(t.customer.lastName)}</div> : null}
+        {!isNew && <div className="center strong" style={{ marginTop: 6 }}>** REPRINT **</div>}
+        <hr className="rule" />
+
+        {t.rentals.map((r) => (
+          <div key={r.id} className="item">
+            <div>{name(r.copy.movieTitle.title)} {FORMAT_LABELS[r.copy.format]}</div>
+            <Row left="RENTAL" right={money(r.price)} />
+          </div>
+        ))}
+        {t.items.map((i) => (
+          <div key={i.id} className="item">
+            <Row left={`${name(i.description)}${i.quantity > 1 ? ` X${i.quantity}` : ""}`} right={money(i.lineTotal)} />
+          </div>
+        ))}
+        {t.returnedRentals.map((r) => (
+          <div key={r.id} className="item">
+            <div>{name(r.copy.movieTitle.title)} {FORMAT_LABELS[r.copy.format]}</div>
+            <div className="sub">
+              {r.outcome === "LOST" ? "MARKED LOST" : r.outcome === "DAMAGED" ? "MARKED DAMAGED" : "RETURNED"}
+            </div>
+            {r.calculatedLateFee && Number(r.calculatedLateFee) > 0 && (
+              <Row left={`LATE FEE${Number(r.chargedLateFee ?? 0) < Number(r.calculatedLateFee) ? (Number(r.chargedLateFee ?? 0) === 0 ? " (WAIVED)" : " (REDUCED)") : ""}`} right={money(r.chargedLateFee ?? 0)} />
+            )}
+            {r.otherFee && <Row left={r.outcome === "LOST" ? "LOST ITEM FEE" : "DAMAGE FEE"} right={money(r.otherFee)} />}
+          </div>
+        ))}
+        <hr className="rule" />
+
+        {t.type !== "RETURN" && <Row left="SUBTOTAL" right={money(t.subtotal)} />}
+        {t.type !== "RETURN" && <Row left="TAX" right={money(t.tax)} />}
+        <Row left="TOTAL" right={money(t.total)} strong />
+        {Number(t.total) > 0 && <Row left={PAYMENT_LABELS[t.paymentMethod]} right={money(t.total)} />}
+        <hr className="rule" />
+
+        {t.rentals.length > 0 && (
+          <>
+            {t.rentals.map((r) => (
+              <div key={r.id} className="item">
+                <div>{name(r.copy.movieTitle.title)} DUE:</div>
+                <div className="sub">{fmtDateUS(r.dueAt)}</div>
+              </div>
+            ))}
+            <div className="center strong">PLEASE REWIND</div>
+          </>
+        )}
+        <div className="center strong" style={{ marginTop: 6 }}>THANK YOU!</div>
+      </article>
+
+      <div className="vm-actions no-print" style={{ justifyContent: "center" }}>
+        <PrintButton />
+        {isNew ? (
+          <>
+            <Link href="/rent" className="vm-btn">[ NEW RENTAL ]</Link>
+            <Link href="/sale" className="vm-btn">[ NEW SALE ]</Link>
+            <Link href="/menu" className="vm-btn">[ CLOSE ]</Link>
+          </>
+        ) : (
+          <Link href={`/transactions/${t.id}`} className="vm-btn">[ CLOSE ]</Link>
+        )}
+      </div>
+    </Screen>
+  );
+}

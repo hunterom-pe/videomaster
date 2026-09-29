@@ -233,5 +233,5 @@ export async function checkout(customerId: string | null, input: CheckoutValues)
   revalidatePath("/customers");
   revalidatePath("/concessions");
   revalidatePath("/menu");
-  redirect(`/rent/done/${transactionId}`);
+  redirect(`/receipt/${transactionId}?new=1`);
 }

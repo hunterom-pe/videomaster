@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeTotals, dueDate, fmtMoney, taxCents, toCents } from "@/lib/pricing";
+import { computeTotals, dueDate, fmtDateUS, fmtMoney, taxCents, toCents } from "@/lib/pricing";
 
 describe("pricing", () => {
   it("converts to cents without float drift", () => {
@@ -40,4 +40,8 @@ describe("computeTotals", () => {
     expect(computeTotals([], [{ cents: 149, taxable: true }], "8.6").total).toBe(162);
     expect(computeTotals([], [], "8.6").total).toBe(0);
   });
+});
+
+describe("fmtDateUS", () => {
+  it("formats as MM/DD/YYYY", () => expect(fmtDateUS(new Date("1996-09-05T12:00:00Z"))).toBe("09/05/1996"));
 });
