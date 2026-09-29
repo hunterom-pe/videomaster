@@ -64,7 +64,7 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
       const now = new Date();
       const cat = rental.copy.rentalCategory;
       const calculated = cat
-        ? lateFeeCents(daysLate(rental.dueAt, now), toCents(cat.lateFeePerDay), cat.maxLateFee ? toCents(cat.maxLateFee) : null)
+        ? lateFeeCents(daysLate(rental.dueAt, now, store.settings!.timezone), toCents(cat.lateFeePerDay), cat.maxLateFee ? toCents(cat.maxLateFee) : null)
         : 0;
 
       // Late fee: may be reduced or waived, never raised above the policy amount. Lost items owe no late fee.

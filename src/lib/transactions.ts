@@ -1,6 +1,7 @@
 import "server-only";
 import type { PaymentMethod, Prisma, TransactionType } from "@/generated/prisma/client";
 import { parseDay } from "@/lib/dates";
+import { addDaysToKey, zonedMidnight } from "@/lib/tz";
 import { db } from "@/lib/db";
 
 export const PAGE_SIZE = 25;
@@ -14,15 +15,16 @@ export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
 
 export type TxFilters = { q: string; type: string; payment: string; from: string; to: string };
 
-export function transactionWhere(storeId: string, f: TxFilters): Prisma.TransactionWhereInput {
-  const from = parseDay(f.from);
-  const to = parseDay(f.to);
+export function transactionWhere(storeId: string, f: TxFilters, tz: string): Prisma.TransactionWhereInput {
+  // Filter days are store-local calendar days.
+  const from = parseDay(f.from) ? zonedMidnight(f.from, tz) : null;
+  const to = parseDay(f.to) ? zonedMidnight(addDaysToKey(f.to, 1), tz) : null;
   const terms = f.q.trim().split(/\s+/).filter(Boolean).slice(0, 4);
   return {
     storeId,
     ...(f.type in TYPE_LABELS ? { type: f.type as TransactionType } : {}),
     ...(f.payment in PAYMENT_LABELS ? { paymentMethod: f.payment as PaymentMethod } : {}),
-    ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lt: new Date(to.getTime() + 86_400_000) } : {}) } } : {}),
+    ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lt: to } : {}) } } : {}),
     AND: terms.map((t) => ({
       OR: [
         ...(/^\d{1,9}$/.test(t) ? [{ number: Number(t) }] : []),
@@ -35,8 +37,8 @@ export function transactionWhere(storeId: string, f: TxFilters): Prisma.Transact
   };
 }
 
-export async function searchTransactions(storeId: string, f: TxFilters, page: number) {
-  const where = transactionWhere(storeId, f);
+export async function searchTransactions(storeId: string, f: TxFilters, page: number, tz: string) {
+  const where = transactionWhere(storeId, f, tz);
   const [rows, total, agg] = await Promise.all([
     db.transaction.findMany({
       where, orderBy: { createdAt: "desc" }, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE,

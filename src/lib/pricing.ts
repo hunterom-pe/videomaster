@@ -1,3 +1,5 @@
+import { fmtDateTz, fmtDateUSTz } from "@/lib/tz";
+
 // Money is handled in integer cents to avoid floating-point drift. Pure functions, safe on client and server.
 
 export const toCents = (amount: number | string | { toString(): string }): number => Math.round(Number(amount.toString()) * 100);
@@ -15,8 +17,7 @@ export function dueDate(from: Date, days: number): Date {
   return new Date(from.getTime() + days * 86_400_000);
 }
 
-export const fmtDate = (d: Date): string =>
-  d.toLocaleDateString("en-US", { month: "short", day: "2-digit", timeZone: "UTC" }).toUpperCase();
+export const fmtDate = (d: Date, tz: string): string => fmtDateTz(d, tz);
 
 export type PriceLine = { cents: number; taxable: boolean };
 
@@ -30,5 +31,5 @@ export function computeTotals(rentals: PriceLine[], merchandise: PriceLine[], ta
   return { rentalCents, merchCents, subtotal: rentalCents + merchCents, tax, total: rentalCents + merchCents + tax };
 }
 
-/** MM/DD/YYYY (UTC calendar date, consistent with the rest of the app). */
-export const fmtDateUS = (d: Date): string => `${String(d.getUTCMonth() + 1).padStart(2, "0")}/${String(d.getUTCDate()).padStart(2, "0")}/${d.getUTCFullYear()}`;
+/** MM/DD/YYYY in the store's time zone. */
+export const fmtDateUS = (d: Date, tz: string): string => fmtDateUSTz(d, tz);

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { createStore, updateStore } from "@/actions/store";
 import { ErrorBox } from "@/components/Screen";
+import { DEFAULT_TIMEZONE, TIMEZONES, isValidTimeZone } from "@/lib/tz";
 import {
   CURRENCIES,
   DEFAULT_CATEGORIES,
@@ -15,7 +16,7 @@ import {
 
 export const EMPTY_STORE: StoreFormValues = {
   name: "", number: "", address: "", city: "", region: "", postalCode: "", phone: "",
-  managerName: "", slogan: "", currency: "USD", salesTaxPercent: "", storeYear: "",
+  managerName: "", slogan: "", currency: "USD", timezone: DEFAULT_TIMEZONE, salesTaxPercent: "", storeYear: "",
   onlyMoviesUpToStoreYear: false, rewindFee: "0.00", damageFee: "0.00", lostItemFee: "0.00", replacementFee: "19.99",
   membershipFee: "0.00", membershipTermMonths: "0", maxRentalsOut: "0", formats: ["VHS"], categories: DEFAULT_CATEGORIES,
 };
@@ -25,6 +26,14 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
+
+  // First-run setup: pre-select the browser's time zone (Arizona stays "America/Phoenix", i.e. no daylight saving).
+  useEffect(() => {
+    if (mode !== "setup") return;
+    const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (detected && isValidTimeZone(detected)) setV((p) => (p.timezone === DEFAULT_TIMEZONE ? { ...p, timezone: detected } : p));
+  }, [mode]);
 
   const set = <K extends keyof StoreFormValues>(key: K, value: StoreFormValues[K]) => setV((p) => ({ ...p, [key]: value }));
   const setCat = (i: number, key: string, value: string) =>
@@ -83,6 +92,15 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
               {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
             {errors.currency && <span className="vm-fielderr">{errors.currency}</span>}
+          </div>
+          <div className="vm-field wide">
+            <label htmlFor="timezone">TIME ZONE</label>
+            <select id="timezone" value={v.timezone} onChange={(e) => set("timezone", e.target.value)} aria-invalid={!!errors.timezone}>
+              {!TIMEZONES.some((z) => z.value === v.timezone) && <option value={v.timezone}>{v.timezone.toUpperCase()}</option>}
+              {TIMEZONES.map((z) => <option key={z.value} value={z.value}>{z.label}</option>)}
+            </select>
+            <span className="vm-hint">DECIDES WHEN &quot;TODAY&quot; STARTS FOR DUE DATES, LATE FEES, OVERDUE AND REPORTS. ARIZONA DOES NOT OBSERVE DAYLIGHT SAVING TIME.</span>
+            {errors.timezone && <span className="vm-fielderr">{errors.timezone}</span>}
           </div>
           {text("salesTaxPercent", "SALES TAX %", { hint: "E.G. 8.6 (0 FOR NONE)", inputMode: "decimal" })}
         </div>

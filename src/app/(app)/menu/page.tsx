@@ -6,12 +6,13 @@ import { requireStore } from "@/lib/store-access";
 
 export default async function MenuPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   const { user, store } = await requireStore();
+  const tz = store.settings!.timezone;
   const { saved } = await searchParams;
   const [videosOut, customers, lowStock, overdueCount] = await Promise.all([
     db.rental.count({ where: { storeId: store.id, returnedAt: null } }),
     db.customer.count({ where: { storeId: store.id } }),
     db.$queryRaw<{ n: bigint }[]>`SELECT count(*) AS n FROM "ConcessionItem" WHERE "storeId" = ${store.id} AND active AND "quantityOnHand" <= "lowStockThreshold"`,
-    db.rental.count({ where: overdueWhere(store.id) }),
+    db.rental.count({ where: overdueWhere(store.id, tz) }),
   ]);
   const lowCount = Number(lowStock[0]?.n ?? 0);
 

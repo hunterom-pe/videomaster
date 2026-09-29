@@ -10,6 +10,7 @@ const PAGE_SIZE = 25;
 
 export default async function ReturnPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
   const { user, store } = await requireStore();
+  const tz = store.settings!.timezone;
   const sp = await searchParams;
   const q = (sp.q ?? "").slice(0, 100);
   const page = Math.max(1, Math.min(100000, parseInt(sp.page ?? "1", 10) || 1));
@@ -48,7 +49,7 @@ export default async function ReturnPage({ searchParams }: { searchParams: Promi
               <thead><tr><th scope="col">COPY</th><th scope="col">TITLE</th><th scope="col">CUSTOMER</th><th scope="col">DUE</th><th scope="col">DAYS LATE</th></tr></thead>
               <tbody>
                 {rows.map((r) => {
-                  const late = daysLate(r.dueAt, now);
+                  const late = daysLate(r.dueAt, now, tz);
                   return (
                     <tr key={r.id}>
                       <td>{r.copy.copyNumber}</td>
@@ -57,7 +58,7 @@ export default async function ReturnPage({ searchParams }: { searchParams: Promi
                         <span className="vm-dim">{FORMAT_LABELS[r.copy.format]}</span>
                       </td>
                       <td>{r.customer.lastName.toUpperCase()}, {r.customer.firstName.toUpperCase()}</td>
-                      <td>{fmtDate(r.dueAt)}</td>
+                      <td>{fmtDate(r.dueAt, tz)}</td>
                       <td>{late > 0 ? <span className="vm-red"><strong>{late} LATE</strong></span> : "—"}</td>
                     </tr>
                   );

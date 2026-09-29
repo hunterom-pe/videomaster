@@ -9,11 +9,12 @@ import { requireStore } from "@/lib/store-access";
 
 export default async function CheckoutPage({ params }: { params: Promise<{ customerId: string }> }) {
   const { user, store, role } = await requireStore();
+  const tz = store.settings!.timezone;
   const { customerId } = await params;
   const c = await db.customer.findFirst({ where: { id: customerId, storeId: store.id } });
   if (!c) notFound();
   const name = `${c.firstName} ${c.lastName}`.toUpperCase();
-  const overdue = (await overdueCounts(store.id, [c.id])).get(c.id) ?? 0;
+  const overdue = (await overdueCounts(store.id, [c.id], tz)).get(c.id) ?? 0;
   const status = effectiveStatus(c.status, overdue);
   const restrictions: string[] = [];
   if (status !== "GOOD") restrictions.push(`ACCOUNT ${status}`);
@@ -44,7 +45,7 @@ export default async function CheckoutPage({ params }: { params: Promise<{ custo
           )}
           <CheckoutClient
             customerId={c.id} customerName={name} status={status} fees={c.outstandingFees.toFixed(2)}
-            restrictions={restrictions} activeOut={activeOut} maxOut={maxOut} canOverride={role !== "EMPLOYEE"} taxPercent={store.settings!.salesTaxPercent.toString()}
+            restrictions={restrictions} activeOut={activeOut} maxOut={maxOut} timezone={tz} canOverride={role !== "EMPLOYEE"} taxPercent={store.settings!.salesTaxPercent.toString()}
           />
         </>
       )}

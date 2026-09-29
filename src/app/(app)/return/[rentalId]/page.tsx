@@ -5,11 +5,12 @@ import { Screen } from "@/components/Screen";
 import { db } from "@/lib/db";
 import { FORMAT_LABELS } from "@/lib/inventory";
 import { daysLate, lateFeeCents } from "@/lib/late-fees";
-import { fmtDate, fmtMoney, fromCents, toCents } from "@/lib/pricing";
+import { fmtDate, fmtDateUS, fmtMoney, fromCents, toCents } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
 
 export default async function ReturnDetailPage({ params }: { params: Promise<{ rentalId: string }> }) {
   const { user, store } = await requireStore();
+  const tz = store.settings!.timezone;
   const { rentalId } = await params;
   const r = await db.rental.findFirst({
     where: { id: rentalId, storeId: store.id },
@@ -20,14 +21,14 @@ export default async function ReturnDetailPage({ params }: { params: Promise<{ r
   if (r.returnedAt) {
     return (
       <Screen title="RETURN VIDEO" userEmail={user.email} storeLine={`STORE: ${store.name} #${store.number}`}>
-        <div className="vm-notice" role="status">*** THIS VIDEO WAS ALREADY RETURNED ON {r.returnedAt.toISOString().slice(0, 10)} ***</div>
+        <div className="vm-notice" role="status">*** THIS VIDEO WAS ALREADY RETURNED ON {fmtDateUS(r.returnedAt, tz)} ***</div>
         <div className="vm-actions"><Link href="/return" className="vm-btn">[ RETURN VIDEO ]</Link></div>
       </Screen>
     );
   }
 
   const now = new Date();
-  const late = daysLate(r.dueAt, now);
+  const late = daysLate(r.dueAt, now, tz);
   const cat = r.copy.rentalCategory;
   const calc = cat ? lateFeeCents(late, toCents(cat.lateFeePerDay), cat.maxLateFee ? toCents(cat.maxLateFee) : null) : 0;
   const settings = store.settings!;
@@ -48,9 +49,9 @@ export default async function ReturnDetailPage({ params }: { params: Promise<{ r
           <dt>MOVIE</dt><dd>{r.copy.movieTitle.title.toUpperCase()}{r.copy.movieTitle.year ? ` (${r.copy.movieTitle.year})` : ""}</dd>
           <dt>COPY</dt><dd>{r.copy.copyNumber} — {FORMAT_LABELS[r.copy.format]}</dd>
           <dt>CUSTOMER</dt><dd><Link href={`/customers/${r.customerId}`}>{r.customer.firstName.toUpperCase()} {r.customer.lastName.toUpperCase()}</Link></dd>
-          <dt>RENTED</dt><dd>{fmtDate(r.rentedAt)}</dd>
-          <dt>DUE</dt><dd>{fmtDate(r.dueAt)}</dd>
-          <dt>RETURNED</dt><dd>{fmtDate(now)}</dd>
+          <dt>RENTED</dt><dd>{fmtDate(r.rentedAt, tz)}</dd>
+          <dt>DUE</dt><dd>{fmtDate(r.dueAt, tz)}</dd>
+          <dt>RETURNED</dt><dd>{fmtDate(now, tz)}</dd>
           <dt>DAYS LATE</dt><dd className={late > 0 ? "vm-red" : ""}>{late}</dd>
           <dt>LATE FEE</dt><dd>{fmtMoney(calc)}{cat ? ` (${fmtMoney(toCents(cat.lateFeePerDay))}/DAY${cat.maxLateFee ? `, MAX ${fmtMoney(toCents(cat.maxLateFee))}` : ""})` : " (NO CATEGORY — NO POLICY)"}</dd>
         </dl>

@@ -6,11 +6,12 @@ import { requireStore } from "@/lib/store-access";
 
 export default async function RentPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
   const { user, store } = await requireStore();
+  const tz = store.settings!.timezone;
   const sp = await searchParams;
   const q = (sp.q ?? "").slice(0, 100);
   const page = Math.max(1, Math.min(100000, parseInt(sp.page ?? "1", 10) || 1));
   const { rows, total, pages } = await searchCustomers(store.id, q, page);
-  const overdue = await overdueCounts(store.id, rows.map((r) => r.id));
+  const overdue = await overdueCounts(store.id, rows.map((r) => r.id), tz);
   const href = (p: number) => `/rent?${new URLSearchParams({ ...(q ? { q } : {}), page: String(p) })}`;
 
   return (

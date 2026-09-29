@@ -6,7 +6,7 @@ import type { Range } from "@/lib/report-range";
 
 const cents = (d: { toString(): string } | null | undefined) => (d ? toCents(d) : 0);
 
-/** Daily activity for one UTC day. */
+/** Daily activity for one store-local day (day..next are the zone-aware boundaries). */
 export async function dailyActivity(storeId: string, day: Date, next: Date) {
   const between = { gte: day, lt: next };
   const [rentals, returns, txCount, sales, txTotal, returned] = await Promise.all([
@@ -86,11 +86,11 @@ export async function topCustomers(storeId: string, r: Range, limit = 25) {
 }
 
 /** Copy counts by status (with derived overdue), overall and by format. */
-export async function inventorySummary(storeId: string) {
+export async function inventorySummary(storeId: string, tz: string) {
   const [titles, groups, overdueRentals] = await Promise.all([
     db.movieTitle.count({ where: { storeId } }),
     db.inventoryCopy.groupBy({ by: ["format", "status"], where: { storeId }, _count: { _all: true } }),
-    db.rental.findMany({ where: overdueWhere(storeId), select: { copy: { select: { format: true } } } }),
+    db.rental.findMany({ where: overdueWhere(storeId, tz), select: { copy: { select: { format: true } } } }),
   ]);
   const overdueByFormat = new Map<string, number>();
   for (const r of overdueRentals) overdueByFormat.set(r.copy.format, (overdueByFormat.get(r.copy.format) ?? 0) + 1);

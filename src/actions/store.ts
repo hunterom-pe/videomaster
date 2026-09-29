@@ -25,6 +25,7 @@ const storeFields = (d: Parsed) => ({
 
 const settingsFields = (d: Parsed) => ({
   currency: d.currency,
+  timezone: d.timezone,
   salesTaxPercent: d.salesTaxPercent.toString(),
   storeYear: d.storeYear,
   onlyMoviesUpToStoreYear: d.storeYear !== null && d.onlyMoviesUpToStoreYear,

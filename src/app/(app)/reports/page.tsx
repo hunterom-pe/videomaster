@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Screen } from "@/components/Screen";
 import { requireStore } from "@/lib/store-access";
+import { tzAbbrev } from "@/lib/tz";
 
 export const REPORTS = [
   { slug: "daily", title: "DAILY ACTIVITY", desc: "RENTALS, RETURNS, MERCHANDISE SALES, LATE FEES, REVENUE AND TRANSACTIONS FOR ONE DAY" },
@@ -29,7 +30,7 @@ export default async function ReportsPage() {
           </Link>
         ))}
       </div>
-      <p className="vm-hint" style={{ textAlign: "center" }}>ALL DATES ARE UTC. EVERY REPORT HAS A [ PRINT ] BUTTON.</p>
+      <p className="vm-hint" style={{ textAlign: "center" }}>DATES USE YOUR STORE TIME ZONE ({tzAbbrev(store.settings!.timezone)}). EVERY REPORT HAS A [ PRINT ] BUTTON.</p>
     </Screen>
   );
 }

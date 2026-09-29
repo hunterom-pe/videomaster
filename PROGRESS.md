@@ -83,16 +83,20 @@
 - Membership: fee collected when a customer is added (checkbox to waive, payment method, membership-fee receipt) and on `[ RENEW MEMBERSHIP ]`; term in months (0 = never expires; renewal extends from the later of now/current expiry); max videos out per customer. Expired membership and over-limit rentals need a manager override at checkout, alongside account-status reasons (all reasons listed together, enforced on the server); merchandise-only sales are never blocked. New `MEMBERSHIP_FEE` transaction type is counted under fees in Revenue/Daily reports (reports still reconcile).
 - DB CHECK constraints keep fees/limits non-negative. 71 unit tests.
 
+**Store time zone** (Store Settings → Store Information)
+- IANA zone per store (`StoreSettings.timezone`, default `America/Phoenix`; first-run setup pre-selects the browser's zone). Curated list includes **Arizona (Phoenix, MST, no daylight saving)**, Hawaii, all US/Canadian zones, London/Paris/Sydney, UTC.
+- Everything date-related now uses the store's calendar day: due dates and receipt dates, days late / late fees, OVERDUE (derived), report and transaction-history date filters and ranges, transaction times (shown with the zone abbreviation, e.g. MST), membership expiry dates. New `lib/tz.ts` handles daylight-saving transitions (unit-tested for Phoenix and New York spring-forward/fall-back).
+- Fixes the earlier UTC limitation (an 8pm Arizona rental no longer rolls to "tomorrow"). Verified live: a rental due 8pm today (Arizona) is on time; one due 10pm yesterday is 1 day late; switching the store to Eastern changes both correctly. 83 unit tests.
+
 ## Current Work
 Nothing in progress.
 
 ## Known Issues
-- Reports: dates are UTC days; Popular/Customer reports count rentals *started* in the period (not only returned ones); no CSV export; reports are computed live (fine for MVP scale, may need indexes/caching for very large stores).
+- Reports: Popular/Customer reports count rentals *started* in the period (not only returned ones); no CSV export; reports are computed live (fine for MVP scale, may need indexes/caching for very large stores).
 - Receipts: no cash-tendered/change lines (no cash-handling yet); print layout not verified on a physical/thermal printer (uses standard browser printing, ~38 char wide).
-- Transaction history shows times in UTC (no store timezone yet); the list total is money collected across all types (fees on returns included).
+- The transaction-history list total is money collected across all types (fees on returns/memberships included).
 - POS: no cash-tendered/change, no voids/refunds yet (Transaction types REFUND/FEE_WAIVER exist in the schema but are unused); a CLOSED customer cannot check out at all (use the walk-in sale for merchandise).
 - Concessions: categories are a fixed list (not yet editable in Store Settings); no stock-adjustment history/audit log; items can't be deleted (deactivate instead). Selling happens in Milestone 13.
-- Dates/lateness use UTC calendar days (consistent with dates shown on screen). A store timezone setting is needed so a rental made in the evening doesn't roll to the next day; add with store settings.
 - Late fees are paid at return time only; no unpaid-balance tracking (`Customer.outstandingFees` is never changed yet), no rewind/membership/damage fee policy settings (damage/lost fees are entered manually).
 - `InventoryCopy.status = OVERDUE` and stored `Customer.status = OVERDUE` are not written by the system (derived instead); manually choosing OVERDUE on a customer only has a display effect.
 - Dev tip: after any Prisma schema change, restart `npm run dev` (Next caches the generated client). `NEXT_DIST_DIR` allows a second dev server for testing.

@@ -4,6 +4,7 @@ import { Screen } from "@/components/Screen";
 import { db } from "@/lib/db";
 import { FORMAT_LABELS } from "@/lib/inventory";
 import { categoryOptions } from "@/lib/inventory-options";
+import { fmtDateUS } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
 
 export default async function CopyPage({ params }: { params: Promise<{ id: string; copyId: string }> }) {
@@ -15,7 +16,7 @@ export default async function CopyPage({ params }: { params: Promise<{ id: strin
   return (
     <Screen title="EDIT COPY" userEmail={user.email} storeLine={`STORE: ${store.name} #${store.number}`}>
       <h1>COPY {c.copyNumber}</h1>
-      <div className="vm-cyan">{c.movieTitle.title.toUpperCase()} — {FORMAT_LABELS[c.format]} · ADDED {c.acquiredAt.toISOString().slice(0, 10)}</div>
+      <div className="vm-cyan">{c.movieTitle.title.toUpperCase()} — {FORMAT_LABELS[c.format]} · ADDED {fmtDateUS(c.acquiredAt, store.settings!.timezone)}</div>
       <hr className="vm-rule" />
       <CopyForm
         copyId={c.id} titleId={id} locked={locked} categories={categoryOptions(store)}

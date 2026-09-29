@@ -151,7 +151,7 @@ export async function checkout(customerId: string | null, input: CheckoutValues)
     if (!customer) return { ok: false, errors: {}, message: "CUSTOMER NOT FOUND" };
     // Account restrictions apply to rentals; a merchandise-only purchase is always allowed.
     if (copyIds.length > 0) {
-      const acct = effectiveStatus(customer.status, (await overdueCounts(store.id, [customer.id])).get(customer.id) ?? 0);
+      const acct = effectiveStatus(customer.status, (await overdueCounts(store.id, [customer.id], store.settings!.timezone)).get(customer.id) ?? 0);
       if (acct === "CLOSED") return { ok: false, errors: {}, message: "*** CUSTOMER ACCOUNT CLOSED *** NO RENTALS ARE ALLOWED ON A CLOSED ACCOUNT." };
       // Anything that needs a manager override, gathered so the clerk sees every reason at once.
       const reasons: string[] = [];

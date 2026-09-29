@@ -1,11 +1,11 @@
 import "server-only";
 import type { CustomerStatus } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { accruedLateFeeCents, daysLate, startOfUtcDay } from "@/lib/late-fees";
+import { accruedLateFeeCents, daysLate, overdueCutoff } from "@/lib/late-fees";
 import { toCents } from "@/lib/pricing";
 
-/** Overdue = unreturned and due before today (UTC). Derived on read, so it can never go stale. */
-export const overdueWhere = (storeId: string, now = new Date()) => ({ storeId, returnedAt: null, dueAt: { lt: startOfUtcDay(now) } });
+/** Overdue = unreturned and due before today (store-local day). Derived on read, so it can never go stale. */
+export const overdueWhere = (storeId: string, tz: string, now = new Date()) => ({ storeId, returnedAt: null, dueAt: { lt: overdueCutoff(now, tz) } });
 
 export type OverdueRow = {
   rentalId: string;
@@ -23,9 +23,9 @@ export type OverdueRow = {
 
 const MAX_ROWS = 5000;
 
-export async function listOverdue(storeId: string, now = new Date()) {
+export async function listOverdue(storeId: string, tz: string, now = new Date()) {
   const rentals = await db.rental.findMany({
-    where: overdueWhere(storeId, now),
+    where: overdueWhere(storeId, tz, now),
     orderBy: { dueAt: "asc" },
     take: MAX_ROWS,
     include: {
@@ -36,7 +36,7 @@ export async function listOverdue(storeId: string, now = new Date()) {
   const perCustomer = new Map<string, number>();
   const rows = rentals.map((r) => {
     const cat = r.copy.rentalCategory;
-    const feeCents = cat ? accruedLateFeeCents(r.dueAt, now, toCents(cat.lateFeePerDay), cat.maxLateFee ? toCents(cat.maxLateFee) : null) : 0;
+    const feeCents = cat ? accruedLateFeeCents(r.dueAt, now, toCents(cat.lateFeePerDay), cat.maxLateFee ? toCents(cat.maxLateFee) : null, tz) : 0;
     perCustomer.set(r.customerId, (perCustomer.get(r.customerId) ?? 0) + feeCents);
     return { r, feeCents };
   });
@@ -49,7 +49,7 @@ export async function listOverdue(storeId: string, now = new Date()) {
     title: r.copy.movieTitle.title,
     copyNumber: r.copy.copyNumber,
     dueAt: r.dueAt,
-    daysLate: daysLate(r.dueAt, now),
+    daysLate: daysLate(r.dueAt, now, tz),
     feeCents,
     balanceCents: (perCustomer.get(r.customerId) ?? 0) + toCents(r.customer.outstandingFees),
   }));
@@ -59,9 +59,9 @@ export async function listOverdue(storeId: string, now = new Date()) {
 }
 
 /** Overdue rental counts for a set of customers (one query). */
-export async function overdueCounts(storeId: string, customerIds: string[], now = new Date()): Promise<Map<string, number>> {
+export async function overdueCounts(storeId: string, customerIds: string[], tz: string, now = new Date()): Promise<Map<string, number>> {
   if (customerIds.length === 0) return new Map();
-  const groups = await db.rental.groupBy({ by: ["customerId"], where: { ...overdueWhere(storeId, now), customerId: { in: customerIds } }, _count: { _all: true } });
+  const groups = await db.rental.groupBy({ by: ["customerId"], where: { ...overdueWhere(storeId, tz, now), customerId: { in: customerIds } }, _count: { _all: true } });
   return new Map(groups.map((g) => [g.customerId, g._count._all]));
 }
 

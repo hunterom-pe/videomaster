@@ -4,7 +4,7 @@ import { DEFAULT_CATEGORIES, storeSchema, zodErrors, type StoreFormValues } from
 const valid: StoreFormValues = {
   name: "VIDEO WORLD", number: "147", address: "123 MAIN ST", city: "PHOENIX", region: "AZ",
   postalCode: "85001", phone: "(602) 555-0147", managerName: "S. CONNOR", slogan: "",
-  currency: "USD", salesTaxPercent: "8.6", storeYear: "1996", onlyMoviesUpToStoreYear: true,
+  currency: "USD", timezone: "America/Phoenix", salesTaxPercent: "8.6", storeYear: "1996", onlyMoviesUpToStoreYear: true,
   rewindFee: "", damageFee: "", lostItemFee: "", replacementFee: "19.99", membershipFee: "", membershipTermMonths: "", maxRentalsOut: "",
   formats: ["VHS"], categories: DEFAULT_CATEGORIES,
 };
@@ -18,6 +18,12 @@ describe("storeSchema", () => {
     const r = storeSchema.safeParse(valid);
     expect(r.success).toBe(true);
     if (r.success) expect(r.data.salesTaxPercent).toBe(8.6);
+  });
+  it("accepts real time zones (incl. Arizona) and rejects bad ones", () => {
+    expect(errorsFor({ timezone: "America/Phoenix" }).timezone).toBeUndefined();
+    expect(errorsFor({ timezone: "America/New_York" }).timezone).toBeUndefined();
+    expect(errorsFor({ timezone: "Mars/Olympus" }).timezone).toBeDefined();
+    expect(errorsFor({ timezone: "" }).timezone).toBeDefined();
   });
   it("rejects negative tax", () => expect(errorsFor({ salesTaxPercent: "-1" }).salesTaxPercent).toMatch(/NEGATIVE/));
   it("rejects tax over 30", () => expect(errorsFor({ salesTaxPercent: "45" }).salesTaxPercent).toBeDefined());

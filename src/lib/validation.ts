@@ -1,5 +1,6 @@
 // Shared by client forms and server actions (no server-only imports here).
 import { z } from "zod";
+import { isValidTimeZone } from "@/lib/tz";
 
 export const CURRENCIES = ["USD", "CAD", "GBP", "EUR", "AUD"] as const;
 
@@ -100,6 +101,7 @@ export const storeSchema = z
     managerName: text("MANAGER / OWNER NAME", 60),
     slogan: z.string().trim().max(80, "SLOGAN MUST BE 80 CHARACTERS OR FEWER").optional().default(""),
     currency: z.enum(CURRENCIES, "SELECT A CURRENCY"),
+    timezone: z.string().trim().refine(isValidTimeZone, "SELECT A VALID TIME ZONE"),
     salesTaxPercent: numberField("SALES TAX", { min: 0, max: 30, decimals: 3 }),
     storeYear: z
       .string()
@@ -147,6 +149,7 @@ export type StoreFormValues = {
   managerName: string;
   slogan: string;
   currency: string;
+  timezone: string;
   salesTaxPercent: string;
   storeYear: string;
   onlyMoviesUpToStoreYear: boolean;

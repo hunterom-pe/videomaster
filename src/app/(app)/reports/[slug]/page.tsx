@@ -20,10 +20,11 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
   const { user, store } = await requireStore();
   const { slug } = await params;
   const sp = await searchParams;
-  const base = { user: user.email, store: { name: store.name, number: store.number }, slug };
+  const tz = store.settings!.timezone;
+  const base = { user: user.email, store: { name: store.name, number: store.number }, slug, tz };
 
   if (slug === "daily") {
-    const d = resolveDay(sp.date);
+    const d = resolveDay(sp.date, tz);
     const a = await dailyActivity(store.id, d.day, d.next);
     return (
       <ReportShell {...base} title="DAILY ACTIVITY" filter={{ kind: "day", day: d.dayStr }} notice={d.invalid ? "*** INVALID DATE IGNORED. SHOWING TODAY. ***" : undefined}>
@@ -49,7 +50,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
   }
 
   if (slug === "overdue") {
-    const { rows, capped } = await listOverdue(store.id);
+    const { rows, capped } = await listOverdue(store.id, tz);
     const total = rows.reduce((n, r) => n + r.feeCents, 0);
     return (
       <ReportShell {...base} title="OVERDUE RENTALS">
@@ -63,7 +64,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
                 <thead><tr><th scope="col">CUSTOMER</th><th scope="col">MOVIE</th><th scope="col">COPY</th><th scope="col">DUE DATE</th><th scope="col">DAYS OVERDUE</th><th scope="col">CURRENT LATE FEE</th></tr></thead>
                 <tbody>
                   {rows.map((r) => (
-                    <tr key={r.rentalId}><td>{r.customerName}</td><td>{r.title.toUpperCase()}</td><td>{r.copyNumber}</td><td>{fmtDate(r.dueAt)}</td><td>{r.daysLate}</td><td>{fmtMoney(r.feeCents)}</td></tr>
+                    <tr key={r.rentalId}><td>{r.customerName}</td><td>{r.title.toUpperCase()}</td><td>{r.copyNumber}</td><td>{fmtDate(r.dueAt, tz)}</td><td>{r.daysLate}</td><td>{fmtMoney(r.feeCents)}</td></tr>
                   ))}
                 </tbody>
               </table>
@@ -75,7 +76,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
   }
 
   if (slug === "inventory") {
-    const inv = await inventorySummary(store.id);
+    const inv = await inventorySummary(store.id, tz);
     const t = inv.totals;
     return (
       <ReportShell {...base} title="INVENTORY">
@@ -110,7 +111,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
   }
 
   if (slug === "popular" || slug === "customers") {
-    const r = resolveRange(sp.from, sp.to, 30);
+    const r = resolveRange(sp.from, sp.to, 30, tz);
     const filter = { kind: "range" as const, from: r.fromStr, to: r.toStr };
     const notice = r.invalid ? "*** INVALID DATE IGNORED. USE YYYY-MM-DD. ***" : undefined;
     if (slug === "popular") {
@@ -186,7 +187,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
   }
 
   if (slug === "revenue") {
-    const r = resolveRange(sp.from, sp.to, 30);
+    const r = resolveRange(sp.from, sp.to, 30, tz);
     const v = await revenue(store.id, r);
     return (
       <ReportShell {...base} title="REVENUE" filter={{ kind: "range", from: r.fromStr, to: r.toStr }} notice={r.invalid ? "*** INVALID DATE IGNORED. USE YYYY-MM-DD. ***" : undefined}>

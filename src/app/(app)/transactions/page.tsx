@@ -2,17 +2,19 @@ import Link from "next/link";
 import { Screen } from "@/components/Screen";
 import { requireStore } from "@/lib/store-access";
 import { parseDay } from "@/lib/dates";
+import { fmtDateTimeTz, tzAbbrev } from "@/lib/tz";
 import { PAGE_SIZE, PAYMENT_LABELS, TYPE_LABELS, searchTransactions } from "@/lib/transactions";
 
 type SP = { q?: string; type?: string; payment?: string; from?: string; to?: string; page?: string };
 
 export default async function TransactionsPage({ searchParams }: { searchParams: Promise<SP> }) {
   const { user, store } = await requireStore();
+  const tz = store.settings!.timezone;
   const sp = await searchParams;
   const f = { q: (sp.q ?? "").slice(0, 60), type: sp.type ?? "", payment: sp.payment ?? "", from: sp.from ?? "", to: sp.to ?? "" };
   const page = Math.max(1, Math.min(100000, parseInt(sp.page ?? "1", 10) || 1));
   const badDate = (f.from && !parseDay(f.from)) || (f.to && !parseDay(f.to));
-  const { rows, total, sum, pages } = await searchTransactions(store.id, f, page);
+  const { rows, total, sum, pages } = await searchTransactions(store.id, f, page, tz);
   const filtered = !!(f.q || f.type || f.payment || f.from || f.to);
   const href = (p: number) => `/transactions?${new URLSearchParams({ ...(f.q && { q: f.q }), ...(f.type && { type: f.type }), ...(f.payment && { payment: f.payment }), ...(f.from && { from: f.from }), ...(f.to && { to: f.to }), page: String(p) })}`;
 
@@ -64,12 +66,12 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
               <caption className="vm-hint" style={{ textAlign: "left", paddingBottom: 4 }}>
                 {total} TRANSACTION{total === 1 ? "" : "S"} · TOTAL ${Number(sum ?? 0).toFixed(2)} · NEWEST FIRST · CLICK A ROW FOR DETAIL
               </caption>
-              <thead><tr><th scope="col">TRANS #</th><th scope="col">DATE / TIME (UTC)</th><th scope="col">TYPE</th><th scope="col">CUSTOMER</th><th scope="col">ITEMS</th><th scope="col">TOTAL</th><th scope="col">PAID BY</th></tr></thead>
+              <thead><tr><th scope="col">TRANS #</th><th scope="col">DATE / TIME ({tzAbbrev(tz)})</th><th scope="col">TYPE</th><th scope="col">CUSTOMER</th><th scope="col">ITEMS</th><th scope="col">TOTAL</th><th scope="col">PAID BY</th></tr></thead>
               <tbody>
                 {rows.map((t) => (
                   <tr key={t.id}>
                     <td><Link href={`/transactions/${t.id}`} className="vm-rowlink">{String(t.number).padStart(6, "0")}</Link></td>
-                    <td>{t.createdAt.toISOString().slice(0, 16).replace("T", " ")}</td>
+                    <td>{fmtDateTimeTz(t.createdAt, tz)}</td>
                     <td>{TYPE_LABELS[t.type]}</td>
                     <td>{t.customer ? `${t.customer.lastName.toUpperCase()}, ${t.customer.firstName.toUpperCase()}` : "WALK-IN"}</td>
                     <td>{t._count.rentals + t._count.items + t._count.returnedRentals}</td>

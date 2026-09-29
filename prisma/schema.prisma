@@ -101,6 +101,7 @@ model Store {
 model StoreSettings {
   storeId                 String   @id
   currency                String   @default("USD")
+  timezone                String   @default("America/Phoenix") // IANA zone; drives "today", due dates, lateness, reports
   salesTaxPercent         Decimal  @db.Decimal(6, 3)
   storeYear               Int?
   onlyMoviesUpToStoreYear Boolean  @default(false)

@@ -17,6 +17,7 @@ export default async function SettingsPage() {
     managerName: store.managerName,
     slogan: store.slogan ?? "",
     currency: s.currency,
+    timezone: s.timezone,
     salesTaxPercent: s.salesTaxPercent.toString(),
     storeYear: s.storeYear?.toString() ?? "",
     onlyMoviesUpToStoreYear: s.onlyMoviesUpToStoreYear,

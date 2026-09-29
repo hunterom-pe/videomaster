@@ -43,5 +43,8 @@ describe("computeTotals", () => {
 });
 
 describe("fmtDateUS", () => {
-  it("formats as MM/DD/YYYY", () => expect(fmtDateUS(new Date("1996-09-05T12:00:00Z"))).toBe("09/05/1996"));
+  it("formats as MM/DD/YYYY in the given zone", () => {
+    expect(fmtDateUS(new Date("1996-09-05T12:00:00Z"), "UTC")).toBe("09/05/1996");
+    expect(fmtDateUS(new Date("1996-09-06T03:00:00Z"), "America/Phoenix")).toBe("09/05/1996"); // 8pm Sep 5 in Arizona
+  });
 });

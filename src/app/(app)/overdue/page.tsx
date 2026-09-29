@@ -8,9 +8,10 @@ const PAGE_SIZE = 25;
 
 export default async function OverduePage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const { user, store } = await requireStore();
+  const tz = store.settings!.timezone;
   const sp = await searchParams;
   const page = Math.max(1, Math.min(100000, parseInt(sp.page ?? "1", 10) || 1));
-  const { rows, capped } = await listOverdue(store.id);
+  const { rows, capped } = await listOverdue(store.id, tz);
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const shown = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const customers = new Set(rows.map((r) => r.customerId)).size;
@@ -48,7 +49,7 @@ export default async function OverduePage({ searchParams }: { searchParams: Prom
                     <td>{r.phone ?? "—"}</td>
                     <td><Link href={`/return/${r.rentalId}`} className="vm-rowlink">{r.title.toUpperCase()}</Link></td>
                     <td>{r.copyNumber}</td>
-                    <td>{fmtDate(r.dueAt)}</td>
+                    <td>{fmtDate(r.dueAt, tz)}</td>
                     <td><span className={r.daysLate > 7 ? "vm-overdue-hot" : "vm-overdue-warm"}>{r.daysLate > 7 ? "*** " : ""}{r.daysLate}</span></td>
                     <td>{fmtMoney(r.feeCents)}</td>
                     <td>{fmtMoney(r.balanceCents)}</td>

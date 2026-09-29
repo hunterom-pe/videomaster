@@ -1,18 +1,20 @@
 import Link from "next/link";
 import { PrintButton } from "@/components/PrintButton";
 import { Screen } from "@/components/Screen";
+import { tzAbbrev } from "@/lib/tz";
 
 type Props = {
   title: string;
   user: string;
   store: { name: string; number: string };
   slug: string;
+  tz: string;
   filter?: { kind: "range"; from: string; to: string } | { kind: "day"; day: string };
   notice?: string;
   children: React.ReactNode;
 };
 
-export function ReportShell({ title, user, store, slug, filter, notice, children }: Props) {
+export function ReportShell({ title, user, store, slug, tz, filter, notice, children }: Props) {
   const period = filter?.kind === "range" ? `${filter.from} TO ${filter.to}` : filter?.kind === "day" ? filter.day : "AS OF NOW";
   return (
     <Screen title={`REPORT: ${title}`} userEmail={user} storeLine={`STORE: ${store.name} #${store.number}`}>
@@ -50,7 +52,7 @@ export function ReportShell({ title, user, store, slug, filter, notice, children
       <div className="vm-report">
         <div className="vm-report-head">
           <strong>{store.name.toUpperCase()} #{store.number} — {title}</strong>
-          <div>PERIOD: {period} (UTC) · PRINTED FROM VIDEOMASTER V1.0</div>
+          <div>PERIOD: {period} ({tzAbbrev(tz)}) · PRINTED FROM VIDEOMASTER V1.0</div>
         </div>
         {children}
       </div>

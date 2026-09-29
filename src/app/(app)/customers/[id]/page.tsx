@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Screen } from "@/components/Screen";
 import { db } from "@/lib/db";
-import { accruedLateFeeCents, daysLate, startOfUtcDay } from "@/lib/late-fees";
+import { accruedLateFeeCents, daysLate, overdueCutoff } from "@/lib/late-fees";
 import { effectiveStatus } from "@/lib/overdue";
 import { membershipState } from "@/lib/membership";
 import { fmtDate, fmtDateUS, fmtMoney, toCents } from "@/lib/pricing";
@@ -16,6 +16,7 @@ export default async function CustomerPage({
   searchParams: Promise<{ saved?: string; edit?: string }>;
 }) {
   const { user, store } = await requireStore();
+  const tz = store.settings!.timezone;
   const { id } = await params;
   // Scoped by the session's store: another store's customer id is simply "not found".
   const c = await db.customer.findFirst({ where: { id, storeId: store.id } });
@@ -27,12 +28,12 @@ export default async function CustomerPage({
     include: { copy: { include: { movieTitle: true, rentalCategory: true } } },
   });
   const now = new Date();
-  const cutoff = startOfUtcDay(now);
+  const cutoff = overdueCutoff(now, tz);
   const overdueRentals = activeRentals.filter((r) => r.dueAt < cutoff);
   const status = effectiveStatus(c.status, overdueRentals.length);
   const accruedCents = overdueRentals.reduce((n, r) => {
     const cat = r.copy.rentalCategory;
-    return n + (cat ? accruedLateFeeCents(r.dueAt, now, toCents(cat.lateFeePerDay), cat.maxLateFee ? toCents(cat.maxLateFee) : null) : 0);
+    return n + (cat ? accruedLateFeeCents(r.dueAt, now, toCents(cat.lateFeePerDay), cat.maxLateFee ? toCents(cat.maxLateFee) : null, tz) : 0);
   }, 0);
   const settings = store.settings!;
   const mState = membershipState(c.membershipExpiresAt, now);
@@ -56,7 +57,7 @@ export default async function CustomerPage({
       {mState === "EXPIRED" && c.membershipExpiresAt && (
         <div className="vm-alert" role="alert">
           <strong>*** MEMBERSHIP EXPIRED ***</strong>
-          EXPIRED {fmtDateUS(c.membershipExpiresAt)}. MANAGER OVERRIDE REQUIRED FOR NEW RENTALS.
+          EXPIRED {fmtDateUS(c.membershipExpiresAt, tz)}. MANAGER OVERRIDE REQUIRED FOR NEW RENTALS.
           <div className="vm-actions"><Link href={`/customers/${c.id}/renew`} className="vm-btn small">[ RENEW MEMBERSHIP ]</Link></div>
         </div>
       )}
@@ -83,8 +84,8 @@ export default async function CustomerPage({
         <dl className="vm-kv">
           <dt>MEMBER #</dt><dd>{c.membershipNumber}</dd>
           <dt>STATUS</dt><dd><span className={`vm-status ${status}`}>{status}</span></dd>
-          <dt>MEMBERSHIP</dt><dd>{c.membershipExpiresAt ? `${mState === "EXPIRED" ? "EXPIRED" : "VALID THROUGH"} ${fmtDateUS(c.membershipExpiresAt)}` : c.membershipPaidAt ? "LIFETIME (FEE PAID)" : feesTracked ? "NO FEE COLLECTED" : "—"}</dd>
-          <dt>DATE JOINED</dt><dd>{c.createdAt.toISOString().slice(0, 10)}</dd>
+          <dt>MEMBERSHIP</dt><dd>{c.membershipExpiresAt ? `${mState === "EXPIRED" ? "EXPIRED" : "VALID THROUGH"} ${fmtDateUS(c.membershipExpiresAt, tz)}` : c.membershipPaidAt ? "LIFETIME (FEE PAID)" : feesTracked ? "NO FEE COLLECTED" : "—"}</dd>
+          <dt>DATE JOINED</dt><dd>{fmtDateUS(c.createdAt, tz)}</dd>
           <dt>PHONE</dt><dd>{c.phone ?? "—"}</dd>
           <dt>E-MAIL</dt><dd>{c.email ?? "—"}</dd>
           <dt>ADDRESS</dt><dd>{address || "—"}</dd>
@@ -106,9 +107,9 @@ export default async function CustomerPage({
                   <tr key={r.id}>
                     <td><Link href={`/inventory/${r.copy.movieTitleId}`}>{r.copy.movieTitle.title.toUpperCase()}</Link></td>
                     <td>{r.copy.copyNumber}</td>
-                    <td>{fmtDate(r.rentedAt)}</td>
-                    <td>{fmtDate(r.dueAt)}</td>
-                    <td>{r.dueAt < cutoff ? <span className="vm-red"><strong>{daysLate(r.dueAt, now)} DAY{daysLate(r.dueAt, now) === 1 ? "" : "S"} LATE</strong></span> : "OUT"}</td>
+                    <td>{fmtDate(r.rentedAt, tz)}</td>
+                    <td>{fmtDate(r.dueAt, tz)}</td>
+                    <td>{r.dueAt < cutoff ? <span className="vm-red"><strong>{daysLate(r.dueAt, now, tz)} DAY{daysLate(r.dueAt, now, tz) === 1 ? "" : "S"} LATE</strong></span> : "OUT"}</td>
                   </tr>
                 ))}
               </tbody>

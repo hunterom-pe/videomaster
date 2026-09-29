@@ -17,6 +17,7 @@ type Props = {
   maxOut: number; // store limit (0 = unlimited)
   canOverride: boolean;
   taxPercent: string;
+  timezone: string; // store zone, for due-date previews
 };
 
 type SaleLine = { item: SaleItem; qty: number };
@@ -26,7 +27,7 @@ const saleKey = (id: string) => `sale:${id}`;
 const rowStyle = (selected: boolean) => (selected ? { background: "var(--cyan)", color: "var(--black)" } : undefined);
 const plainBtn = { background: "none", border: 0, font: "inherit", color: "inherit", padding: 0, cursor: "pointer", textAlign: "left" } as const;
 
-export function CheckoutClient({ customerId, customerName, status, fees, restrictions, activeOut, maxOut, canOverride, taxPercent }: Props) {
+export function CheckoutClient({ customerId, customerName, status, fees, restrictions, activeOut, maxOut, canOverride, taxPercent, timezone }: Props) {
   const [rentals, setRentals] = useState<CartItem[]>([]);
   const [sales, setSales] = useState<SaleLine[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -235,7 +236,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
                     </button>
                   </td>
                   <td>{fmtMoney(i.priceCents)}</td>
-                  <td>{fmtDate(dueDate(now, i.days))}</td>
+                  <td>{fmtDate(dueDate(now, i.days), timezone)}</td>
                 </tr>
               ))}
               {sales.map((l) => (

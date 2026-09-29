@@ -13,12 +13,13 @@ const MAX_COPIES_SHOWN = 300;
 
 export default async function TitlePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ added?: string; copy?: string }> }) {
   const { user, store } = await requireStore();
+  const tz = store.settings!.timezone;
   const { id } = await params;
   const t = await db.movieTitle.findFirst({ where: { id, storeId: store.id } });
   if (!t) notFound();
   const { added, copy: savedCopy } = await searchParams;
 
-  const overdueRentals = await db.rental.findMany({ where: { ...overdueWhere(store.id), copy: { movieTitleId: t.id } }, select: { copyId: true, copy: { select: { format: true } } } });
+  const overdueRentals = await db.rental.findMany({ where: { ...overdueWhere(store.id, tz), copy: { movieTitleId: t.id } }, select: { copyId: true, copy: { select: { format: true } } } });
   const overdueIds = new Set(overdueRentals.map((r) => r.copyId));
   const overdueByFormat = new Map<string, number>();
   for (const r of overdueRentals) overdueByFormat.set(r.copy.format, (overdueByFormat.get(r.copy.format) ?? 0) + 1);

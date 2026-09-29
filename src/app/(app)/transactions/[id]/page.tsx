@@ -4,6 +4,7 @@ import { Screen } from "@/components/Screen";
 import { db } from "@/lib/db";
 import { FORMAT_LABELS } from "@/lib/inventory";
 import { fmtDate } from "@/lib/pricing";
+import { fmtDateTimeTz, tzAbbrev } from "@/lib/tz";
 import { requireStore } from "@/lib/store-access";
 import { PAYMENT_LABELS, TYPE_LABELS } from "@/lib/transactions";
 
@@ -11,6 +12,7 @@ const rentalInclude = { copy: { include: { movieTitle: true } } } as const;
 
 export default async function TransactionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { user, store } = await requireStore();
+  const tz = store.settings!.timezone;
   const { id } = await params;
   const t = await db.transaction.findFirst({
     where: { id, storeId: store.id },
@@ -39,7 +41,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
         <legend>SUMMARY</legend>
         <dl className="vm-kv">
           <dt>TYPE</dt><dd>{TYPE_LABELS[t.type]}</dd>
-          <dt>DATE / TIME</dt><dd>{t.createdAt.toISOString().slice(0, 16).replace("T", " ")} UTC</dd>
+          <dt>DATE / TIME</dt><dd>{fmtDateTimeTz(t.createdAt, tz)} {tzAbbrev(tz, t.createdAt)}</dd>
           <dt>CUSTOMER</dt><dd>{t.customer ? <Link href={`/customers/${t.customer.id}`}>{t.customer.firstName.toUpperCase()} {t.customer.lastName.toUpperCase()} (#{t.customer.membershipNumber})</Link> : "WALK-IN"}</dd>
           <dt>EMPLOYEE</dt><dd>{t.createdBy?.email ?? "—"}</dd>
           <dt>PAID BY</dt><dd>{PAYMENT_LABELS[t.paymentMethod]}</dd>
@@ -59,8 +61,8 @@ export default async function TransactionDetailPage({ params }: { params: Promis
                     <td><Link href={`/inventory/${r.copy.movieTitleId}`}>{r.copy.movieTitle.title.toUpperCase()}</Link> <span className="vm-dim">{FORMAT_LABELS[r.copy.format]}</span></td>
                     <td>{r.copy.copyNumber}</td>
                     <td>${r.price.toFixed(2)}</td>
-                    <td>{fmtDate(r.dueAt)}</td>
-                    <td>{r.returnedAt ? `RETURNED ${fmtDate(r.returnedAt)}${r.outcome && r.outcome !== "RETURNED" ? ` (${r.outcome})` : ""}` : "OUT"}</td>
+                    <td>{fmtDate(r.dueAt, tz)}</td>
+                    <td>{r.returnedAt ? `RETURNED ${fmtDate(r.returnedAt, tz)}${r.outcome && r.outcome !== "RETURNED" ? ` (${r.outcome})` : ""}` : "OUT"}</td>
                   </tr>
                 ))}
               </tbody>
