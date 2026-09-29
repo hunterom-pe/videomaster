@@ -291,3 +291,13 @@ export const checkoutSchema = z.object({
   override: z.boolean(),
 });
 export type CheckoutValues = { copyIds: string[]; paymentMethod: string; override: boolean };
+
+// ── Returns ──
+export const RETURN_OUTCOMES = ["RETURNED", "DAMAGED", "LOST"] as const;
+export const returnSchema = z.object({
+  outcome: z.enum(RETURN_OUTCOMES, "SELECT A RETURN OUTCOME"),
+  lateFee: numberField("LATE FEE", { min: 0, max: 999.99, decimals: 2 }),
+  otherFee: numberField("DAMAGE / REPLACEMENT FEE", { min: 0, max: 999.99, decimals: 2 }),
+  paymentMethod: z.enum(PAYMENT_METHODS.map((p) => p.value) as [string, ...string[]], "SELECT A PAYMENT METHOD"),
+});
+export type ReturnValues = { outcome: string; lateFee: string; otherFee: string; paymentMethod: string };

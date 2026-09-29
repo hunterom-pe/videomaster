@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { requireStore } from "@/lib/store-access";
 
 const ITEMS = [
-  { key: "F2", label: "RETURN VIDEO" },
   { key: "F5", label: "CONCESSIONS" },
   { key: "F6", label: "OVERDUE RENTALS" },
   { key: "F7", label: "TRANSACTIONS" },
@@ -40,6 +39,10 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
         <Link href="/rent" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
           <span className="fkey">[F1]</span>RENT VIDEO
           <small>CHECK OUT VIDEOS TO A CUSTOMER</small>
+        </Link>
+        <Link href="/return" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
+          <span className="fkey">[F2]</span>RETURN VIDEO
+          <small>RETURN A RENTED VIDEO, LATE FEES</small>
         </Link>
         <Link href="/customers" className="vm-btn" style={{ minHeight: 56, fontSize: 17 }}>
           <span className="fkey">[F3]</span>CUSTOMERS

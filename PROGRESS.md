@@ -36,10 +36,21 @@
 - New `Transaction` (per-store numbering, type/payment method/subtotal/tax/total) and `Rental.price`. Active rentals now show on the customer account. Simulated payment methods only.
 - 34 unit tests. Verified in browser incl. override refusal and a simulated race.
 
+**Milestones 10–11 — Returns and late fees**
+- RETURN VIDEO: list of everything currently out (oldest due first, days-late highlighted); search by copy ID, barcode, title, customer name/member #/phone. Click a row → return screen (movie, copy, customer, rented, due, returned, days late, late fee).
+- Late fee = whole calendar days past due × the category's per-day fee, capped by the category's optional max. Both the calculated and the actually charged fee are stored (`Rental.calculatedLateFee` / `chargedLateFee`); fee can be reduced or waived, never raised above policy.
+- Outcomes: normal return → copy AVAILABLE; [ DAMAGE ] → copy DAMAGED (+ optional damage fee); [ LOST ] → copy LOST, replacement cost charged (from copy's replacement cost, editable), no late fee. Confirm dialog, then a RETURN transaction (per-store numbering, notes record waivers/reductions) and a completion screen.
+- Concurrency-safe: guarded close (`returnedAt IS NULL`), all writes in one DB transaction; already-returned rentals show a notice.
+- 41 unit tests. Verified in browser: 3-days-late reduced fee, lost item, on-time return.
+
 ## Current Work
 Nothing in progress.
 
 ## Known Issues
+- Dates/lateness use UTC calendar days (consistent with dates shown on screen). A store timezone setting is needed so a rental made in the evening doesn't roll to the next day; add with store settings.
+- Late fees are paid at return time only; no unpaid-balance tracking (`Customer.outstandingFees` is never changed yet), no rewind/membership/damage fee policy settings (damage/lost fees are entered manually).
+- OVERDUE copy/customer status is not auto-computed yet (Milestone 16); RENTED copies past due still show RENTED.
+- Dev tip: after any Prisma schema change, restart `npm run dev` (Next caches the generated client). `NEXT_DIST_DIR` allows a second dev server for testing.
 - Checkout: no cash-tendered/change calculation yet; no rental limits per customer; outstanding fees warn but don't block. Due date = rental time + N days (a timestamp; day-boundary rules to be decided with late fees).
 - Rentals stay RENTED until returns exist (M10); OVERDUE status is not computed yet (M11/M16).
 - Title metadata cannot be edited after adding (only copies); spec's title [ EDIT ] / [ RETIRE COPY ] buttons: retire is done via copy status, title edit is not built.
@@ -58,7 +69,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Milestone 10 — Returns (return by copy ID/barcode/title/customer, set copy AVAILABLE or DAMAGED/LOST), then 11 — late fees.
+Milestone 12 — Concessions (merchandise inventory, low-stock warnings), then 13 — combined POS transactions.
 
 ## Decisions
 - Browser-based web app only (Next.js/React/HTML/CSS/TS). Never native/Electron/desktop/CLI.
