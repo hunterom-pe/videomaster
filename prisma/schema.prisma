@@ -114,6 +114,9 @@ model StoreSettings {
   membershipFee           Decimal  @default(0) @db.Decimal(8, 2)
   membershipTermMonths    Int      @default(0) // 0 = never expires
   maxRentalsOut           Int      @default(0) // 0 = unlimited
+  // System settings
+  functionKeys            Boolean  @default(false) // F1-F9 keyboard shortcuts (off by default: they are browser keys)
+  receiptFooter           String   @default("THANK YOU!")
   updatedAt               DateTime @updatedAt
   store                   Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
 }

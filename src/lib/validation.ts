@@ -122,6 +122,8 @@ export const storeSchema = z
     membershipFee: optionalNumber("MEMBERSHIP FEE", { max: 999.99, decimals: 2 }),
     membershipTermMonths: optionalNumber("MEMBERSHIP TERM", { max: 120, decimals: 0, integer: true }),
     maxRentalsOut: optionalNumber("MAXIMUM VIDEOS OUT", { max: 99, decimals: 0, integer: true }),
+    functionKeys: z.boolean(),
+    receiptFooter: z.string().trim().max(40, "RECEIPT MESSAGE MUST BE 40 CHARACTERS OR FEWER"),
     formats: z
       .array(z.enum(FORMAT_VALUES))
       .min(1, "SELECT AT LEAST ONE FORMAT")
@@ -160,6 +162,8 @@ export type StoreFormValues = {
   membershipFee: string;
   membershipTermMonths: string;
   maxRentalsOut: string;
+  functionKeys: boolean;
+  receiptFooter: string;
   formats: string[];
   categories: { id?: string; name: string; rentalPrice: string; rentalDays: string; lateFeePerDay: string }[];
 };

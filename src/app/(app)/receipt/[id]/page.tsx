@@ -100,7 +100,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
             <div className="center strong">PLEASE REWIND</div>
           </>
         )}
-        <div className="center strong" style={{ marginTop: 6 }}>THANK YOU!</div>
+        <div className="center strong" style={{ marginTop: 6 }}>{name(store.settings!.receiptFooter || "THANK YOU!")}</div>
       </article>
 
       <div className="vm-actions no-print" style={{ justifyContent: "center" }}>

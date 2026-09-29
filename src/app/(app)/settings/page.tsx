@@ -39,6 +39,8 @@ export default async function SettingsPage() {
     membershipFee: s.membershipFee.toFixed(2),
     membershipTermMonths: String(s.membershipTermMonths),
     maxRentalsOut: String(s.maxRentalsOut),
+    functionKeys: s.functionKeys,
+    receiptFooter: s.receiptFooter,
     formats: store.formats.filter((f) => f.enabled).map((f) => f.format),
     categories: store.rentalCategories.map((c) => ({
       id: c.id,

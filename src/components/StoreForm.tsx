@@ -18,7 +18,7 @@ export const EMPTY_STORE: StoreFormValues = {
   name: "", number: "", address: "", city: "", region: "", postalCode: "", phone: "",
   managerName: "", slogan: "", currency: "USD", timezone: DEFAULT_TIMEZONE, salesTaxPercent: "", storeYear: "",
   onlyMoviesUpToStoreYear: false, rewindFee: "0.00", damageFee: "0.00", lostItemFee: "0.00", replacementFee: "19.99",
-  membershipFee: "0.00", membershipTermMonths: "0", maxRentalsOut: "0", formats: ["VHS"], categories: DEFAULT_CATEGORIES,
+  membershipFee: "0.00", membershipTermMonths: "0", maxRentalsOut: "0", functionKeys: false, receiptFooter: "THANK YOU!", formats: ["VHS"], categories: DEFAULT_CATEGORIES,
 };
 
 export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initial: StoreFormValues }) {
@@ -208,9 +208,24 @@ export function StoreForm({ mode, initial }: { mode: "setup" | "settings"; initi
         </div>
       </fieldset>
 
+      <fieldset className="vm-section">
+        <legend>7. SYSTEM SETTINGS</legend>
+        <div className="vm-grid">
+          <div className="vm-field">
+            <span className="vm-label">KEYBOARD</span>
+            <label className="vm-check">
+              <input type="checkbox" checked={v.functionKeys} onChange={(e) => set("functionKeys", e.target.checked)} />
+              <span>ENABLE FUNCTION-KEY SHORTCUTS (F1-F9)</span>
+            </label>
+            <span className="vm-hint">F1 RENT · F2 RETURN · F3 CUSTOMERS · F4 INVENTORY · F5 CONCESSIONS · F6 REPORTS · F7 OVERDUE · F8 TRANSACTIONS · F9 SETTINGS. EVERYTHING ALSO WORKS BY CLICKING. WHEN ON, THESE KEYS NO LONGER DO THEIR BROWSER JOBS (E.G. F5 REFRESH) WHILE VIDEOMASTER IS OPEN.</span>
+          </div>
+          {text("receiptFooter", "RECEIPT CLOSING MESSAGE", { hint: "PRINTED AT THE BOTTOM OF EVERY RECEIPT. BLANK = THANK YOU!" })}
+        </div>
+      </fieldset>
+
       {mode === "setup" && (
         <fieldset className="vm-section">
-          <legend>7. SAMPLE STORE DATA (OPTIONAL)</legend>
+          <legend>8. SAMPLE STORE DATA (OPTIONAL)</legend>
           <label className="vm-check">
             <input type="checkbox" checked={loadSample} onChange={(e) => setLoadSample(e.target.checked)} />
             <span>LOAD SAMPLE STORE DATA?</span>

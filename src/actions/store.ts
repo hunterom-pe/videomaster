@@ -37,6 +37,8 @@ const settingsFields = (d: Parsed) => ({
   membershipFee: d.membershipFee.toFixed(2),
   membershipTermMonths: d.membershipTermMonths,
   maxRentalsOut: d.maxRentalsOut,
+  functionKeys: d.functionKeys,
+  receiptFooter: d.receiptFooter || "THANK YOU!",
 });
 
 const formatRows = (d: Parsed) =>

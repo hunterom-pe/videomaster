@@ -104,6 +104,11 @@
 - Measured all screens in 375px frames (and key screens at 320px): sideways page scroll, overflowing elements outside scroll containers, and tap targets under 32px. Found two overflows (customer account, revenue report — long label/value rows); fixed globally: label/value grids shrink and wrap, and stack (label above value) under 520px; tighter padding on phones. Now zero overflow on every screen at 375px and on key screens at 320px; no undersized tap targets (buttons ≥34px tall). Wide tables scroll inside their own container (as the spec requires) instead of scrolling the page.
 - Not verified visually (browser pane could not render screenshots in this environment) — measurements only.
 
+**Polish step 3 — System settings & function keys**
+- New Store Settings section *System Settings*: `ENABLE FUNCTION-KEY SHORTCUTS (F1-F9)` and a custom receipt closing message (default `THANK YOU!`, ≤40 chars).
+- F-key numbering now follows the spec (F1 rent, F2 return, F3 customers, F4 inventory, F5 concessions, F6 reports, F7 overdue, F8 transactions, F9 settings); labels on the menu use one shared map (`lib/function-keys.ts`). Shortcuts are **off by default** (they are browser keys) and, when on, never intercept modified keys (Ctrl/Alt/Cmd/Shift), F10-F12, or anything while a dialog is open. Clicking always works.
+- Verified: OFF does nothing; ON navigates F1/F3/F6/F9; Ctrl+F5 and F12 left alone; F3 ignored with a dialog open; custom message on the receipt. 87 unit tests.
+
 ## Current Work
 Nothing in progress.
 
