@@ -5,14 +5,14 @@ import { FORMAT_LABELS } from "@/lib/inventory";
 import { stockState } from "@/lib/concessions";
 import { fmtDate, fmtMoney } from "@/lib/pricing";
 import { resolveDay, resolveRange } from "@/lib/report-range";
-import { dailyActivity, inventorySummary, listOverdue, merchandiseInventory, popularRentals, revenue, topCustomers } from "@/lib/reports";
+import { customerBalances, dailyActivity, inventorySummary, listOverdue, merchandiseInventory, popularRentals, revenue, topCustomers } from "@/lib/reports";
 import { requireStore } from "@/lib/store-access";
 import { PAYMENT_LABELS } from "@/lib/transactions";
 import type { MediaFormat, PaymentMethod } from "@/generated/prisma/client";
 
 const REPORT_TITLES: Record<string, string> = {
   daily: "DAILY ACTIVITY", overdue: "OVERDUE RENTALS REPORT", inventory: "INVENTORY REPORT", popular: "POPULAR RENTALS",
-  customers: "CUSTOMER ACTIVITY", merchandise: "MERCHANDISE INVENTORY", revenue: "REVENUE REPORT",
+  customers: "CUSTOMER ACTIVITY", balances: "CUSTOMER BALANCES", merchandise: "MERCHANDISE INVENTORY", revenue: "REVENUE REPORT",
 };
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -47,13 +47,16 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
             <Row label="DAMAGE / LOST FEES" value={fmtMoney(a.otherFeeCents)} />
             <Row label="REWIND FEES" value={fmtMoney(a.rewindFeeCents)} />
             <Row label="MEMBERSHIP FEES" value={fmtMoney(a.membershipCents)} />
+            {a.accountPaymentCents > 0 && <Row label="PAYMENTS ON ACCOUNT" value={fmtMoney(a.accountPaymentCents)} />}
+            {a.onAccountCents > 0 && <Row label="FEES PUT ON ACCOUNT (NOT COLLECTED)" value={fmtMoney(a.onAccountCents)} />}
+            {a.waivedCents > 0 && <Row label="BALANCES WAIVED" value={fmtMoney(a.waivedCents)} />}
             {a.refundCount > 0 && <Row label={`REFUNDS (${a.refundCount}, BEFORE TAX)`} value={`-${fmtMoney(-a.refundCents)}`} />}
             <Row label="SALES TAX (NET OF REFUNDS)" value={fmtMoney(a.taxCents)} />
             <Row label="TOTAL REVENUE" value={fmtMoney(a.totalCents)} strong />
             <Row label="TRANSACTIONS" value={a.transactions} />
           </dl>
         </fieldset>
-        <p className="vm-hint no-print">TOTAL REVENUE = ALL MONEY COLLECTED THAT DAY (INCLUDING TAX). <Link href={`/transactions?from=${d.dayStr}&to=${d.dayStr}`}>VIEW THE {a.transactions} TRANSACTION{a.transactions === 1 ? "" : "S"}</Link></p>
+        <p className="vm-hint no-print">TOTAL REVENUE = ALL MONEY COLLECTED THAT DAY (INCLUDING TAX). FEES PUT ON ACCOUNT COUNT WHEN PAID. <Link href={`/transactions?from=${d.dayStr}&to=${d.dayStr}`}>VIEW THE {a.transactions} TRANSACTION{a.transactions === 1 ? "" : "S"}</Link></p>
       </ReportShell>
     );
   }
@@ -114,6 +117,25 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
               </tbody>
             </table>
           </div>
+        )}
+      </ReportShell>
+    );
+  }
+
+  if (slug === "balances") {
+    const { rows, totalCents } = await customerBalances(store.id);
+    return (
+      <ReportShell {...base} title="CUSTOMER BALANCES">
+        {rows.length === 0 ? <div className="vm-notice" role="status">*** NO CUSTOMER OWES A BALANCE ***</div> : (
+          <>
+            <p><strong>{rows.length}</strong> CUSTOMER{rows.length === 1 ? " OWES" : "S OWE"} <strong>{fmtMoney(totalCents)}</strong> IN TOTAL</p>
+            <div className="vm-tablewrap">
+              <table className="vm-table" style={{ minWidth: 520 }}>
+                <thead><tr><th scope="col">CUSTOMER</th><th scope="col">MEMBER #</th><th scope="col">PHONE</th><th scope="col">BALANCE DUE</th></tr></thead>
+                <tbody>{rows.map((r) => <tr key={r.id}><td><Link href={`/customers/${r.id}/balance`}>{r.name}</Link></td><td>{r.member}</td><td>{r.phone ?? "—"}</td><td className="vm-red">{fmtMoney(r.cents)}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </>
         )}
       </ReportShell>
     );

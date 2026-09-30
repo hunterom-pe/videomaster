@@ -10,7 +10,7 @@ const cents = (d: { toString(): string } | null | undefined) => (d ? toCents(d) 
 export async function dailyActivity(storeId: string, day: Date, next: Date) {
   const between = { gte: day, lt: next };
   const live = { voidedAt: null }; // voided transactions never count
-  const [rentals, returns, txCount, sales, txTotal, returned, refunds] = await Promise.all([
+  const [rentals, returns, txCount, sales, txTotal, returned, refunds, acct] = await Promise.all([
     db.rental.count({ where: { storeId, rentedAt: between } }),
     db.rental.count({ where: { storeId, returnedAt: between } }),
     db.transaction.count({ where: { storeId, createdAt: between, ...live } }),
@@ -18,12 +18,17 @@ export async function dailyActivity(storeId: string, day: Date, next: Date) {
     db.transaction.aggregate({ where: { storeId, createdAt: between, ...live }, _sum: { total: true, tax: true } }),
     db.rental.aggregate({ where: { storeId, returnedAt: between }, _sum: { chargedLateFee: true, otherFee: true, rewindFee: true } }),
     db.transaction.aggregate({ where: { storeId, type: "REFUND", createdAt: between, ...live }, _sum: { subtotal: true }, _count: { _all: true } }),
+    db.transaction.groupBy({ by: ["type"], where: { storeId, createdAt: between, ...live, balanceChange: { not: 0 } }, _sum: { balanceChange: true, total: true } }),
   ]);
+  const acctSum = (type: string, key: "balanceChange" | "total") => cents(acct.find((g) => g.type === type)?._sum[key]);
   const rentalRevenue = await db.rental.aggregate({ where: { storeId, rentedAt: between }, _sum: { price: true } });
   const membership = await db.transaction.aggregate({ where: { storeId, type: "MEMBERSHIP_FEE", createdAt: between, ...live }, _sum: { total: true } });
   return {
     refundCount: refunds._count._all,
     refundCents: cents(refunds._sum.subtotal), // negative, before tax
+    onAccountCents: acctSum("RETURN", "balanceChange"), // fees put on account that day
+    accountPaymentCents: acctSum("ACCOUNT_PAYMENT", "total"),
+    waivedCents: -acctSum("FEE_WAIVER", "balanceChange"),
     rentals, returns, transactions: txCount,
     merchandiseUnits: sales._sum.quantity ?? 0,
     merchandiseCents: cents(sales._sum.lineTotal),
@@ -37,14 +42,14 @@ export async function dailyActivity(storeId: string, day: Date, next: Date) {
   };
 }
 
-/** Revenue over a date range. total = rentals + merchandise + fees (return + membership) + refunds (negative) + tax (net of refunded tax). */
+/** Revenue over a date range. total = rentals + merchandise + fees (return + membership + account payments) + refunds (negative) + tax (net of refunded tax). */
 export async function revenue(storeId: string, r: Range) {
   const between = { gte: r.from, lt: r.toExclusive };
   const live = { voidedAt: null }; // voided transactions never count
   const [rent, merch, fees, refunds, all] = await Promise.all([
     db.rental.aggregate({ where: { storeId, transaction: { createdAt: between, ...live } }, _sum: { price: true }, _count: { _all: true } }),
     db.transactionItem.aggregate({ where: { storeId, transaction: { createdAt: between, type: { not: "REFUND" }, ...live } }, _sum: { lineTotal: true } }),
-    db.transaction.aggregate({ where: { storeId, type: { in: ["RETURN", "MEMBERSHIP_FEE"] }, createdAt: between, ...live }, _sum: { total: true }, _count: { _all: true } }),
+    db.transaction.aggregate({ where: { storeId, type: { in: ["RETURN", "MEMBERSHIP_FEE", "ACCOUNT_PAYMENT"] }, createdAt: between, ...live }, _sum: { total: true }, _count: { _all: true } }),
     db.transaction.aggregate({ where: { storeId, type: "REFUND", createdAt: between, ...live }, _sum: { subtotal: true }, _count: { _all: true } }),
     db.transaction.aggregate({ where: { storeId, createdAt: between, ...live }, _sum: { tax: true, total: true }, _count: { _all: true } }),
   ]);
@@ -132,6 +137,16 @@ export async function merchandiseInventory(storeId: string) {
   const units = items.reduce((n, i) => n + i.quantityOnHand, 0);
   const retailValueCents = items.reduce((n, i) => n + toCents(i.retailPrice) * i.quantityOnHand, 0);
   return { items, outCount: out.length, lowCount: low.length, units, retailValueCents };
+}
+
+/** Customers who owe money, largest balance first. */
+export async function customerBalances(storeId: string) {
+  const rows = await db.customer.findMany({
+    where: { storeId, outstandingFees: { gt: 0 } }, orderBy: [{ outstandingFees: "desc" }, { lastName: "asc" }], take: 1000,
+    select: { id: true, firstName: true, lastName: true, membershipNumber: true, phone: true, outstandingFees: true },
+  });
+  const list = rows.map((c) => ({ id: c.id, name: `${c.lastName.toUpperCase()}, ${c.firstName.toUpperCase()}`, member: c.membershipNumber, phone: c.phone, cents: cents(c.outstandingFees) }));
+  return { rows: list, totalCents: list.reduce((n, r) => n + r.cents, 0) };
 }
 
 export { listOverdue };

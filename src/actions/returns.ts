@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { PaymentMethod, Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { resolvePaidNow } from "@/lib/balance";
 import { resolveTender } from "@/lib/cash";
 import { daysLate, lateFeeCents } from "@/lib/late-fees";
 import { fmtMoney, fromCents, toCents } from "@/lib/pricing";
@@ -76,7 +77,10 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
       // Rewind fee: amount comes from store settings (never from the browser); VHS only; not for lost items.
       const rewind = d.notRewound && d.outcome !== "LOST" && rental.copy.format === "VHS" ? toCents(store.settings!.rewindFee) : 0;
       const total = lateCharged + other + rewind;
-      const tender = resolveTender(d.paymentMethod, total, input.tendered);
+      // Part (or all) of the fees may go on the customer's account instead of being paid now.
+      const split = resolvePaidNow(total, input.paidNow);
+      if (!split.ok) throw new ReturnError(split.message);
+      const tender = resolveTender(d.paymentMethod, split.paidCents, input.tendered);
       if (!tender.ok) throw new ReturnError(tender.message);
 
       const { nextTransactionNumber } = await tx.store.update({
@@ -89,11 +93,13 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
         calculated !== lateCharged && d.outcome !== "LOST" ? `LATE FEE ${fmtMoney(calculated)} CALCULATED, ${fmtMoney(lateCharged)} CHARGED${lateCharged === 0 ? " (WAIVED)" : " (REDUCED)"}` : null,
         d.outcome === "LOST" && calculated > 0 ? `LATE FEE ${fmtMoney(calculated)} NOT CHARGED (LOST ITEM)` : null,
         rewind > 0 ? `REWIND FEE ${fmtMoney(rewind)}` : null,
+        split.unpaidCents > 0 ? `${fmtMoney(split.unpaidCents)} OF ${fmtMoney(total)} FEES PUT ON ACCOUNT` : null,
       ].filter(Boolean).join("; ");
       const transaction = await tx.transaction.create({
         data: {
           storeId: store.id, number: nextTransactionNumber - 1, type: "RETURN", customerId: rental.customerId, createdById: user.id,
-          subtotal: fromCents(total), tax: "0.00", total: fromCents(total), paymentMethod: d.paymentMethod as PaymentMethod, notes: notes || null,
+          // subtotal/total = money actually collected now; the unpaid part is recorded in balanceChange
+          subtotal: fromCents(split.paidCents), tax: "0.00", total: fromCents(split.paidCents), balanceChange: fromCents(split.unpaidCents), paymentMethod: d.paymentMethod as PaymentMethod, notes: notes || null,
           tendered: tender.tenderedCents === null ? null : fromCents(tender.tenderedCents),
         },
       });
@@ -112,6 +118,8 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
         where: { id: rental.copyId, storeId: store.id },
         data: { status: d.outcome === "DAMAGED" ? "DAMAGED" : d.outcome === "LOST" ? "LOST" : "AVAILABLE" },
       });
+      if (split.unpaidCents > 0)
+        await tx.customer.update({ where: { id: rental.customerId, storeId: store.id }, data: { outstandingFees: { increment: fromCents(split.unpaidCents) } } });
       return transaction.id;
     });
   } catch (e) {

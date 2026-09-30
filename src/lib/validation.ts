@@ -374,7 +374,7 @@ export const returnSchema = z.object({
   paymentMethod: z.enum(PAYMENT_METHODS.map((p) => p.value) as [string, ...string[]], "SELECT A PAYMENT METHOD"),
   notRewound: z.boolean(),
 });
-export type ReturnValues = { outcome: string; lateFee: string; otherFee: string; paymentMethod: string; notRewound: boolean; tendered?: string };
+export type ReturnValues = { outcome: string; lateFee: string; otherFee: string; paymentMethod: string; notRewound: boolean; tendered?: string; paidNow?: string };
 
 // ── Concessions ──
 export const concessionSchema = z.object({
@@ -421,3 +421,13 @@ export const refundSchema = z.object({
   wholeFee: z.boolean(),
 });
 export type RefundValues = z.input<typeof refundSchema>;
+
+// ── Account balances ──
+export const balancePaySchema = z.object({
+  amount: z.string().trim().max(12, "AMOUNT IS TOO LONG"),
+  paymentMethod: z.enum(PAYMENT_METHODS.map((p) => p.value) as [string, ...string[]], "SELECT A PAYMENT METHOD"),
+});
+export const balanceWaiveSchema = z.object({
+  amount: z.string().trim().max(12, "AMOUNT IS TOO LONG"),
+  reason: reasonField,
+});

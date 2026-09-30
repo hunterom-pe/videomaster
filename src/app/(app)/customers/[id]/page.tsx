@@ -80,7 +80,13 @@ export default async function CustomerPage({
           {status === "CLOSED" ? "THIS ACCOUNT IS CLOSED." : "MANAGER OVERRIDE REQUIRED FOR NEW RENTALS."}
         </div>
       )}
-      {fees > 0 && <div className="vm-notice" role="status">OUTSTANDING BALANCE: ${fees.toFixed(2)}</div>}
+      {fees > 0 && (
+        <div className="vm-alert" role="alert">
+          <strong>*** BALANCE DUE: ${fees.toFixed(2)} ***</strong>
+          FEES PUT ON THIS ACCOUNT. MANAGER OVERRIDE IS REQUIRED TO RENT UNTIL IT IS PAID OR WAIVED.
+          <div className="vm-actions"><Link href={`/customers/${c.id}/balance`} className="vm-btn small">[ PAY OR WAIVE BALANCE ]</Link></div>
+        </div>
+      )}
       <fieldset className="vm-section">
         <legend>ACCOUNT</legend>
         <dl className="vm-kv">
@@ -92,7 +98,7 @@ export default async function CustomerPage({
           <dt>E-MAIL</dt><dd>{c.email ?? "—"}</dd>
           <dt>ADDRESS</dt><dd>{address || "—"}</dd>
           <dt>DATE OF BIRTH</dt><dd>{c.dateOfBirth ? c.dateOfBirth.toISOString().slice(0, 10) : "—"}</dd>
-          <dt>FEES DUE</dt><dd>${fees.toFixed(2)}</dd>
+          <dt>BALANCE DUE</dt><dd>{fees > 0 ? <Link href={`/customers/${c.id}/balance`} className="vm-red">${fees.toFixed(2)}</Link> : "$0.00"}</dd>
           <dt>NOTES</dt><dd style={{ whiteSpace: "pre-wrap" }}>{c.notes ?? "—"}</dd>
         </dl>
       </fieldset>

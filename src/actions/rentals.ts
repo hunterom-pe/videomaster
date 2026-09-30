@@ -160,6 +160,7 @@ export async function checkout(customerId: string | null, input: CheckoutValues)
       const reasons: string[] = [];
       if (acct !== "GOOD") reasons.push(`ACCOUNT ${acct}`);
       if (membershipState(customer.membershipExpiresAt, new Date()) === "EXPIRED") reasons.push("MEMBERSHIP EXPIRED");
+      if (Number(customer.outstandingFees) > 0) reasons.push(`BALANCE DUE $${customer.outstandingFees.toFixed(2)}`);
       const max = store.settings!.maxRentalsOut;
       if (max > 0) {
         const out = await db.rental.count({ where: { storeId: store.id, customerId: customer.id, returnedAt: null } });

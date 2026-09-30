@@ -65,7 +65,8 @@ export function refundability(t: OriginalTransaction): Refundability {
       id: r.id, label: `${r.copy.movieTitle.title.toUpperCase()} [${r.copy.copyNumber}]`, cents: toCents(r.price),
       taxable: r.copy.rentalCategory?.taxable ?? true, copyStatus: r.copy.status, returned: !!r.returnedAt,
     }));
-  const fee = isIn(FEE_TYPES, t.type) && !t.refundedAt && toCents(t.total) > 0 ? { label: t.type === "RETURN" ? "FEES CHARGED AT RETURN" : "MEMBERSHIP FEE", cents: toCents(t.total) } : null;
+  // A return whose fees were partly put on account cannot be refunded as a whole fee: waive the balance instead.
+  const fee = isIn(FEE_TYPES, t.type) && !t.refundedAt && toCents(t.total) > 0 && toCents(t.balanceChange) === 0 ? { label: t.type === "RETURN" ? "FEES CHARGED AT RETURN" : "MEMBERSHIP FEE", cents: toCents(t.total) } : null;
 
   const originalTaxableBaseCents =
     t.items.filter((i) => i.taxable).reduce((n, i) => n + toCents(i.lineTotal), 0) +

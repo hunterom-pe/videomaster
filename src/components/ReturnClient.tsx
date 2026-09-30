@@ -6,6 +6,7 @@ import { completeReturn } from "@/actions/returns";
 import { CashTender } from "@/components/CashTender";
 import { ErrorBox } from "@/components/Screen";
 import { RetroDialog } from "@/components/RetroDialog";
+import { resolvePaidNow } from "@/lib/balance";
 import { parseTender } from "@/lib/cash";
 import { fmtMoney, toCents } from "@/lib/pricing";
 import { PAYMENT_METHODS, returnSchema, zodErrors } from "@/lib/validation";
@@ -20,6 +21,7 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
   const [otherFee, setOtherFee] = useState("0.00");
   const [payment, setPayment] = useState("CASH");
   const [tendered, setTendered] = useState("");
+  const [paidNow, setPaidNow] = useState("");
   const [notRewound, setNotRewound] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
@@ -33,6 +35,9 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
   const otherCents = outcome === "RETURNED" || !Number.isFinite(otherNum) ? 0 : toCents(otherNum);
   const rewindCents = notRewound && outcome !== "LOST" && isVhs ? toCents(rewindFee) : 0;
   const total = lateCents + otherCents + rewindCents;
+  const split = resolvePaidNow(total, paidNow);
+  const paidCents = split.ok ? split.paidCents : total;
+  const onAccountCents = split.ok ? split.unpaidCents : 0;
 
   function pick(next: Outcome) {
     const value = outcome === next ? "RETURNED" : next; // click again to undo
@@ -54,10 +59,15 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
       setMessage("PLEASE CORRECT THE FIELDS MARKED BELOW");
       return;
     }
-    const tp = parseTender(tendered);
-    if (payment === "CASH" && total > 0 && (Number.isNaN(tp) || (tp !== null && tp < total))) {
+    if (!split.ok) {
       setErrors({});
-      setMessage(Number.isNaN(tp) ? "CASH TENDERED MUST BE A DOLLAR AMOUNT SUCH AS 20 OR 20.00." : `CASH TENDERED IS LESS THAN THE ${fmtMoney(total)} DUE.`);
+      setMessage(split.message);
+      return;
+    }
+    const tp = parseTender(tendered);
+    if (payment === "CASH" && paidCents > 0 && (Number.isNaN(tp) || (tp !== null && tp < paidCents))) {
+      setErrors({});
+      setMessage(Number.isNaN(tp) ? "CASH TENDERED MUST BE A DOLLAR AMOUNT SUCH AS 20 OR 20.00." : `CASH TENDERED IS LESS THAN THE ${fmtMoney(paidCents)} DUE NOW.`);
       return;
     }
     setErrors({});
@@ -68,7 +78,7 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
   function complete() {
     setConfirming(false);
     startTransition(async () => {
-      const r = await completeReturn(rentalId, { outcome, lateFee, otherFee, paymentMethod: payment, notRewound, tendered });
+      const r = await completeReturn(rentalId, { outcome, lateFee, otherFee, paymentMethod: payment, notRewound, tendered, paidNow });
       if (r && !r.ok) {
         setErrors(r.errors);
         setMessage(r.message);
@@ -112,7 +122,20 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
             </select>
             <span className="vm-hint">{total > 0 ? "SIMULATED — NO REAL PAYMENT IS PROCESSED" : "NO PAYMENT DUE"}</span>
           </div>
-          <CashTender method={payment} totalCents={total} value={tendered} onChange={setTendered} />
+          {total > 0 && (
+            <div className="vm-field">
+              <label htmlFor="paidnow">AMOUNT PAID NOW</label>
+              <input id="paidnow" inputMode="decimal" value={paidNow} onChange={(e) => setPaidNow(e.target.value)} placeholder={(total / 100).toFixed(2)} autoComplete="off" aria-describedby="paidnow-hint" />
+              <div className="vm-actions" style={{ marginTop: 4 }}>
+                <button type="button" className="vm-btn small" onClick={() => setPaidNow("")}>[ PAY ALL NOW ]</button>
+                <button type="button" className="vm-btn small" onClick={() => setPaidNow("0")}>[ PUT ALL ON ACCOUNT ]</button>
+              </div>
+              <span id="paidnow-hint" className={split.ok ? (onAccountCents > 0 ? "vm-yellow" : "vm-hint") : "vm-red"} aria-live="polite">
+                {!split.ok ? split.message : onAccountCents > 0 ? `${fmtMoney(onAccountCents)} WILL BE PUT ON THE CUSTOMER'S ACCOUNT` : "LEAVE BLANK TO COLLECT THE FULL AMOUNT"}
+              </span>
+            </div>
+          )}
+          <CashTender method={payment} totalCents={paidCents} value={tendered} onChange={setTendered} />
         </div>
         <dl className="vm-kv" style={{ marginTop: 10 }}>
           <dt>OUTCOME</dt><dd className={outcome === "RETURNED" ? "" : "vm-yellow"}>{outcome === "RETURNED" ? "NORMAL RETURN" : `*** COPY WILL BE MARKED ${outcome} ***`}</dd>
@@ -135,7 +158,8 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
             {rewindCents > 0 && (<><dt>REWIND FEE</dt><dd>{fmtMoney(rewindCents)}</dd></>)}
             <dt>FEES DUE</dt><dd>{fmtMoney(total)}</dd>
             {total > 0 && (<><dt>PAYMENT</dt><dd>{PAYMENT_METHODS.find((p) => p.value === payment)?.label}</dd></>)}
-            {payment === "CASH" && total > 0 && (<><dt>CASH TENDERED</dt><dd>{fmtMoney(parseTender(tendered) ?? total)}</dd><dt>CHANGE DUE</dt><dd><strong>{fmtMoney((parseTender(tendered) ?? total) - total)}</strong></dd></>)}
+            {onAccountCents > 0 && (<><dt>PAID NOW</dt><dd>{fmtMoney(paidCents)}</dd><dt>ON ACCOUNT</dt><dd className="vm-yellow">{fmtMoney(onAccountCents)}</dd></>)}
+            {payment === "CASH" && paidCents > 0 && (<><dt>CASH TENDERED</dt><dd>{fmtMoney(parseTender(tendered) ?? paidCents)}</dd><dt>CHANGE DUE</dt><dd><strong>{fmtMoney((parseTender(tendered) ?? paidCents) - paidCents)}</strong></dd></>)}
           </dl>
           <p className="vm-center">COMPLETE RETURN?</p>
           <div className="vm-actions" style={{ justifyContent: "center" }}>

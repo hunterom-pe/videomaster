@@ -319,6 +319,7 @@ enum TransactionType {
   DAMAGE_FEE
   LOST_ITEM_FEE
   MEMBERSHIP_FEE
+  ACCOUNT_PAYMENT
 }
 
 enum PaymentMethod {
@@ -341,6 +342,9 @@ model Transaction {
   tax             Decimal           @default(0) @db.Decimal(10, 2)
   total           Decimal           @default(0) @db.Decimal(10, 2)
   paymentMethod   PaymentMethod     @default(CASH)
+  // Signed effect on the customer's account balance: fees put on account (+), payments and waivers (-).
+  // Customer.outstandingFees always equals the sum of this column over the customer's non-voided transactions.
+  balanceChange   Decimal           @default(0) @db.Decimal(10, 2)
   tendered        Decimal?          @db.Decimal(10, 2) // cash handed over (CASH payments with money due only); change = tendered - total
   notes           String?
   createdAt       DateTime          @default(now())

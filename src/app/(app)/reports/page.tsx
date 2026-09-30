@@ -11,6 +11,7 @@ export const REPORTS = [
   { slug: "inventory", title: "INVENTORY", desc: "TITLES AND COPIES: AVAILABLE, RENTED, OVERDUE, DAMAGED, LOST" },
   { slug: "popular", title: "POPULAR RENTALS", desc: "TITLES RANKED BY NUMBER OF RENTALS" },
   { slug: "customers", title: "CUSTOMER ACTIVITY", desc: "TOP CUSTOMERS BY NUMBER OF RENTALS" },
+  { slug: "balances", title: "CUSTOMER BALANCES", desc: "CUSTOMERS WHO OWE FEES PUT ON ACCOUNT, LARGEST FIRST" },
   { slug: "merchandise", title: "MERCHANDISE INVENTORY", desc: "QUANTITY ON HAND, LOW STOCK AND OUT OF STOCK" },
   { slug: "revenue", title: "REVENUE", desc: "RENTAL, MERCHANDISE, FEES, TAXES AND TOTAL FOR A DATE RANGE" },
 ] as const;

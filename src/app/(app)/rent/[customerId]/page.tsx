@@ -21,6 +21,7 @@ export default async function CheckoutPage({ params }: { params: Promise<{ custo
   const restrictions: string[] = [];
   if (status !== "GOOD") restrictions.push(`ACCOUNT ${status}`);
   if (membershipState(c.membershipExpiresAt, new Date()) === "EXPIRED") restrictions.push("MEMBERSHIP EXPIRED");
+  if (Number(c.outstandingFees) > 0) restrictions.push(`BALANCE DUE $${c.outstandingFees.toFixed(2)}`);
   const activeOut = await db.rental.count({ where: { storeId: store.id, customerId: c.id, returnedAt: null } });
   const maxOut = store.settings!.maxRentalsOut;
 

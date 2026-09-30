@@ -234,7 +234,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
           <dt>CUSTOMER</dt><dd>{customerName}</dd>
           {customerId && (<><dt>ACCOUNT</dt><dd><span className={`vm-status ${status}`}>{status}</span></dd></>)}
         </dl>
-        {Number(fees) > 0 && <div className="vm-notice" role="status">OUTSTANDING BALANCE: ${fees}</div>}
+        {Number(fees) > 0 && <div className="vm-notice" role="status">BALANCE DUE: ${fees} — <Link href={`/customers/${customerId}/balance`}>[ PAY OR WAIVE ]</Link></div>}
         <hr className="vm-thin-rule" />
         <div className="vm-tablewrap">
           <table className="vm-table rows" style={{ minWidth: 560 }}>
