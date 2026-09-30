@@ -49,6 +49,7 @@ export default async function CustomerPage({
         <h1>{c.lastName.toUpperCase()}, {c.firstName.toUpperCase()}</h1>
         <span className="vm-actions" style={{ marginTop: 0 }}>
           <Link href={`/rent/${c.id}`} className="vm-btn">[ RENT VIDEO ]</Link>
+          <Link href={`/customers/${c.id}/history`} className="vm-btn">[ HISTORY ]</Link>
           {feesTracked && <Link href={`/customers/${c.id}/renew`} className="vm-btn">[ RENEW MEMBERSHIP ]</Link>}
           <Link href={`/customers/${c.id}/edit`} className="vm-btn">[ EDIT ]</Link>
           <Link href="/customers" className="vm-btn">[ CUSTOMER SEARCH ]</Link>
@@ -124,7 +125,7 @@ export default async function CustomerPage({
             </table>
           </div>
         )}
-        <div className="vm-hint">RETURNS AND FULL RENTAL HISTORY ARE NOT INSTALLED YET.</div>
+        <div className="vm-actions"><Link href={`/customers/${c.id}/history`} className="vm-btn small">[ FULL RENTAL &amp; TRANSACTION HISTORY ]</Link></div>
       </fieldset>
     </Screen>
   );

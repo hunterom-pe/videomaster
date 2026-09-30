@@ -147,6 +147,8 @@
 
 **Feature 3 — Unpaid-balance tracking** — `Customer.outstandingFees` is now the live balance (CHECK ≥ 0), every change recorded as signed `Transaction.balanceChange` (invariant: balance = Σ balanceChange of non-voided txs, tested). Return screen: `AMOUNT PAID NOW` (rest goes on account; RETURN total = money collected now). `ACCOUNT_PAYMENT` and `FEE_WAIVER` transactions via `lib/balance-ops.ts` / `actions/balance.ts` (guarded atomic decrement; waive = manager only); `/customers/[id]/balance` page; balance adds a manager-override reason at checkout (client + server); receipts, detail, reports (PAYMENTS ON ACCOUNT / PUT ON ACCOUNT / WAIVED rows, CUSTOMER BALANCES report). A return that put fees on account cannot be whole-fee refunded.
 
+**Feature 4 — Customer history** — `/customers/[id]/history` (`lib/customer-history.ts`): lifetime summary, paged rentals and transactions views, linked from the customer account. Voids excluded from spend.
+
 ## Current Work
 Nothing in progress.
 
@@ -177,7 +179,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Queued by the owner (one at a time, push each): 4 customer history, 5 rent again / return all, 6 membership cards with barcodes, 7 dark/phosphor-green theme toggle, 8 sound effects. (Demo mode is done.)
+Queued by the owner (one at a time, push each): 5 rent again / return all, 6 membership cards with barcodes, 7 dark/phosphor-green theme toggle, 8 sound effects. (Demo mode is done.)
 
 (Earlier plan:) Polish & accessibility pass: keyboard/focus review, contrast, labels/table semantics, phone-width check, optional F-key shortcuts. Remaining optional spec items: concession categories editable in settings, inventory/system settings sections, per-format pricing overrides.
 
