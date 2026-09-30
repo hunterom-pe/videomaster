@@ -139,6 +139,7 @@ Copy `.env.example` to `.env`. `.env` is git-ignored and never committed.
 |---|---|---|
 | `DATABASE_URL` | **Yes** | PostgreSQL connection string used by the running app, e.g. `postgresql://you@localhost:5432/videomaster`. On Supabase use the Shared Pooler in **Transaction mode** (port 6543). |
 | `MIGRATE_DATABASE_URL` | No | Connection used only by the Prisma CLI for migrations. Falls back to `DATABASE_URL`. |
+| `SITE_URL` | No | Public site URL for link previews (defaults to Netlify's `URL`, then the videomaster-rms Netlify address). Set it if you add a custom domain. |
 | `DB_POOL_MAX` | No | Max database connections per server instance (1–20, default 5). |
 | `DB_SSL` | No | `no-verify` = encrypt but skip certificate-chain verification (automatic for Supabase hosts). |
 | `TMDB_READ_ACCESS_TOKEN` | No* | TMDB "API Read Access Token" (sent as a bearer header). |
@@ -340,6 +341,7 @@ videomaster/
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Unit tests (the database test is skipped without a test DB) |
 | `npm run test:db` | Migrates a spare `videomaster_test` database and runs the sample-store integration test (create it once with `createdb videomaster_test`; override with `TEST_DATABASE_URL`) |
+| `python3 scripts/generate-brand-images.py` | Regenerates the link-preview image, app icon and favicon (`src/app/opengraph-image.png`, `twitter-image.png`, `apple-icon.png`, `favicon.ico`); needs Pillow and macOS Menlo |
 | `node scripts/fetch-sample-titles.mjs` | Regenerates `src/lib/sample-titles.json` from TMDB (needs a TMDB credential in `.env`) |
 
 ---

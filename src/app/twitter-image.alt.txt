@@ -1,0 +1,1 @@
+VideoMaster video rental management system: a 1990s-style store screen with menu buttons for renting, returning, customers, inventory and reports.
