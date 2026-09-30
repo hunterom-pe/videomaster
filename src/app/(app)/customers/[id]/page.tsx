@@ -49,6 +49,7 @@ export default async function CustomerPage({
         <h1>{c.lastName.toUpperCase()}, {c.firstName.toUpperCase()}</h1>
         <span className="vm-actions" style={{ marginTop: 0 }}>
           <Link href={`/rent/${c.id}`} className="vm-btn">[ RENT VIDEO ]</Link>
+          {activeRentals.length > 0 && <Link href={`/customers/${c.id}/return-all`} className="vm-btn">[ RETURN ALL ({activeRentals.length}) ]</Link>}
           <Link href={`/customers/${c.id}/history`} className="vm-btn">[ HISTORY ]</Link>
           {feesTracked && <Link href={`/customers/${c.id}/renew`} className="vm-btn">[ RENEW MEMBERSHIP ]</Link>}
           <Link href={`/customers/${c.id}/edit`} className="vm-btn">[ EDIT ]</Link>

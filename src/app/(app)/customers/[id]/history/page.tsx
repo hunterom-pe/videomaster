@@ -88,6 +88,7 @@ export default async function CustomerHistoryPage({ params, searchParams }: { pa
                           <span className={r.outcome === "RETURNED" ? "" : "vm-yellow"}>{r.outcome ?? "RETURNED"}</span>
                         ) : overdue ? <span className="vm-red"><strong>OVERDUE</strong></span> : "OUT"}
                         {r.returnTransactionId && <> · <Link href={`/transactions/${r.returnTransactionId}`}>RECEIPT</Link></>}
+                        {r.returnedAt && <> · <Link href={`/rent/${c.id}?again=${r.id}`}>RENT AGAIN</Link></>}
                       </td>
                     </tr>
                   );
@@ -109,7 +110,7 @@ export default async function CustomerHistoryPage({ params, searchParams }: { pa
                       <td>{TYPE_LABELS[t.type]}{t.voidedAt && <span className="vm-red"> VOID</span>}</td>
                       <td>{t.voidedAt ? <s>{money(toCents(t.total))}</s> : money(toCents(t.total))}</td>
                       <td>{PAYMENT_LABELS[t.paymentMethod]}</td>
-                      <td>{bal === 0 ? "—" : bal > 0 ? `+${fmtMoney(bal)} OWED` : `-${fmtMoney(-bal)}`}</td>
+                      <td>{bal === 0 ? "—" : bal > 0 ? `+${fmtMoney(bal)} OWED` : `-${fmtMoney(-bal)}`}{t.type === "RENTAL" && !t.voidedAt && <> <Link href={`/rent/${c.id}?againTx=${t.id}`}>RENT AGAIN</Link></>}</td>
                     </tr>
                   );
                 })}

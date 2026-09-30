@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { PaymentMethod } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { FORMAT_LABELS } from "@/lib/inventory";
+import { copyInclude, toCartItem as toItem } from "@/lib/cart-items";
 import { resolveTender } from "@/lib/cash";
 import { computeTotals, dueDate, fromCents, toCents } from "@/lib/pricing";
 import { membershipState } from "@/lib/membership";
@@ -33,24 +34,6 @@ export type TitleHit = {
 
 const MAX_HITS = 8;
 const MAX_COPIES_PER_GROUP = 6;
-
-const toItem = (c: {
-  id: string; copyNumber: string; format: keyof typeof FORMAT_LABELS;
-  movieTitle: { title: string; year: number | null };
-  rentalCategory: { name: string; rentalPrice: { toString(): string }; rentalDays: number; taxable: boolean } | null;
-}): CartItem | null =>
-  c.rentalCategory
-    ? {
-        copyId: c.id, copyNumber: c.copyNumber, title: c.movieTitle.title, year: c.movieTitle.year,
-        format: FORMAT_LABELS[c.format], categoryName: c.rentalCategory.name,
-        priceCents: toCents(c.rentalCategory.rentalPrice), days: c.rentalCategory.rentalDays, taxable: c.rentalCategory.taxable,
-      }
-    : null;
-
-const copyInclude = {
-  movieTitle: { select: { title: true, year: true } },
-  rentalCategory: { select: { name: true, rentalPrice: true, rentalDays: true, taxable: true } },
-} as const;
 
 /** Available copies matching a title search, exact copy ID, or barcode. Scoped to the session's store. */
 export async function findRentableCopies(query: string, excludeIds: string[]): Promise<{ hits: TitleHit[]; message?: string }> {

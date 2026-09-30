@@ -431,3 +431,13 @@ export const balanceWaiveSchema = z.object({
   amount: z.string().trim().max(12, "AMOUNT IS TOO LONG"),
   reason: reasonField,
 });
+
+// ── Return all ──
+export const returnAllSchema = z.object({
+  rentalIds: z.array(z.string().min(1)).min(1, "SELECT AT LEAST ONE VIDEO TO RETURN").max(50, "RETURN AT MOST 50 VIDEOS AT ONCE").refine((ids) => new Set(ids).size === ids.length, "THE SAME RENTAL APPEARS TWICE"),
+  waiveLate: z.boolean(),
+  paymentMethod: z.enum(PAYMENT_METHODS.map((p) => p.value) as [string, ...string[]], "SELECT A PAYMENT METHOD"),
+  paidNow: z.string().trim().max(12, "AMOUNT IS TOO LONG"),
+  tendered: z.string().trim().max(12, "AMOUNT IS TOO LONG"),
+});
+export type ReturnAllValues = z.input<typeof returnAllSchema>;

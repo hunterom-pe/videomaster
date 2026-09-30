@@ -149,6 +149,8 @@
 
 **Feature 4 — Customer history** — `/customers/[id]/history` (`lib/customer-history.ts`): lifetime summary, paged rentals and transactions views, linked from the customer account. Voids excluded from spend.
 
+**Feature 5 — Return all / Rent again** — `lib/returns-batch.ts` (`returnRentals`: one RETURN transaction for many rentals, guarded per-rental close, waive-all, paid-now/on-account, tender), `returnAll` action, `/customers/[id]/return-all` + `ReturnAllForm`; `lib/rent-again.ts` + `?again=` / `?againTx=` on `/rent/[customerId]` (cart pre-filled, missing titles reported); `lib/cart-items.ts` shared cart mapping. DB integration test `returns-batch.int.test.ts`.
+
 ## Current Work
 Nothing in progress.
 
@@ -179,7 +181,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Queued by the owner (one at a time, push each): 5 rent again / return all, 6 membership cards with barcodes, 7 dark/phosphor-green theme toggle, 8 sound effects. (Demo mode is done.)
+Queued by the owner (one at a time, push each): 6 membership cards with barcodes, 7 dark/phosphor-green theme toggle, 8 sound effects. (Demo mode is done.)
 
 (Earlier plan:) Polish & accessibility pass: keyboard/focus review, contrast, labels/table semantics, phone-width check, optional F-key shortcuts. Remaining optional spec items: concession categories editable in settings, inventory/system settings sections, per-format pricing overrides.
 

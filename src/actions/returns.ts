@@ -8,8 +8,9 @@ import { resolvePaidNow } from "@/lib/balance";
 import { resolveTender } from "@/lib/cash";
 import { daysLate, lateFeeCents } from "@/lib/late-fees";
 import { fmtMoney, fromCents, toCents } from "@/lib/pricing";
+import { ReturnBatchError, returnRentals } from "@/lib/returns-batch";
 import { requireStore } from "@/lib/store-access";
-import { returnSchema, zodErrors, type ActionState, type ReturnValues } from "@/lib/validation";
+import { returnAllSchema, returnSchema, zodErrors, type ActionState, type ReturnAllValues, type ReturnValues } from "@/lib/validation";
 
 class ReturnError extends Error {}
 
@@ -129,5 +130,30 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
   revalidatePath("/inventory");
   revalidatePath("/customers");
   revalidatePath("/return");
+  redirect(`/receipt/${transactionId}?new=1`);
+}
+
+/** Return several of one customer's open rentals in one step (one RETURN transaction). */
+export async function returnAll(customerId: string, input: ReturnAllValues): Promise<ActionState> {
+  const { store, user } = await requireStore();
+  const parsed = returnAllSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error), message: "PLEASE CORRECT THE FOLLOWING" };
+  const d = parsed.data;
+  let transactionId: string;
+  try {
+    ({ transactionId } = await db.$transaction((tx) =>
+      returnRentals(tx, {
+        storeId: store.id, userId: user.id, customerId, rentalIds: d.rentalIds, waiveLate: d.waiveLate, method: d.paymentMethod as PaymentMethod,
+        paidRaw: d.paidNow, tenderedRaw: d.tendered, tz: store.settings!.timezone, now: new Date(),
+      }),
+    ));
+  } catch (e) {
+    if (e instanceof ReturnBatchError) return { ok: false, errors: {}, message: e.message };
+    throw e;
+  }
+  revalidatePath("/inventory");
+  revalidatePath("/customers");
+  revalidatePath("/return");
+  revalidatePath("/overdue");
   redirect(`/receipt/${transactionId}?new=1`);
 }

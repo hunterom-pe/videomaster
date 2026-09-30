@@ -22,6 +22,8 @@ type Props = {
   taxPercent: string;
   timezone: string; // store zone, for due-date previews
   saleCategories: { id: string; name: string }[]; // merchandise category buttons
+  initialRentals?: CartItem[]; // "rent again": copies already in the cart
+  initialNotice?: string;
 };
 
 type SaleLine = { item: SaleItem; qty: number };
@@ -31,8 +33,8 @@ const saleKey = (id: string) => `sale:${id}`;
 const rowStyle = (selected: boolean) => (selected ? { background: "var(--cyan)", color: "var(--black)" } : undefined);
 const plainBtn = { background: "none", border: 0, font: "inherit", color: "inherit", padding: 0, cursor: "pointer", textAlign: "left" } as const;
 
-export function CheckoutClient({ customerId, customerName, status, fees, restrictions, activeOut, maxOut, canOverride, taxPercent, timezone, saleCategories }: Props) {
-  const [rentals, setRentals] = useState<CartItem[]>([]);
+export function CheckoutClient({ customerId, customerName, status, fees, restrictions, activeOut, maxOut, canOverride, taxPercent, timezone, saleCategories, initialRentals = [], initialNotice = "" }: Props) {
+  const [rentals, setRentals] = useState<CartItem[]>(initialRentals);
   const [sales, setSales] = useState<SaleLine[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -173,6 +175,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
               <div className="vm-hint">ONLY MOVIES ALREADY IN YOUR STORE INVENTORY CAN BE RENTED. <Link href="/inventory/add">ADD A TITLE FIRST</Link>.</div>
             </div>
           )}
+          {initialNotice && <div className="vm-notice" role="status">{initialNotice}</div>}
           <div aria-live="polite">
           {hits.map((h) => (
             <div key={h.titleId} style={{ marginBottom: 10 }}>
