@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { PaymentMethod } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { FORMAT_LABELS } from "@/lib/inventory";
 import { copyInclude, toCartItem as toItem } from "@/lib/cart-items";
 import { resolveTender } from "@/lib/cash";
 import { computeTotals, dueDate, fromCents, toCents } from "@/lib/pricing";
