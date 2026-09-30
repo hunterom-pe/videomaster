@@ -43,7 +43,7 @@ export default async function TitlePage({ params, searchParams }: { params: Prom
       <div className="vm-actions" style={{ marginTop: 0, justifyContent: "space-between" }}>
         <h1>{t.title.toUpperCase()}{t.year ? ` (${t.year})` : ""}</h1>
         <span className="vm-actions" style={{ marginTop: 0 }}>
-          <Link href="/rent" className="vm-btn small">[ RENT ]</Link>
+          <Link href="/rent" className="vm-btn">[ RENT ]</Link>
           <Link href="/inventory" className="vm-btn">[ INVENTORY ]</Link>
         </span>
       </div>
