@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { login, signup } from "@/actions/auth";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [state, action, pending] = useActionState(mode === "login" ? login : signup, undefined);

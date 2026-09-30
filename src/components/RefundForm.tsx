@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { refundTransactionAction } from "@/actions/transaction-ops";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 import { RetroDialog } from "@/components/RetroDialog";
 import { fmtMoney } from "@/lib/pricing";
 import { refundTotals } from "@/lib/refunds";

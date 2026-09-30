@@ -55,7 +55,7 @@ export default async function CheckoutPage({ params, searchParams }: { params: P
           {restrictions.length > 0 && (
             <div className="vm-alert" role="alert">
               <strong>*** {restrictions.join("; ")} ***</strong>
-              {overdue > 0 ? `CUSTOMER HAS ${overdue} OVERDUE RENTAL${overdue === 1 ? "" : "S"}. ` : ""}MANAGER OVERRIDE REQUIRED TO RENT TO THIS CUSTOMER. <Link href={`/customers/${c.id}`} style={{ color: "var(--yellow)" }}>VIEW ACCOUNT DETAILS</Link>
+              {overdue > 0 ? `CUSTOMER HAS ${overdue} OVERDUE RENTAL${overdue === 1 ? "" : "S"}. ` : ""}MANAGER OVERRIDE REQUIRED TO RENT TO THIS CUSTOMER. <Link href={`/customers/${c.id}`} style={{ color: "var(--alert-head)" }}>VIEW ACCOUNT DETAILS</Link>
             </div>
           )}
           <CheckoutClient

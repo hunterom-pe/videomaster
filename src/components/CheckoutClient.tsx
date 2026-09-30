@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { checkout, findRentableCopies, findSaleItems, type CartItem, type SaleItem, type TitleHit } from "@/actions/rentals";
 import { CashTender } from "@/components/CashTender";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 import { RetroDialog } from "@/components/RetroDialog";
 import { changeDueCents, parseTender } from "@/lib/cash";
 import { computeTotals, dueDate, fmtDate, fmtMoney } from "@/lib/pricing";
@@ -30,7 +30,7 @@ type SaleLine = { item: SaleItem; qty: number };
 
 const rentalKey = (id: string) => `rental:${id}`;
 const saleKey = (id: string) => `sale:${id}`;
-const rowStyle = (selected: boolean) => (selected ? { background: "var(--cyan)", color: "var(--black)" } : undefined);
+const rowStyle = (selected: boolean) => (selected ? { background: "var(--hover)", color: "var(--on-hover)" } : undefined);
 const plainBtn = { background: "none", border: 0, font: "inherit", color: "inherit", padding: 0, cursor: "pointer", textAlign: "left" } as const;
 
 export function CheckoutClient({ customerId, customerName, status, fees, restrictions, activeOut, maxOut, canOverride, taxPercent, timezone, saleCategories, initialRentals = [], initialNotice = "" }: Props) {
@@ -201,7 +201,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
           <button type="button" className="vm-btn small" aria-pressed={saleCat === "" && saleLoaded} onClick={() => { setSaleCat(""); loadSale(saleQuery, ""); }}>[ ALL ]</button>
           {saleCategories.map((c) => (
             <button key={c.id} type="button" className="vm-btn small" aria-pressed={saleCat === c.id}
-              style={saleCat === c.id ? { background: "var(--cyan)" } : undefined}
+              style={saleCat === c.id ? { background: "var(--hover)", color: "var(--on-hover)" } : undefined}
               onClick={() => { setSaleCat(c.id); loadSale(saleQuery, c.id); }}>[ {c.name} ]</button>
           ))}
         </div>

@@ -45,8 +45,8 @@ export default async function NewTitlePage({ searchParams }: { searchParams: Pro
     <Screen title="ADD TITLE TO INVENTORY" userEmail={user.email} storeLine={`STORE: ${store.name} #${store.number}`}>
       <h1>ADD TITLE TO INVENTORY</h1>
       <hr className="vm-rule" />
-      {formats.length === 0 && <div className="vm-alert" role="alert"><strong>*** NO FORMATS ENABLED ***</strong>ENABLE AT LEAST ONE FORMAT IN <Link href="/settings" style={{ color: "var(--yellow)" }}>STORE SETTINGS</Link>.</div>}
-      {problem && <div className="vm-alert" role="alert"><strong>*** {problem} ***</strong>ENTER THE TITLE DETAILS BY HAND BELOW, OR <Link href={`/inventory/new?tmdb=${tmdbId}`} style={{ color: "var(--yellow)" }}>TRY AGAIN</Link>.</div>}
+      {formats.length === 0 && <div className="vm-alert" role="alert"><strong>*** NO FORMATS ENABLED ***</strong>ENABLE AT LEAST ONE FORMAT IN <Link href="/settings" style={{ color: "var(--alert-head)" }}>STORE SETTINGS</Link>.</div>}
+      {problem && <div className="vm-alert" role="alert"><strong>*** {problem} ***</strong>ENTER THE TITLE DETAILS BY HAND BELOW, OR <Link href={`/inventory/new?tmdb=${tmdbId}`} style={{ color: "var(--alert-head)" }}>TRY AGAIN</Link>.</div>}
       {existing && (
         <div className="vm-notice" role="status">
           THIS MOVIE IS ALREADY IN YOUR STORE. SUBMITTING WILL ADD COPIES TO THE EXISTING TITLE (<Link href={`/inventory/${existing.id}`}>{existing.title.toUpperCase()}</Link>).

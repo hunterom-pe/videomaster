@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { startDemo } from "@/actions/auth";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 
 export function DemoButton() {
   const [message, setMessage] = useState("");

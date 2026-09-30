@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { renewMembership } from "@/actions/customers";
 import { CashTender } from "@/components/CashTender";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 import { PAYMENT_METHODS } from "@/lib/validation";
 
 export function RenewForm({ customerId, fee }: { customerId: string; fee: string }) {

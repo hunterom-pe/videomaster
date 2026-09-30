@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import "./globals.css";
+import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 
 // Absolute base URL: link-preview crawlers (iMessage, Slack, ...) need full URLs for the image.
 // Set SITE_URL in Netlify if you add a custom domain; Netlify's own URL variable is used otherwise.
@@ -17,9 +19,10 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
   return (
-    <html lang="en">
+    <html lang="en" data-theme={theme}>
       <body>{children}</body>
     </html>
   );

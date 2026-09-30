@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { createStore, updateStore } from "@/actions/store";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 import { DEFAULT_TIMEZONE, TIMEZONES, isValidTimeZone } from "@/lib/tz";
 import {
   CURRENCIES,

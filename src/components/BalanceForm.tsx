@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { payBalanceAction, waiveBalanceAction } from "@/actions/balance";
 import { CashTender } from "@/components/CashTender";
 import { RetroDialog } from "@/components/RetroDialog";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 import { resolveBalanceAmount } from "@/lib/balance";
 import { parseTender } from "@/lib/cash";
 import { fmtMoney } from "@/lib/pricing";
@@ -51,8 +51,8 @@ export function BalanceForm({ customerId, balanceCents, canWaive }: { customerId
       {message && <ErrorBox message={message} />}
       {canWaive && (
         <div className="vm-actions" style={{ marginTop: 0 }} role="group" aria-label="Action">
-          <button type="button" className="vm-btn" aria-pressed={mode === "pay"} style={mode === "pay" ? { background: "var(--cyan)" } : undefined} onClick={() => setMode("pay")}>[ TAKE PAYMENT ]</button>
-          <button type="button" className="vm-btn" aria-pressed={mode === "waive"} style={mode === "waive" ? { background: "var(--cyan)" } : undefined} onClick={() => setMode("waive")}>[ WAIVE BALANCE ]</button>
+          <button type="button" className="vm-btn" aria-pressed={mode === "pay"} style={mode === "pay" ? { background: "var(--hover)", color: "var(--on-hover)" } : undefined} onClick={() => setMode("pay")}>[ TAKE PAYMENT ]</button>
+          <button type="button" className="vm-btn" aria-pressed={mode === "waive"} style={mode === "waive" ? { background: "var(--hover)", color: "var(--on-hover)" } : undefined} onClick={() => setMode("waive")}>[ WAIVE BALANCE ]</button>
         </div>
       )}
       <div className="vm-grid" style={{ marginTop: 10 }}>

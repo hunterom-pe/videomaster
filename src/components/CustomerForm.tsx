@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createCustomer, updateCustomer } from "@/actions/customers";
 import { CashTender } from "@/components/CashTender";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 import { CUSTOMER_STATUSES, PAYMENT_METHODS, customerSchema, zodErrors, type CustomerFormValues } from "@/lib/validation";
 
 

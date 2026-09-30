@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { voidTransactionAction } from "@/actions/transaction-ops";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 import { RetroDialog } from "@/components/RetroDialog";
 
 export function VoidForm({ transactionId, number }: { transactionId: string; number: string }) {

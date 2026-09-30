@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { addCopies, addTitle, updateCopy } from "@/actions/inventory";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 import {
   COPY_CONDITIONS, EDITABLE_COPY_STATUSES, addCopiesSchema, addTitleSchema, copyEditSchema, zodErrors,
   type AddCopiesValues, type AddTitleValues, type CopyEditValues,

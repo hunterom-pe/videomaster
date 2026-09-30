@@ -58,8 +58,8 @@ export default async function CustomerHistoryPage({ params, searchParams }: { pa
       </fieldset>
 
       <div className="vm-actions" style={{ marginTop: 0 }} role="group" aria-label="History view">
-        <Link href={href("rentals")} className="vm-btn" aria-current={view === "rentals" ? "page" : undefined} style={view === "rentals" ? { background: "var(--cyan)" } : undefined}>[ RENTALS ]</Link>
-        <Link href={href("transactions")} className="vm-btn" aria-current={view === "transactions" ? "page" : undefined} style={view === "transactions" ? { background: "var(--cyan)" } : undefined}>[ TRANSACTIONS ]</Link>
+        <Link href={href("rentals")} className="vm-btn" aria-current={view === "rentals" ? "page" : undefined} style={view === "rentals" ? { background: "var(--hover)", color: "var(--on-hover)" } : undefined}>[ RENTALS ]</Link>
+        <Link href={href("transactions")} className="vm-btn" aria-current={view === "transactions" ? "page" : undefined} style={view === "transactions" ? { background: "var(--hover)", color: "var(--on-hover)" } : undefined}>[ TRANSACTIONS ]</Link>
       </div>
 
       {total === 0 ? (

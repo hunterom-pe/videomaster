@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { returnAll } from "@/actions/returns";
 import { CashTender } from "@/components/CashTender";
 import { RetroDialog } from "@/components/RetroDialog";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 import { resolvePaidNow } from "@/lib/balance";
 import { parseTender } from "@/lib/cash";
 import { fmtMoney } from "@/lib/pricing";

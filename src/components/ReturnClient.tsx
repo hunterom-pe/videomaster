@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { completeReturn } from "@/actions/returns";
 import { CashTender } from "@/components/CashTender";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 import { RetroDialog } from "@/components/RetroDialog";
 import { resolvePaidNow } from "@/lib/balance";
 import { parseTender } from "@/lib/cash";

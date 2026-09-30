@@ -1,6 +1,9 @@
+import { cookies } from "next/headers";
 import { logout } from "@/actions/auth";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 
-export function Screen({
+export async function Screen({
   title,
   storeLine,
   userEmail,
@@ -13,18 +16,22 @@ export function Screen({
   children: React.ReactNode;
   status?: string;
 }) {
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
   return (
     <div className="vm-screen">
       <a className="vm-skip" href="#main">SKIP TO MAIN CONTENT</a>
       <div className="vm-frame">
         <header className="vm-titlebar">
           <span>VIDEOMASTER V1.0 — {title}</span>
-          {userEmail ? (
-            <form action={logout}>
-              <span style={{ marginRight: 12, fontWeight: "normal" }}>{userEmail}</span>
-              <button type="submit" className="vm-btn small">[ LOG OFF ]</button>
-            </form>
-          ) : null}
+          <span className="vm-titlebar-tools">
+            <ThemeToggle initial={theme} />
+            {userEmail ? (
+              <form action={logout}>
+                <span style={{ marginRight: 12, fontWeight: "normal" }}>{userEmail}</span>
+                <button type="submit" className="vm-btn small">[ LOG OFF ]</button>
+              </form>
+            ) : null}
+          </span>
         </header>
         <main id="main" className="vm-body" tabIndex={-1}>{children}</main>
         <footer className="vm-statusbar">
@@ -32,23 +39,6 @@ export function Screen({
           {storeLine ? <span>{storeLine}</span> : null}
         </footer>
       </div>
-    </div>
-  );
-}
-
-export function ErrorBox({ message, errors }: { message: string; errors?: Record<string, string> }) {
-  const list = errors ? Object.values(errors) : [];
-  return (
-    <div className="vm-alert" role="alert">
-      <strong>*** ERROR ***</strong>
-      {message}
-      {list.length > 0 && (
-        <ul>
-          {list.map((e, i) => (
-            <li key={i}>{e}</li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }

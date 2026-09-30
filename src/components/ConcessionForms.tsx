@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { addStock, createConcession, updateConcession } from "@/actions/concessions";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 import { concessionSchema, zodErrors, type ConcessionFormValues } from "@/lib/validation";
 
 

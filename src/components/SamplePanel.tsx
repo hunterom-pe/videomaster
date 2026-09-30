@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { clearData, loadSample } from "@/actions/sample";
-import { ErrorBox } from "@/components/Screen";
+import { ErrorBox } from "@/components/ErrorBox";
 import { RetroDialog } from "@/components/RetroDialog";
 
 export function SamplePanel({ isEmpty, isOwner, canManage }: { isEmpty: boolean; isOwner: boolean; canManage: boolean }) {
