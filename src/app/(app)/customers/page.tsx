@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Screen } from "@/components/Screen";
 import { searchCustomers } from "@/lib/customers";
 import { effectiveStatus, overdueCounts } from "@/lib/overdue";
+import { db } from "@/lib/db";
+import { normalizeMemberNumber } from "@/lib/membership-card";
 import { requireStore } from "@/lib/store-access";
 
 export const metadata = { title: "CUSTOMERS" };
@@ -12,6 +15,12 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const sp = await searchParams;
   const q = (sp.q ?? "").slice(0, 100);
   const page = Math.max(1, Math.min(100000, parseInt(sp.page ?? "1", 10) || 1));
+  // A scanned membership card (or a typed member number) opens that customer directly.
+  const member = normalizeMemberNumber(q);
+  if (member && !sp.page) {
+    const hit = await db.customer.findFirst({ where: { storeId: store.id, membershipNumber: member }, select: { id: true } });
+    if (hit) redirect(`/customers/${hit.id}`);
+  }
   const { rows, total, pages } = await searchCustomers(store.id, q, page);
   const overdue = await overdueCounts(store.id, rows.map((r) => r.id), tz);
   const href = (p: number) => `/customers?${new URLSearchParams({ ...(q ? { q } : {}), page: String(p) })}`;

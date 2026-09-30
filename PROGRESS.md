@@ -151,6 +151,8 @@
 
 **Feature 5 — Return all / Rent again** — `lib/returns-batch.ts` (`returnRentals`: one RETURN transaction for many rentals, guarded per-rental close, waive-all, paid-now/on-account, tender), `returnAll` action, `/customers/[id]/return-all` + `ReturnAllForm`; `lib/rent-again.ts` + `?again=` / `?againTx=` on `/rent/[customerId]` (cart pre-filled, missing titles reported); `lib/cart-items.ts` shared cart mapping. DB integration test `returns-batch.int.test.ts`.
 
+**Feature 6 — Membership cards** — `/customers/[id]/card` (Code 128 SVG via `bwip-js/node`, `lib/barcode.ts`), print CSS, `lib/membership-card.ts` (`normalizeMemberNumber`, tested); exact member-number search on /rent and /customers redirects straight to the customer (scanner-friendly). New dependency: `bwip-js`.
+
 ## Current Work
 Nothing in progress.
 
@@ -181,7 +183,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Queued by the owner (one at a time, push each): 6 membership cards with barcodes, 7 dark/phosphor-green theme toggle, 8 sound effects. (Demo mode is done.)
+Queued by the owner (one at a time, push each): 7 dark/phosphor-green theme toggle, 8 sound effects. (Demo mode is done.)
 
 (Earlier plan:) Polish & accessibility pass: keyboard/focus review, contrast, labels/table semantics, phone-width check, optional F-key shortcuts. Remaining optional spec items: concession categories editable in settings, inventory/system settings sections, per-format pricing overrides.
 

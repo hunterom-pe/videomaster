@@ -51,6 +51,7 @@ export default async function CustomerPage({
           <Link href={`/rent/${c.id}`} className="vm-btn">[ RENT VIDEO ]</Link>
           {activeRentals.length > 0 && <Link href={`/customers/${c.id}/return-all`} className="vm-btn">[ RETURN ALL ({activeRentals.length}) ]</Link>}
           <Link href={`/customers/${c.id}/history`} className="vm-btn">[ HISTORY ]</Link>
+          <Link href={`/customers/${c.id}/card`} className="vm-btn">[ MEMBER CARD ]</Link>
           {feesTracked && <Link href={`/customers/${c.id}/renew`} className="vm-btn">[ RENEW MEMBERSHIP ]</Link>}
           <Link href={`/customers/${c.id}/edit`} className="vm-btn">[ EDIT ]</Link>
           <Link href="/customers" className="vm-btn">[ CUSTOMER SEARCH ]</Link>
