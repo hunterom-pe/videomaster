@@ -141,6 +141,8 @@
 - Owner/manager only (re-checked server-side). Void (RENTAL / RETAIL_SALE, nothing returned or refunded): rentals deleted, copies back to AVAILABLE, stock restocked, transaction kept marked VOID with reason/user/snapshot and excluded from all totals. Refund: negative REFUND transaction linked to the original (`refundOfId`); merchandise lines by quantity (`TransactionItem.refundedQty`, optional restock), rental charges (`Rental.refundedAt`, money only), whole fee/membership payment (`Transaction.refundedAt`); proportional tax, the final refund returns the exact remaining tax. Concurrency-safe guarded updates.
 - Reports/revenue show a REFUNDS row and net tax; history list shows VOID and excludes voids from the net total; receipts support REFUND and VOID. Logic in `lib/transaction-ops.ts` + `lib/refunds.ts`; unit tests + DB integration tests (`npm run test:db` now runs every `*.int.test.ts`).
 
+**Demo mode** — `[ TRY DEMO MODE ]` on the log-on screen: `startDemo` action → `lib/demo.ts` creates a private `User{isDemo}` + store and loads the sample data; accounts purged after 24 h on later demo starts; no password login possible (`passwordHash "!"`); per-IP rate limit; banner on the main menu. Store-creation field helpers moved to `lib/store-fields.ts`.
+
 ## Current Work
 Nothing in progress.
 
@@ -171,7 +173,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Queued by the owner (one at a time, push each): 2 cash tendered/change, 3 unpaid-balance tracking, 4 customer history, 5 rent again / return all, 6 membership cards with barcodes, 7 dark/phosphor-green theme toggle, 8 sound effects. Also requested: a one-click DEMO MODE on the login screen (pre-filled store).
+Queued by the owner (one at a time, push each): 2 cash tendered/change, 3 unpaid-balance tracking, 4 customer history, 5 rent again / return all, 6 membership cards with barcodes, 7 dark/phosphor-green theme toggle, 8 sound effects. (Demo mode is done.)
 
 (Earlier plan:) Polish & accessibility pass: keyboard/focus review, contrast, labels/table semantics, phone-width check, optional F-key shortcuts. Remaining optional spec items: concession categories editable in settings, inventory/system settings sections, per-format pricing overrides.
 

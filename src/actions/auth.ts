@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { createDemoAccount, purgeOldDemos } from "@/lib/demo";
 import { DUMMY_HASH, hashPassword, verifyPassword } from "@/lib/password";
 import { clientIp, isRateLimited, recordFailure } from "@/lib/rate-limit";
 import { createSession, destroySession } from "@/lib/session";
@@ -50,4 +51,14 @@ export async function login(_prev: ActionState, formData: FormData): Promise<Act
 export async function logout() {
   await destroySession();
   redirect("/login");
+}
+
+/** One-click demo: a private throwaway store with inventory, customers and transactions. Rate limited per IP. */
+export async function startDemo(): Promise<ActionState> {
+  const keys = [`demo:${await clientIp()}`];
+  if (await isRateLimited(keys)) return { ok: false, errors: {}, message: "TOO MANY DEMO STARTS FROM THIS ADDRESS. WAIT A WHILE AND TRY AGAIN." };
+  await recordFailure(keys); // counts demo starts; same DB-backed window as failed log-ons
+  await purgeOldDemos(db).catch(() => 0); // housekeeping must never block a visitor
+  await createSession(await createDemoAccount(db));
+  redirect("/menu");
 }

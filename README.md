@@ -77,6 +77,7 @@ It is a real, working point-of-sale and inventory system (rentals, returns, late
 
 **Money and records**
 - Transactions (rentals, returns, retail sales, membership fees) with per-store numbering, payment method, tax and notes; filterable history and a detail page.
+- **Demo mode:** a `[ TRY DEMO MODE ]` button on the log-on screen creates a private throwaway account with a fully stocked sample store (videos, customers, rentals, overdue items, sales) and signs in. Every click gets its own store; demo accounts are deleted after 24 hours, and demo starts are rate limited per IP.
 - **Voids and refunds** (owner/manager only): *void* cancels an open rental or sale as if it never happened (copies back on the shelf, stock restocked, kept in history marked VOID, excluded from totals); *refund* returns money for chosen merchandise lines (with optional restock), rental charges or a fee/membership payment, with proportional tax, as a negative REFUND transaction linked to the original.
 - Retro on-screen **receipts** with `[ PRINT ]` (browser print, black-on-white stylesheet) and reprint from any transaction.
 - Seven printable **reports**: Daily Activity, Overdue Rentals, Inventory, Popular Rentals, Customer Activity, Merchandise Inventory, Revenue — with date filters. Totals reconcile to the cent.

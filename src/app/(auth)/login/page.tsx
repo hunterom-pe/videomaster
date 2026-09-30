@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { DemoButton } from "@/components/DemoButton";
 import { AuthForm } from "@/components/AuthForm";
 import { Screen } from "@/components/Screen";
 import { getCurrentUser } from "@/lib/session";
@@ -17,6 +18,8 @@ export default async function LoginPage() {
         </div>
         <hr className="vm-rule" />
         <AuthForm mode="login" />
+        <hr className="vm-thin-rule" />
+        <DemoButton />
       </Screen>
     </div>
   );

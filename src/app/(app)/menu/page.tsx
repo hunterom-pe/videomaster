@@ -29,6 +29,7 @@ export default async function MenuPage({ searchParams }: { searchParams: Promise
         {store.slogan && <div className="vm-cyan">&quot;{store.slogan}&quot;</div>}
       </div>
       <hr className="vm-rule" />
+      {user.isDemo && <div className="vm-notice" role="status">*** DEMO MODE: THIS IS YOUR OWN PRIVATE PRACTICE STORE. CHANGE ANYTHING YOU LIKE. IT IS DELETED AFTER 24 HOURS. ***</div>}
       {saved && <div className="vm-notice" role="status">*** STORE SETTINGS SAVED ***</div>}
       {sample && <div className="vm-notice" role="status">*** SAMPLE STORE DATA LOADED. EXPLORE THE MENU BELOW. ***</div>}
       {cleared && <div className="vm-notice" role="status">*** ALL STORE DATA CLEARED ***</div>}

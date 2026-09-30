@@ -18,6 +18,7 @@ model User {
   email              String         @unique
   passwordHash       String
   createdAt          DateTime       @default(now())
+  isDemo             Boolean        @default(false)
   sessions           Session[]
   memberships        StoreMember[]
   loginAttempts      LoginAttempt[]
