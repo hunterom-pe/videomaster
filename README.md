@@ -137,8 +137,10 @@ Copy `.env.example` to `.env`. `.env` is git-ignored and never committed.
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `DATABASE_URL` | **Yes** | PostgreSQL connection string used by the running app, e.g. `postgresql://you@localhost:5432/videomaster`. On a serverless host use the provider's **pooled** connection string. |
-| `MIGRATE_DATABASE_URL` | No | A **direct (non-pooled)** connection used only by the Prisma CLI for migrations. Falls back to `DATABASE_URL`. |
+| `DATABASE_URL` | **Yes** | PostgreSQL connection string used by the running app, e.g. `postgresql://you@localhost:5432/videomaster`. On Supabase use the **Session pooler** string. |
+| `MIGRATE_DATABASE_URL` | No | Connection used only by the Prisma CLI for migrations. Falls back to `DATABASE_URL`. |
+| `DB_POOL_MAX` | No | Max database connections per server instance (1–20, default 5). |
+| `DB_SSL` | No | `no-verify` = encrypt but skip certificate-chain verification (automatic for Supabase hosts). |
 | `TMDB_READ_ACCESS_TOKEN` | No* | TMDB "API Read Access Token" (sent as a bearer header). |
 | `TMDB_API_KEY` | No* | TMDB v3 API key (used only if no token is set). |
 
@@ -353,17 +355,25 @@ Before every milestone: lint, type-check, unit tests, production build, and a ma
 
 ---
 
-## Deploying (Netlify)
+## Deploying (Netlify + Supabase)
 
-1. **Database** — create a hosted PostgreSQL database (Neon, Supabase, …).
-2. **Site** — Netlify → *Add new site → Import from Git* → choose this repository. `netlify.toml` sets the build command and Node 22.
-3. **Environment variables** (Site configuration → Environment variables):
-   - `DATABASE_URL` — the provider's **pooled** connection string (runtime).
-   - `MIGRATE_DATABASE_URL` — the **direct** connection string (migrations).
-   - `TMDB_READ_ACCESS_TOKEN` or `TMDB_API_KEY` — for movie search.
-4. **Deploy.** Production builds run `npx prisma migrate deploy` before `next build`; deploy previews **do not** migrate, so they cannot touch production data.
+**1. Database (Supabase).** Create a project (choose a region near Netlify, e.g. US East) and set a database password. Then open **Connect** (top of the project page) and copy the **Session pooler** connection string (port `5432`, host like `aws-0-<region>.pooler.supabase.com`, user `postgres.<project-ref>`; put your password where it says `[YOUR-PASSWORD]`). Use this string for **both** variables below. Do *not* use the "Direct connection": on the free plan it is IPv6-only and Netlify's build machines are IPv4.
 
-Nothing relies on in-process state, so the app is safe on serverless functions. This deployment path has been prepared and its migrations verified from scratch, but it has not been run on Netlify itself.
+**2. Site.** Netlify → *Add new site → Import from Git* → choose this repository. `netlify.toml` sets the build command and Node 22.
+
+**3. Environment variables** (Site configuration → Environment variables; scope each to **Builds** *and* **Functions**):
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | Supabase Session pooler string |
+| `MIGRATE_DATABASE_URL` | the same Session pooler string |
+| `TMDB_API_KEY` *(or `TMDB_READ_ACCESS_TOKEN`)* | your TMDB credential |
+
+Optional: `DB_POOL_MAX` (connections per serverless instance, default 5; keep it small) and `DB_SSL=no-verify` (applied automatically for Supabase hosts: the connection is encrypted but the pooler's certificate chain is not verified, because Node's default trust store rejects it).
+
+**4. Deploy.** Production builds run `npx prisma migrate deploy` before `next build`; deploy previews **do not** migrate, so they cannot touch production data. The hosted database starts empty: sign up on the live site and (optionally) load the sample store.
+
+Nothing relies on in-process state, so the app is safe on serverless functions, and no session secret is needed (sessions are random tokens stored in the database). This path has been prepared and the connection code unit-tested, but it has not been run against Supabase or on Netlify itself.
 
 ---
 

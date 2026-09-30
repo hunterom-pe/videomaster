@@ -123,6 +123,10 @@
 **Polish step 6 — Detailed README**
 - README rewritten: overview, feature list, prerequisites/quick start (incl. Homebrew Postgres), configuration table, screens/routes table, workflows, sample demo store, keyboard shortcuts, business rules, architecture, data model, security model, project structure, scripts, testing/quality, Netlify deployment, development gotchas (restart after schema changes, hand-written migrations, second dev server, Prisma pin, Next 16 differences, client-module constants), design principles, known limitations, credits (TMDB attribution).
 
+**Supabase-ready connection handling**
+- `lib/db-config.ts` (unit-tested): for Supabase hosts (or `DB_SSL=no-verify`) strips `sslmode` from the URL and connects with encrypted-but-unverified TLS (Node rejects the pooler's certificate chain, and `sslmode=` in a URL overrides an explicit `ssl` option); caps the pool (`DB_POOL_MAX`, default 5) for serverless. Local/other hosts are unchanged. Docs say to use Supabase's **Session pooler** string for both `DATABASE_URL` and `MIGRATE_DATABASE_URL` (the direct connection is IPv6-only on the free plan; Netlify builds are IPv4).
+- Not yet exercised against a real Supabase project.
+
 ## Current Work
 Nothing in progress.
 
