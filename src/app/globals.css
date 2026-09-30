@@ -209,3 +209,7 @@ main:focus { outline: none; }
 .vm-jumpnav a.vm-btn { text-decoration: none; color: var(--black); }
 .vm-section { scroll-margin-top: 12px; }
 @media print { .vm-jumpnav { display: none; } }
+
+/* Buttons inside table cells (e.g. [ REMOVE ]) never wrap their label; the cell sizes itself to the button. */
+.vm-table td .vm-btn { white-space: nowrap; }
+.vm-table td:has(> .vm-btn) { width: 1%; white-space: nowrap; }
