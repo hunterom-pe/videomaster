@@ -130,6 +130,9 @@
 **First Netlify deploy: secrets-scanning failure**
 - Netlify failed the first build on *secrets scanning* (`DATABASE_URL`, `MIGRATE_DATABASE_URL`, `TMDB_API_KEY` values "detected"). Investigated: no real secret is committed (checked files + full git history), and a local production build with canary values shows none of them in any build output, the generated client, or the build log. Treated as a false positive and set `SECRETS_SCAN_OMIT_KEYS` for exactly those variables in `netlify.toml` (other secrets remain scanned). If it recurs, the Netlify log lists the exact file/line for each detection — check those before widening the omit list.
 
+**Netlify runtime error after a redeploy ("This page couldn't load")**
+- Likely cause: Supabase's **session-mode** pooler caps clients (~15); each Netlify function instance holds up to 5 and old instances keep theirs across a redeploy, so the pool is exhausted. Fix (config, no code change): runtime `DATABASE_URL` → **transaction-mode** pooler (port 6543; `@prisma/adapter-pg` does not use named prepared statements unless `statementNameGenerator` is set, so this is compatible), keep `MIGRATE_DATABASE_URL` on session mode (5432), set `DB_POOL_MAX=3`. Docs updated. Not yet confirmed from Netlify function logs.
+
 ## Current Work
 Nothing in progress.
 

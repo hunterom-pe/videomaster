@@ -137,7 +137,7 @@ Copy `.env.example` to `.env`. `.env` is git-ignored and never committed.
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `DATABASE_URL` | **Yes** | PostgreSQL connection string used by the running app, e.g. `postgresql://you@localhost:5432/videomaster`. On Supabase use the **Session pooler** string. |
+| `DATABASE_URL` | **Yes** | PostgreSQL connection string used by the running app, e.g. `postgresql://you@localhost:5432/videomaster`. On Supabase use the Shared Pooler in **Transaction mode** (port 6543). |
 | `MIGRATE_DATABASE_URL` | No | Connection used only by the Prisma CLI for migrations. Falls back to `DATABASE_URL`. |
 | `DB_POOL_MAX` | No | Max database connections per server instance (1–20, default 5). |
 | `DB_SSL` | No | `no-verify` = encrypt but skip certificate-chain verification (automatic for Supabase hosts). |
@@ -357,7 +357,12 @@ Before every milestone: lint, type-check, unit tests, production build, and a ma
 
 ## Deploying (Netlify + Supabase)
 
-**1. Database (Supabase).** Create a project (choose a region near Netlify, e.g. US East) and set a database password. Then open **Connect** (top of the project page) and copy the **Session pooler** connection string (port `5432`, host like `aws-0-<region>.pooler.supabase.com`, user `postgres.<project-ref>`; put your password where it says `[YOUR-PASSWORD]`). Use this string for **both** variables below. Do *not* use the "Direct connection": on the free plan it is IPv6-only and Netlify's build machines are IPv4.
+**1. Database (Supabase).** Create a project (choose a region near Netlify, e.g. US East) and set a database password. Open **Connect** and copy **two** strings from the **Shared Pooler** (put your password where it says `[YOUR-PASSWORD]`, brackets removed):
+
+- **Transaction mode** (port `6543`) → the running app (`DATABASE_URL`). It is designed for serverless, where many short-lived function instances each open connections.
+- **Session mode** (port `5432`) → migrations (`MIGRATE_DATABASE_URL`), which need session features.
+
+Do *not* use the "Direct connection" (IPv6-only on the free plan; Netlify builds are IPv4). Using session mode for the running app is tempting but it allows only about 15 simultaneous clients, and a redeploy (old instances still holding connections while new ones start) can exhaust it and produce "This page couldn't load".
 
 **2. Site.** Netlify → *Add new site → Import from Git* → choose this repository. `netlify.toml` sets the build command and Node 22.
 
@@ -365,11 +370,12 @@ Before every milestone: lint, type-check, unit tests, production build, and a ma
 
 | Variable | Value |
 |---|---|
-| `DATABASE_URL` | Supabase Session pooler string |
-| `MIGRATE_DATABASE_URL` | the same Session pooler string |
+| `DATABASE_URL` | Supabase Shared Pooler, **Transaction mode** string (port 6543) |
+| `MIGRATE_DATABASE_URL` | Supabase Shared Pooler, **Session mode** string (port 5432) |
+| `DB_POOL_MAX` | `3` (connections per function instance) |
 | `TMDB_API_KEY` *(or `TMDB_READ_ACCESS_TOKEN`)* | your TMDB credential |
 
-Optional: `DB_POOL_MAX` (connections per serverless instance, default 5; keep it small) and `DB_SSL=no-verify` (applied automatically for Supabase hosts: the connection is encrypted but the pooler's certificate chain is not verified, because Node's default trust store rejects it).
+Optional: `DB_SSL=no-verify` (applied automatically for Supabase hosts: the connection is encrypted but the pooler's certificate chain is not verified, because Node's default trust store rejects it).
 
 **4. Deploy.** Production builds run `npx prisma migrate deploy` before `next build`; deploy previews **do not** migrate, so they cannot touch production data. The hosted database starts empty: sign up on the live site and (optionally) load the sample store.
 
