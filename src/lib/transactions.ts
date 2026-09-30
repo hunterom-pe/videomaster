@@ -45,7 +45,7 @@ export async function searchTransactions(storeId: string, f: TxFilters, page: nu
       include: { customer: { select: { firstName: true, lastName: true } }, _count: { select: { rentals: true, items: true, returnedRentals: true } } },
     }),
     db.transaction.count({ where }),
-    db.transaction.aggregate({ where, _sum: { total: true } }),
+    db.transaction.aggregate({ where: { ...where, voidedAt: null }, _sum: { total: true } }), // voided transactions are not money
   ]);
   return { rows, total, sum: agg._sum.total, pages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
 }

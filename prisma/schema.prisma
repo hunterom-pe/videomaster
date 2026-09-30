@@ -14,14 +14,15 @@ datasource db {
 // ───────────────────────── Auth & ownership ─────────────────────────
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  passwordHash  String
-  createdAt     DateTime       @default(now())
-  sessions      Session[]
-  memberships   StoreMember[]
-  loginAttempts LoginAttempt[]
-  transactions  Transaction[]
+  id                 String         @id @default(cuid())
+  email              String         @unique
+  passwordHash       String
+  createdAt          DateTime       @default(now())
+  sessions           Session[]
+  memberships        StoreMember[]
+  loginAttempts      LoginAttempt[]
+  transactions       Transaction[]
+  voidedTransactions Transaction[]  @relation("TransactionVoidedBy")
 }
 
 model Session {
@@ -292,6 +293,7 @@ model Rental {
   chargedLateFee      Decimal?       @db.Decimal(8, 2) // what was actually charged (waived/reduced)
   otherFee            Decimal?       @db.Decimal(8, 2) // damage / lost-item fee
   rewindFee           Decimal?       @db.Decimal(8, 2)
+  refundedAt          DateTime? // rental charge refunded
   returnTransactionId String?
   store               Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
   customer            Customer       @relation(fields: [storeId, customerId], references: [storeId, id])
@@ -340,9 +342,21 @@ model Transaction {
   paymentMethod   PaymentMethod     @default(CASH)
   notes           String?
   createdAt       DateTime          @default(now())
+  // Voids: a mistaken rental/sale undone in full (rentals removed, stock and copies restored). Excluded from all totals.
+  voidedAt        DateTime?
+  voidedById      String?
+  voidReason      String?
+  voidSnapshot    String? // what the void removed, e.g. "TERMINATOR 2 VHS-000001; C001 SOUR PATCH KIDS x1"
+  // Refunds: a REFUND transaction points at the transaction it refunds. `refundedAt` marks a whole-fee refund
+  // (RETURN / MEMBERSHIP_FEE transactions are refunded all-or-nothing).
+  refundOfId      String?
+  refundedAt      DateTime?
   store           Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
   customer        Customer?         @relation(fields: [storeId, customerId], references: [storeId, id])
   createdBy       User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  voidedBy        User?             @relation("TransactionVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
+  refundOf        Transaction?      @relation("TransactionRefunds", fields: [refundOfId], references: [id])
+  refunds         Transaction[]     @relation("TransactionRefunds")
   rentals         Rental[]          @relation("RentalCheckout")
   returnedRentals Rental[]          @relation("RentalReturn")
   items           TransactionItem[]
@@ -380,20 +394,28 @@ model ConcessionItem {
 
 // Merchandise lines on a transaction (rentals are linked via Rental.transactionId).
 // Name/SKU/price are snapshots so history survives later edits to the catalog item.
+enum TransactionItemKind {
+  MERCHANDISE
+  RENTAL // a refunded rental charge (negative line on a REFUND transaction)
+  FEE // a refunded fee (negative line on a REFUND transaction)
+}
+
 model TransactionItem {
-  id               String          @id @default(cuid())
+  id               String              @id @default(cuid())
   storeId          String
   transactionId    String
   concessionItemId String?
   sku              String
   description      String
   quantity         Int
-  unitPrice        Decimal         @db.Decimal(8, 2)
-  lineTotal        Decimal         @db.Decimal(10, 2)
+  unitPrice        Decimal             @db.Decimal(8, 2)
+  lineTotal        Decimal             @db.Decimal(10, 2)
   taxable          Boolean
-  store            Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  transaction      Transaction     @relation(fields: [storeId, transactionId], references: [storeId, id], onDelete: Cascade)
-  concessionItem   ConcessionItem? @relation(fields: [storeId, concessionItemId], references: [storeId, id])
+  kind             TransactionItemKind @default(MERCHANDISE)
+  refundedQty      Int                 @default(0) // units of this merchandise line already refunded
+  store            Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  transaction      Transaction         @relation(fields: [storeId, transactionId], references: [storeId, id], onDelete: Cascade)
+  concessionItem   ConcessionItem?     @relation(fields: [storeId, concessionItemId], references: [storeId, id])
 
   @@index([storeId, transactionId])
   @@index([storeId, concessionItemId])

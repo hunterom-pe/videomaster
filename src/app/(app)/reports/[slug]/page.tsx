@@ -47,7 +47,8 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
             <Row label="DAMAGE / LOST FEES" value={fmtMoney(a.otherFeeCents)} />
             <Row label="REWIND FEES" value={fmtMoney(a.rewindFeeCents)} />
             <Row label="MEMBERSHIP FEES" value={fmtMoney(a.membershipCents)} />
-            <Row label="SALES TAX" value={fmtMoney(a.taxCents)} />
+            {a.refundCount > 0 && <Row label={`REFUNDS (${a.refundCount}, BEFORE TAX)`} value={`-${fmtMoney(-a.refundCents)}`} />}
+            <Row label="SALES TAX (NET OF REFUNDS)" value={fmtMoney(a.taxCents)} />
             <Row label="TOTAL REVENUE" value={fmtMoney(a.totalCents)} strong />
             <Row label="TRANSACTIONS" value={a.transactions} />
           </dl>
@@ -205,7 +206,8 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
             <Row label="RENTAL REVENUE" value={fmtMoney(v.rentalCents)} />
             <Row label="MERCHANDISE REVENUE" value={fmtMoney(v.merchandiseCents)} />
             <Row label="FEES (LATE / DAMAGE / LOST / REWIND / MEMBERSHIP)" value={fmtMoney(v.feeCents)} />
-            <Row label="TAXES" value={fmtMoney(v.taxCents)} />
+            {v.refundCount > 0 && <Row label={`REFUNDS (${v.refundCount}, BEFORE TAX)`} value={`-${fmtMoney(-v.refundCents)}`} />}
+            <Row label="TAXES (NET OF REFUNDS)" value={fmtMoney(v.taxCents)} />
             <Row label="TOTAL" value={fmtMoney(v.totalCents)} strong />
             <Row label="TRANSACTIONS" value={v.transactions} />
           </dl>
@@ -215,7 +217,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
             <table className="vm-table" style={{ minWidth: 420 }}>
               <caption className="vm-hint" style={{ textAlign: "left" }}>BY PAYMENT METHOD</caption>
               <thead><tr><th scope="col">METHOD</th><th scope="col">TRANSACTIONS</th><th scope="col">TOTAL</th></tr></thead>
-              <tbody>{v.byPayment.map((p) => <tr key={p.method}><td>{PAYMENT_LABELS[p.method as PaymentMethod]}</td><td>{p.count}</td><td>{fmtMoney(p.totalCents)}</td></tr>)}</tbody>
+              <tbody>{v.byPayment.map((p) => <tr key={p.method}><td>{PAYMENT_LABELS[p.method as PaymentMethod]}</td><td>{p.count}</td><td>{p.totalCents < 0 ? `-${fmtMoney(-p.totalCents)}` : fmtMoney(p.totalCents)}</td></tr>)}</tbody>
             </table>
           </div>
         )}

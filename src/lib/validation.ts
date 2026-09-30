@@ -405,3 +405,18 @@ export type ConcessionFormValues = {
 };
 
 export const addStockSchema = z.object({ amount: numberField("AMOUNT", { min: 1, max: 99999, decimals: 0, integer: true }) });
+
+// ── Voids / refunds ──
+const reasonField = z.string().trim().min(3, "ENTER A REASON (AT LEAST 3 CHARACTERS)").max(120, "REASON MAY NOT EXCEED 120 CHARACTERS");
+export const voidSchema = z.object({ reason: reasonField });
+export const refundSchema = z.object({
+  reason: reasonField,
+  paymentMethod: z.enum(PAYMENT_METHODS.map((p) => p.value) as [string, ...string[]], "SELECT HOW THE MONEY IS RETURNED"),
+  merchandise: z
+    .array(z.object({ itemId: z.string().min(1), qty: z.number().int("QUANTITY MUST BE A WHOLE NUMBER").min(1).max(999), restock: z.boolean() }))
+    .max(MAX_SALE_LINES)
+    .refine((ls) => new Set(ls.map((l) => l.itemId)).size === ls.length, "THE SAME ITEM APPEARS TWICE"),
+  rentalIds: z.array(z.string().min(1)).max(MAX_RENTALS_PER_CHECKOUT).refine((ids) => new Set(ids).size === ids.length, "THE SAME RENTAL APPEARS TWICE"),
+  wholeFee: z.boolean(),
+});
+export type RefundValues = z.input<typeof refundSchema>;

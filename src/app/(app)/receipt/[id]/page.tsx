@@ -11,7 +11,7 @@ import { PAYMENT_LABELS } from "@/lib/transactions";
 export const metadata = { title: "RECEIPT" };
 
 const rentalInclude = { copy: { include: { movieTitle: true } } } as const;
-const money = (n: { toFixed(d: number): string } | number) => `$${n.toFixed(2)}`;
+const money = (n: { toFixed(d: number): string } | number) => (Number(n) < 0 ? `-$${Math.abs(Number(n)).toFixed(2)}` : `$${Number(n).toFixed(2)}`);
 const Row = ({ left, right, strong }: { left: string; right?: string; strong?: boolean }) => (
   <div className={`row${strong ? " strong" : ""}`}><span>{left}</span><span>{right}</span></div>
 );
@@ -28,6 +28,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
       items: { orderBy: { description: "asc" } },
       rentals: { orderBy: { rentedAt: "asc" }, include: rentalInclude },
       returnedRentals: { orderBy: { returnedAt: "asc" }, include: rentalInclude },
+      refundOf: { select: { number: true } },
     },
   });
   if (!t) notFound();
@@ -45,8 +46,10 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
         <div className="center">{store.phone}</div>
         {store.slogan && <div className="center">&quot;{name(store.slogan)}&quot;</div>}
         <hr className="rule" />
-        <Row left={fmtDateUS(t.createdAt, tz)} right={t.type === "RETURN" ? "RETURN" : t.type === "RETAIL_SALE" ? "SALE" : t.type === "MEMBERSHIP_FEE" ? "MEMBERSHIP" : "RENTAL"} />
+        <Row left={fmtDateUS(t.createdAt, tz)} right={t.type === "REFUND" ? "REFUND" : t.type === "RETURN" ? "RETURN" : t.type === "RETAIL_SALE" ? "SALE" : t.type === "MEMBERSHIP_FEE" ? "MEMBERSHIP" : "RENTAL"} />
         <Row left={`TRANSACTION #${String(t.number).padStart(6, "0")}`} />
+        {t.refundOf && <div>REFUND OF TRANSACTION #{String(t.refundOf.number).padStart(6, "0")}</div>}
+        {t.voidedAt && <div className="center strong" style={{ marginTop: 6 }}>*** VOID ***</div>}
         {t.customer ? <div>CUSTOMER: {name(t.customer.firstName)} {name(t.customer.lastName)}</div> : null}
         {!isNew && <div className="center strong" style={{ marginTop: 6 }}>** REPRINT **</div>}
         <hr className="rule" />
@@ -65,7 +68,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
         ))}
         {t.items.map((i) => (
           <div key={i.id} className="item">
-            <Row left={`${name(i.description)}${i.quantity > 1 ? ` X${i.quantity}` : ""}`} right={money(i.lineTotal)} />
+            <Row left={`${name(i.description)}${Math.abs(i.quantity) > 1 ? ` X${Math.abs(i.quantity)}` : ""}`} right={money(i.lineTotal)} />
           </div>
         ))}
         {t.returnedRentals.map((r) => (
@@ -87,6 +90,8 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
         {t.type !== "RETURN" && t.type !== "MEMBERSHIP_FEE" && <Row left="TAX" right={money(t.tax)} />}
         <Row left="TOTAL" right={money(t.total)} strong />
         {Number(t.total) > 0 && <Row left={PAYMENT_LABELS[t.paymentMethod]} right={money(t.total)} />}
+        {Number(t.total) < 0 && <Row left={`REFUNDED TO ${PAYMENT_LABELS[t.paymentMethod]}`} right={money(t.total)} />}
+        {t.type === "REFUND" && t.notes && <div className="sub">{t.notes.replace(/^REFUND OF #\d+: /, "REASON: ").toUpperCase()}</div>}
         <hr className="rule" />
 
         {t.rentals.length > 0 && (

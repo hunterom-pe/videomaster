@@ -7,6 +7,8 @@ import { PAGE_SIZE, PAYMENT_LABELS, TYPE_LABELS, searchTransactions } from "@/li
 
 export const metadata = { title: "TRANSACTIONS" };
 
+const money = (n: { toFixed(d: number): string }) => (Number(n) < 0 ? `-$${Math.abs(Number(n)).toFixed(2)}` : `$${Number(n).toFixed(2)}`);
+
 type SP = { q?: string; type?: string; payment?: string; from?: string; to?: string; page?: string };
 
 export default async function TransactionsPage({ searchParams }: { searchParams: Promise<SP> }) {
@@ -66,7 +68,7 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
           <div className="vm-tablewrap">
             <table className="vm-table rows">
               <caption className="vm-hint" style={{ textAlign: "left", paddingBottom: 4 }}>
-                {total} TRANSACTION{total === 1 ? "" : "S"} · TOTAL ${Number(sum ?? 0).toFixed(2)} · NEWEST FIRST · CLICK A ROW FOR DETAIL
+                {total} TRANSACTION{total === 1 ? "" : "S"} · NET TOTAL {Number(sum ?? 0) < 0 ? "-" : ""}${Math.abs(Number(sum ?? 0)).toFixed(2)} (VOIDS EXCLUDED) · NEWEST FIRST · CLICK A ROW FOR DETAIL
               </caption>
               <thead><tr><th scope="col">TRANS #</th><th scope="col">DATE / TIME ({tzAbbrev(tz)})</th><th scope="col">TYPE</th><th scope="col">CUSTOMER</th><th scope="col">ITEMS</th><th scope="col">TOTAL</th><th scope="col">PAID BY</th></tr></thead>
               <tbody>
@@ -74,10 +76,10 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
                   <tr key={t.id}>
                     <td><Link href={`/transactions/${t.id}`} className="vm-rowlink">{String(t.number).padStart(6, "0")}</Link></td>
                     <td>{fmtDateTimeTz(t.createdAt, tz)}</td>
-                    <td>{TYPE_LABELS[t.type]}</td>
+                    <td>{TYPE_LABELS[t.type]}{t.voidedAt && <span className="vm-red"> VOID</span>}</td>
                     <td>{t.customer ? `${t.customer.lastName.toUpperCase()}, ${t.customer.firstName.toUpperCase()}` : "WALK-IN"}</td>
                     <td>{t._count.rentals + t._count.items + t._count.returnedRentals}</td>
-                    <td>${t.total.toFixed(2)}</td>
+                    <td>{t.voidedAt ? <s>{money(t.total)}</s> : money(t.total)}</td>
                     <td>{PAYMENT_LABELS[t.paymentMethod]}</td>
                   </tr>
                 ))}

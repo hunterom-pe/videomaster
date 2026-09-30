@@ -7,13 +7,16 @@ import { fmtDate } from "@/lib/pricing";
 import { fmtDateTimeTz, tzAbbrev } from "@/lib/tz";
 import { requireStore } from "@/lib/store-access";
 import { PAYMENT_LABELS, TYPE_LABELS } from "@/lib/transactions";
+import { refundability, voidBlocker, originalInclude } from "@/lib/transaction-ops";
 
 export const metadata = { title: "TRANSACTION DETAIL" };
 
 const rentalInclude = { copy: { include: { movieTitle: true } } } as const;
+const money = (n: { toFixed(d: number): string } | number) => (Number(n) < 0 ? `-$${Math.abs(Number(n)).toFixed(2)}` : `$${Number(n).toFixed(2)}`);
+const num = (n: number) => String(n).padStart(6, "0");
 
 export default async function TransactionDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { user, store } = await requireStore();
+  const { user, store, role } = await requireStore();
   const tz = store.settings!.timezone;
   const { id } = await params;
   const t = await db.transaction.findFirst({
@@ -24,9 +27,16 @@ export default async function TransactionDetailPage({ params }: { params: Promis
       items: { orderBy: { description: "asc" } },
       rentals: { orderBy: { rentedAt: "asc" }, include: rentalInclude },
       returnedRentals: { orderBy: { returnedAt: "asc" }, include: rentalInclude },
+      voidedBy: { select: { email: true } },
+      refundOf: { select: { id: true, number: true } },
+      refunds: { orderBy: { number: "asc" }, select: { id: true, number: true, total: true, createdAt: true, voidedAt: true } },
     },
   });
   if (!t) notFound();
+  // Void / refund eligibility (manager-only). Uses the same rules as the server actions.
+  const full = role === "EMPLOYEE" ? null : await db.transaction.findFirst({ where: { id: t.id, storeId: store.id }, include: originalInclude });
+  const canVoid = !!full && voidBlocker(full) === null;
+  const canRefund = !!full && refundability(full).anything;
   const number = String(t.number).padStart(6, "0");
 
   return (
@@ -35,10 +45,18 @@ export default async function TransactionDetailPage({ params }: { params: Promis
         <h1>TRANSACTION #{number}</h1>
         <span className="vm-actions" style={{ marginTop: 0 }}>
           <Link href={`/receipt/${t.id}`} className="vm-btn">[ RECEIPT ]</Link>
+          {canRefund && <Link href={`/transactions/${t.id}/refund`} className="vm-btn">[ REFUND ]</Link>}
+          {canVoid && <Link href={`/transactions/${t.id}/void`} className="vm-btn danger">[ VOID ]</Link>}
           <Link href="/transactions" className="vm-btn">[ TRANSACTION HISTORY ]</Link>
         </span>
       </div>
       <hr className="vm-rule" />
+      {t.voidedAt && (
+        <div className="vm-notice" role="status">
+          *** VOIDED {fmtDateTimeTz(t.voidedAt, tz)} BY {t.voidedBy?.email ?? "—"}: {t.voidReason} ***
+          {t.voidSnapshot && <div className="vm-dim">WAS: {t.voidSnapshot}</div>}
+        </div>
+      )}
       <fieldset className="vm-section">
         <legend>SUMMARY</legend>
         <dl className="vm-kv">
@@ -47,6 +65,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
           <dt>CUSTOMER</dt><dd>{t.customer ? <Link href={`/customers/${t.customer.id}`}>{t.customer.firstName.toUpperCase()} {t.customer.lastName.toUpperCase()} (#{t.customer.membershipNumber})</Link> : "WALK-IN"}</dd>
           <dt>EMPLOYEE</dt><dd>{t.createdBy?.email ?? "—"}</dd>
           <dt>PAID BY</dt><dd>{PAYMENT_LABELS[t.paymentMethod]}</dd>
+          {t.refundOf && (<><dt>REFUND OF</dt><dd><Link href={`/transactions/${t.refundOf.id}`}>#{num(t.refundOf.number)}</Link></dd></>)}
           {t.notes && (<><dt>NOTES</dt><dd className="vm-yellow">{t.notes}</dd></>)}
         </dl>
       </fieldset>
@@ -62,7 +81,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
                   <tr key={r.id}>
                     <td><Link href={`/inventory/${r.copy.movieTitleId}`}>{r.copy.movieTitle.title.toUpperCase()}</Link> <span className="vm-dim">{FORMAT_LABELS[r.copy.format]}</span></td>
                     <td>{r.copy.copyNumber}</td>
-                    <td>${r.price.toFixed(2)}</td>
+                    <td>${r.price.toFixed(2)}{r.refundedAt && <span className="vm-yellow"> (REFUNDED)</span>}</td>
                     <td>{fmtDate(r.dueAt, tz)}</td>
                     <td>{r.returnedAt ? `RETURNED ${fmtDate(r.returnedAt, tz)}${r.outcome && r.outcome !== "RETURNED" ? ` (${r.outcome})` : ""}` : "OUT"}</td>
                   </tr>
@@ -104,7 +123,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
               <thead><tr><th scope="col">SKU</th><th scope="col">ITEM</th><th scope="col">QTY</th><th scope="col">UNIT</th><th scope="col">LINE TOTAL</th></tr></thead>
               <tbody>
                 {t.items.map((i) => (
-                  <tr key={i.id}><td>{i.sku}</td><td>{i.description.toUpperCase()}{i.taxable ? "" : " (NO TAX)"}</td><td>{i.quantity}</td><td>${i.unitPrice.toFixed(2)}</td><td>${i.lineTotal.toFixed(2)}</td></tr>
+                  <tr key={i.id}><td>{i.sku}</td><td>{i.description.toUpperCase()}{i.taxable ? "" : " (NO TAX)"}{i.refundedQty > 0 && <span className="vm-yellow"> ({i.refundedQty} REFUNDED)</span>}</td><td>{i.quantity}</td><td>{money(i.unitPrice)}</td><td>{money(i.lineTotal)}</td></tr>
                 ))}
               </tbody>
             </table>
@@ -115,11 +134,22 @@ export default async function TransactionDetailPage({ params }: { params: Promis
       <fieldset className="vm-section">
         <legend>TOTALS</legend>
         <dl className="vm-kv">
-          <dt>SUBTOTAL</dt><dd>${t.subtotal.toFixed(2)}</dd>
-          <dt>TAX</dt><dd>${t.tax.toFixed(2)}</dd>
-          <dt>TOTAL</dt><dd><strong>${t.total.toFixed(2)}</strong></dd>
+          <dt>SUBTOTAL</dt><dd>{money(t.subtotal)}</dd>
+          <dt>TAX</dt><dd>{money(t.tax)}</dd>
+          <dt>TOTAL</dt><dd><strong>{money(t.total)}</strong></dd>
         </dl>
       </fieldset>
+
+      {t.refunds.length > 0 && (
+        <fieldset className="vm-section">
+          <legend>REFUNDS AGAINST THIS TRANSACTION</legend>
+          <ul className="vm-plain">
+            {t.refunds.map((r) => (
+              <li key={r.id}><Link href={`/transactions/${r.id}`}>#{num(r.number)}</Link> — {fmtDateTimeTz(r.createdAt, tz)} — {money(r.total)}</li>
+            ))}
+          </ul>
+        </fieldset>
+      )}
     </Screen>
   );
 }
