@@ -64,7 +64,11 @@ h1, h2, h3 { margin: 0; font-weight: bold; font-size: 20px; letter-spacing: 1px;
   padding: 4px 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
   font-weight: bold; letter-spacing: 1px;
 }
-.vm-titlebar-tools { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; min-width: 0; max-width: 100%; }
+/* The tools group is always pushed to the right edge (also when it wraps under the title), in every theme. */
+.vm-titlebar-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px 12px; flex-wrap: wrap; margin-left: auto; min-width: 0; max-width: 100%; }
+.vm-toggle { text-align: center; }
+.vm-toggle.theme { min-width: 210px; }
+.vm-toggle.sound { min-width: 175px; }
 .vm-titlebar form { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 0; min-width: 0; max-width: 100%; }
 .vm-titlebar form > span { overflow-wrap: anywhere; min-width: 0; }
 .vm-body { padding: 16px 20px; }

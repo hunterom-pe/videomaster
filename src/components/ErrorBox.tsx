@@ -1,7 +1,7 @@
 export function ErrorBox({ message, errors }: { message: string; errors?: Record<string, string> }) {
   const list = errors ? Object.values(errors) : [];
   return (
-    <div className="vm-alert" role="alert">
+    <div className="vm-alert" role="alert" data-sound-on-show="buzz">
       <strong>*** ERROR ***</strong>
       {message}
       {list.length > 0 && (

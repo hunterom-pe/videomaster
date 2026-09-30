@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { THEMES, nextTheme, parseTheme, themeLabel } from "@/lib/theme";
+import { THEMES, nextTheme, parseTheme, themeLabel, themeShort } from "@/lib/theme";
 
 describe("theme", () => {
   it("falls back to DOS blue for missing or unknown cookies", () => {
@@ -8,6 +8,10 @@ describe("theme", () => {
   it("accepts every defined theme", () => {
     for (const t of THEMES) expect(parseTheme(t.id)).toBe(t.id);
   });
+  it("keeps button labels about the same width so the title bar lays out the same in every theme", () => {
+    const widths = THEMES.map((t) => t.short.length);
+    expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1);
+  });
   it("cycles through all themes and wraps around", () => {
     const seen = [];
     let t = parseTheme("blue");
@@ -15,5 +19,6 @@ describe("theme", () => {
     expect(new Set(seen).size).toBe(THEMES.length);
     expect(t).toBe("blue");
     expect(themeLabel("green")).toBe("PHOSPHOR GREEN");
+    expect(themeShort("green")).toBe("GREEN");
   });
 });

@@ -2,9 +2,9 @@
 // first paint (no flash); the CSS variables for each theme are in globals.css.
 
 export const THEMES = [
-  { id: "blue", label: "DOS BLUE" },
-  { id: "green", label: "PHOSPHOR GREEN" },
-  { id: "light", label: "LIGHT" },
+  { id: "blue", label: "DOS BLUE", short: "BLUE" },
+  { id: "green", label: "PHOSPHOR GREEN", short: "GREEN" },
+  { id: "light", label: "LIGHT", short: "LIGHT" },
 ] as const;
 export type ThemeId = (typeof THEMES)[number]["id"];
 export const THEME_COOKIE = "vm_theme";
@@ -16,3 +16,5 @@ export const parseTheme = (raw: string | null | undefined): ThemeId => THEMES.fi
 export const nextTheme = (current: ThemeId): ThemeId => THEMES[(THEMES.findIndex((t) => t.id === current) + 1) % THEMES.length].id;
 
 export const themeLabel = (id: ThemeId) => THEMES.find((t) => t.id === id)!.label;
+/** Short name for the title-bar button, so its width is the same in every theme. */
+export const themeShort = (id: ThemeId) => THEMES.find((t) => t.id === id)!.short;

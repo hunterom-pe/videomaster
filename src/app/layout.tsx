@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import "./globals.css";
+import { SoundEngine } from "@/components/SoundEngine";
+import { SOUND_COOKIE, parseSoundEnabled } from "@/lib/sound";
 import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 
 // Absolute base URL: link-preview crawlers (iMessage, Slack, ...) need full URLs for the image.
@@ -20,10 +22,15 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
+  const jar = await cookies();
+  const theme = parseTheme(jar.get(THEME_COOKIE)?.value);
+  const soundOn = parseSoundEnabled(jar.get(SOUND_COOKIE)?.value);
   return (
     <html lang="en" data-theme={theme}>
-      <body>{children}</body>
+      <body>
+        <SoundEngine initialEnabled={soundOn} />
+        {children}
+      </body>
     </html>
   );
 }

@@ -155,6 +155,8 @@
 
 **Feature 7 — Color themes** — `lib/theme.ts`, `ThemeToggle` (title bar, cookie `vm_theme`), root layout sets `data-theme`; every color is now a CSS variable (`[data-theme="green"|"light"]` overrides). `Screen` is now an async server component (reads the cookie) so `ErrorBox` moved to `components/ErrorBox.tsx` — client components must not import `Screen`.
 
+**Feature 8 — Sound effects** — `lib/sound.ts` (Web Audio synthesized notes, pure schedule tested; cookie `vm_sound`, default ON), `SoundEngine` (root layout; `data-sound` click sounds, `data-sound-on-show` and `.vm-alert` appearance sounds, throttled) and `SoundToggle` (title bar). Title-bar tools group is right-aligned with fixed-width toggles so the layout is identical in every theme (earlier it shifted because label widths differed).
+
 ## Current Work
 Nothing in progress.
 
@@ -185,9 +187,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Queued by the owner (one at a time, push each): 8 sound effects. (Demo mode is done.)
-
-(Earlier plan:) Polish & accessibility pass: keyboard/focus review, contrast, labels/table semantics, phone-width check, optional F-key shortcuts. Remaining optional spec items: concession categories editable in settings, inventory/system settings sections, per-format pricing overrides.
+All eight owner-requested features and demo mode are done. (Earlier plan:) Polish & accessibility pass: keyboard/focus review, contrast, labels/table semantics, phone-width check, optional F-key shortcuts. Remaining optional spec items: concession categories editable in settings, inventory/system settings sections, per-format pricing overrides.
 
 Deliberately dropped by the owner: password reset (small local project), editing a title's metadata after adding it.
 

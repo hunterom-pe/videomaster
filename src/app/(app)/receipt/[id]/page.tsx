@@ -38,7 +38,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
   return (
     <Screen title="RECEIPT" userEmail={user.email} storeLine={`STORE: ${store.name} #${store.number}`} status={isNew ? "TRANSACTION COMPLETE" : "RECEIPT REPRINT"}>
       <h1 className="vm-sr-only">RECEIPT FOR TRANSACTION {String(t.number).padStart(6, "0")}</h1>
-      {isNew && <div className="vm-notice no-print" role="status">*** TRANSACTION COMPLETE ***</div>}
+      {isNew && <div className="vm-notice no-print" role="status" data-sound-on-show="ding">*** TRANSACTION COMPLETE ***</div>}
 
       <article className="vm-receipt" aria-label={`Receipt for transaction ${t.number}`}>
         <div className="center strong">{name(store.name)} #{store.number}</div>

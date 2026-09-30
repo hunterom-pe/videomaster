@@ -184,9 +184,9 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
               {h.groups.filter((g) => g.available > 0).map((g) => (
                 <div key={g.format} className="vm-actions" style={{ alignItems: "center", marginTop: 4 }}>
                   <span style={{ minWidth: 120 }}>{g.format} · {g.available} AVAILABLE</span>
-                  <button type="button" className="vm-btn small" onClick={() => addRental(g.copies[0])}>[ ADD {g.copies[0].copyNumber} · {fmtMoney(g.copies[0].priceCents)} ]</button>
+                  <button type="button" className="vm-btn small" data-sound="beep" onClick={() => addRental(g.copies[0])}>[ ADD {g.copies[0].copyNumber} · {fmtMoney(g.copies[0].priceCents)} ]</button>
                   {g.copies.length > 1 && <span className="vm-hint">OR PICK:</span>}
-                  {g.copies.slice(1).map((c) => <button key={c.copyId} type="button" className="vm-btn small" onClick={() => addRental(c)}>{c.copyNumber}</button>)}
+                  {g.copies.slice(1).map((c) => <button key={c.copyId} type="button" className="vm-btn small" data-sound="beep" onClick={() => addRental(c)}>{c.copyNumber}</button>)}
                 </div>
               ))}
             </div>
@@ -222,7 +222,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
                 {saleHits.map((i) => (
                   <tr key={i.itemId}>
                     <td>{i.sku}</td><td>{i.name.toUpperCase()}</td><td>{fmtMoney(i.priceCents)}</td><td>{i.onHand}</td>
-                    <td><button type="button" className="vm-btn small" onClick={() => addSale(i)} aria-label={`Add ${i.name}`}>[ ADD ]</button></td>
+                    <td><button type="button" className="vm-btn small" data-sound="beep" onClick={() => addSale(i)} aria-label={`Add ${i.name}`}>[ ADD ]</button></td>
                   </tr>
                 ))}
               </tbody>

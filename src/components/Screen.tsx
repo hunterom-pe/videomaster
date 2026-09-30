@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { logout } from "@/actions/auth";
+import { SoundToggle } from "@/components/SoundToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SOUND_COOKIE, parseSoundEnabled } from "@/lib/sound";
 import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 
 export async function Screen({
@@ -16,7 +18,9 @@ export async function Screen({
   children: React.ReactNode;
   status?: string;
 }) {
-  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
+  const jar = await cookies();
+  const theme = parseTheme(jar.get(THEME_COOKIE)?.value);
+  const soundOn = parseSoundEnabled(jar.get(SOUND_COOKIE)?.value);
   return (
     <div className="vm-screen">
       <a className="vm-skip" href="#main">SKIP TO MAIN CONTENT</a>
@@ -25,6 +29,7 @@ export async function Screen({
           <span>VIDEOMASTER V1.0 — {title}</span>
           <span className="vm-titlebar-tools">
             <ThemeToggle initial={theme} />
+            <SoundToggle initial={soundOn} />
             {userEmail ? (
               <form action={logout}>
                 <span style={{ marginRight: 12, fontWeight: "normal" }}>{userEmail}</span>
