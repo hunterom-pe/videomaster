@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { PaymentMethod, Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { resolveTender } from "@/lib/cash";
 import { daysLate, lateFeeCents } from "@/lib/late-fees";
 import { fmtMoney, fromCents, toCents } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
@@ -75,6 +76,8 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
       // Rewind fee: amount comes from store settings (never from the browser); VHS only; not for lost items.
       const rewind = d.notRewound && d.outcome !== "LOST" && rental.copy.format === "VHS" ? toCents(store.settings!.rewindFee) : 0;
       const total = lateCharged + other + rewind;
+      const tender = resolveTender(d.paymentMethod, total, input.tendered);
+      if (!tender.ok) throw new ReturnError(tender.message);
 
       const { nextTransactionNumber } = await tx.store.update({
         where: { id: store.id },
@@ -91,6 +94,7 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
         data: {
           storeId: store.id, number: nextTransactionNumber - 1, type: "RETURN", customerId: rental.customerId, createdById: user.id,
           subtotal: fromCents(total), tax: "0.00", total: fromCents(total), paymentMethod: d.paymentMethod as PaymentMethod, notes: notes || null,
+          tendered: tender.tenderedCents === null ? null : fromCents(tender.tenderedCents),
         },
       });
 

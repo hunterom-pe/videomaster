@@ -143,12 +143,14 @@
 
 **Demo mode** — `[ TRY DEMO MODE ]` on the log-on screen: `startDemo` action → `lib/demo.ts` creates a private `User{isDemo}` + store and loads the sample data; accounts purged after 24 h on later demo starts; no password login possible (`passwordHash "!"`); per-IP rate limit; banner on the main menu. Store-creation field helpers moved to `lib/store-fields.ts`.
 
+**Feature 2 — Cash tendered and change** — `Transaction.tendered` (migration with CHECK tendered ≥ total). `lib/cash.ts` (parse, quick amounts, server `resolveTender`: CASH with money due only, blank = exact, short rejected) + `CashTender` component on checkout, return fees, new-customer fee and renewal; receipt and detail show tendered/change. Unit tests in `cash.test.ts`.
+
 ## Current Work
 Nothing in progress.
 
 ## Known Issues
 - Reports: Popular/Customer reports count rentals *started* in the period (not only returned ones); no CSV export; reports are computed live (fine for MVP scale, may need indexes/caching for very large stores).
-- Receipts: no cash-tendered/change lines (no cash-handling yet); print layout not verified on a physical/thermal printer (uses standard browser printing, ~38 char wide).
+- Receipts: print layout not verified on a physical/thermal printer (uses standard browser printing, ~38 char wide).
 - The transaction-history list total is money collected across all types (fees on returns/memberships included).
 - POS: no cash-tendered/change, no voids/refunds yet (Transaction types REFUND/FEE_WAIVER exist in the schema but are unused); a CLOSED customer cannot check out at all (use the walk-in sale for merchandise).
 - Concessions: categories are a fixed list (not yet editable in Store Settings); no stock-adjustment history/audit log; items can't be deleted (deactivate instead). Selling happens in Milestone 13.
@@ -173,7 +175,7 @@ Nothing in progress.
 - `npm audit` reports advisories in transitive deps; not reviewed.
 
 ## Next
-Queued by the owner (one at a time, push each): 2 cash tendered/change, 3 unpaid-balance tracking, 4 customer history, 5 rent again / return all, 6 membership cards with barcodes, 7 dark/phosphor-green theme toggle, 8 sound effects. (Demo mode is done.)
+Queued by the owner (one at a time, push each): 3 unpaid-balance tracking, 4 customer history, 5 rent again / return all, 6 membership cards with barcodes, 7 dark/phosphor-green theme toggle, 8 sound effects. (Demo mode is done.)
 
 (Earlier plan:) Polish & accessibility pass: keyboard/focus review, contrast, labels/table semantics, phone-width check, optional F-key shortcuts. Remaining optional spec items: concession categories editable in settings, inventory/system settings sections, per-format pricing overrides.
 

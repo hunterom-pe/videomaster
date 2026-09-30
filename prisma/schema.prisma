@@ -341,6 +341,7 @@ model Transaction {
   tax             Decimal           @default(0) @db.Decimal(10, 2)
   total           Decimal           @default(0) @db.Decimal(10, 2)
   paymentMethod   PaymentMethod     @default(CASH)
+  tendered        Decimal?          @db.Decimal(10, 2) // cash handed over (CASH payments with money due only); change = tendered - total
   notes           String?
   createdAt       DateTime          @default(now())
   // Voids: a mistaken rental/sale undone in full (rentals removed, stock and copies restored). Excluded from all totals.

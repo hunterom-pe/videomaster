@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { checkout, findRentableCopies, findSaleItems, type CartItem, type SaleItem, type TitleHit } from "@/actions/rentals";
+import { CashTender } from "@/components/CashTender";
 import { ErrorBox } from "@/components/Screen";
 import { RetroDialog } from "@/components/RetroDialog";
+import { changeDueCents, parseTender } from "@/lib/cash";
 import { computeTotals, dueDate, fmtDate, fmtMoney } from "@/lib/pricing";
 import { PAYMENT_METHODS } from "@/lib/validation";
 
@@ -45,6 +47,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
   const [saleLoaded, setSaleLoaded] = useState(false);
 
   const [payment, setPayment] = useState("CASH");
+  const [tendered, setTendered] = useState("");
   const [override, setOverride] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
@@ -57,6 +60,10 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
     sales.map((s) => ({ cents: s.item.priceCents * s.qty, taxable: s.item.taxable })),
     taxPercent,
   );
+  const cashDue = payment === "CASH" && totals.total > 0;
+  const tenderParsed = parseTender(tendered);
+  const tenderCents = cashDue ? (tenderParsed === null ? totals.total : tenderParsed) : null;
+  const changeCents = tenderCents !== null && !Number.isNaN(tenderCents) ? changeDueCents(totals.total, tenderCents) : null;
   const itemCount = rentals.length + sales.reduce((n, s) => n + s.qty, 0);
   const now = new Date();
   const limitReason = maxOut > 0 && activeOut + rentals.length > maxOut ? `RENTAL LIMIT ${maxOut} (${activeOut} ALREADY OUT)` : null;
@@ -126,6 +133,8 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
     if (itemCount === 0) return setError("*** CART EMPTY *** ADD AT LEAST ONE ITEM BEFORE TAKING PAYMENT.");
     if (needsOverrideNow && !override)
       return setError(canOverride ? `*** ${reasons.join("; ")} *** CHECK "MANAGER OVERRIDE" BELOW TO CONTINUE.` : `*** ${reasons.join("; ")} *** MANAGER OVERRIDE REQUIRED.`);
+    if (cashDue && (Number.isNaN(tenderParsed) || (tenderParsed !== null && tenderParsed < totals.total)))
+      return setError(Number.isNaN(tenderParsed) ? "*** CASH TENDERED MUST BE A DOLLAR AMOUNT *** E.G. 20 OR 20.00." : `*** CASH SHORT *** TENDERED AMOUNT IS LESS THAN THE ${fmtMoney(totals.total)} DUE.`);
     setError("");
     setConfirming(true);
   }
@@ -138,6 +147,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
         items: sales.map((l) => ({ itemId: l.item.itemId, quantity: l.qty })),
         paymentMethod: payment,
         override,
+        tendered,
       });
       if (r && !r.ok) setError([r.message, ...Object.values(r.errors)].join(" "));
     });
@@ -276,6 +286,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
             </select>
             <span className="vm-hint">SIMULATED — NO REAL PAYMENT IS PROCESSED</span>
           </div>
+          <CashTender method={payment} totalCents={totals.total} value={tendered} onChange={setTendered} />
           {needsOverrideNow && (
             <div className="vm-field">
               <span className="vm-label">MANAGER OVERRIDE</span>
@@ -300,6 +311,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
             <dt>ITEMS</dt><dd>{itemCount}</dd>
             <dt>TOTAL</dt><dd>{fmtMoney(totals.total)}</dd>
             <dt>PAYMENT</dt><dd>{PAYMENT_METHODS.find((p) => p.value === payment)?.label}</dd>
+            {changeCents !== null && (<><dt>CASH TENDERED</dt><dd>{fmtMoney(tenderCents!)}</dd><dt>CHANGE DUE</dt><dd><strong>{fmtMoney(changeCents)}</strong></dd></>)}
           </dl>
           <p className="vm-center">COMPLETE TRANSACTION?</p>
           <div className="vm-actions" style={{ justifyContent: "center" }}>

@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { completeReturn } from "@/actions/returns";
+import { CashTender } from "@/components/CashTender";
 import { ErrorBox } from "@/components/Screen";
 import { RetroDialog } from "@/components/RetroDialog";
+import { parseTender } from "@/lib/cash";
 import { fmtMoney, toCents } from "@/lib/pricing";
 import { PAYMENT_METHODS, returnSchema, zodErrors } from "@/lib/validation";
 
@@ -17,6 +19,7 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
   const [lateFee, setLateFee] = useState(calculated);
   const [otherFee, setOtherFee] = useState("0.00");
   const [payment, setPayment] = useState("CASH");
+  const [tendered, setTendered] = useState("");
   const [notRewound, setNotRewound] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
@@ -51,6 +54,12 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
       setMessage("PLEASE CORRECT THE FIELDS MARKED BELOW");
       return;
     }
+    const tp = parseTender(tendered);
+    if (payment === "CASH" && total > 0 && (Number.isNaN(tp) || (tp !== null && tp < total))) {
+      setErrors({});
+      setMessage(Number.isNaN(tp) ? "CASH TENDERED MUST BE A DOLLAR AMOUNT SUCH AS 20 OR 20.00." : `CASH TENDERED IS LESS THAN THE ${fmtMoney(total)} DUE.`);
+      return;
+    }
     setErrors({});
     setMessage("");
     setConfirming(true);
@@ -59,7 +68,7 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
   function complete() {
     setConfirming(false);
     startTransition(async () => {
-      const r = await completeReturn(rentalId, { outcome, lateFee, otherFee, paymentMethod: payment, notRewound });
+      const r = await completeReturn(rentalId, { outcome, lateFee, otherFee, paymentMethod: payment, notRewound, tendered });
       if (r && !r.ok) {
         setErrors(r.errors);
         setMessage(r.message);
@@ -103,6 +112,7 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
             </select>
             <span className="vm-hint">{total > 0 ? "SIMULATED — NO REAL PAYMENT IS PROCESSED" : "NO PAYMENT DUE"}</span>
           </div>
+          <CashTender method={payment} totalCents={total} value={tendered} onChange={setTendered} />
         </div>
         <dl className="vm-kv" style={{ marginTop: 10 }}>
           <dt>OUTCOME</dt><dd className={outcome === "RETURNED" ? "" : "vm-yellow"}>{outcome === "RETURNED" ? "NORMAL RETURN" : `*** COPY WILL BE MARKED ${outcome} ***`}</dd>
@@ -125,6 +135,7 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
             {rewindCents > 0 && (<><dt>REWIND FEE</dt><dd>{fmtMoney(rewindCents)}</dd></>)}
             <dt>FEES DUE</dt><dd>{fmtMoney(total)}</dd>
             {total > 0 && (<><dt>PAYMENT</dt><dd>{PAYMENT_METHODS.find((p) => p.value === payment)?.label}</dd></>)}
+            {payment === "CASH" && total > 0 && (<><dt>CASH TENDERED</dt><dd>{fmtMoney(parseTender(tendered) ?? total)}</dd><dt>CHANGE DUE</dt><dd><strong>{fmtMoney((parseTender(tendered) ?? total) - total)}</strong></dd></>)}
           </dl>
           <p className="vm-center">COMPLETE RETURN?</p>
           <div className="vm-actions" style={{ justifyContent: "center" }}>

@@ -90,6 +90,12 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
         {t.type !== "RETURN" && t.type !== "MEMBERSHIP_FEE" && <Row left="TAX" right={money(t.tax)} />}
         <Row left="TOTAL" right={money(t.total)} strong />
         {Number(t.total) > 0 && <Row left={PAYMENT_LABELS[t.paymentMethod]} right={money(t.total)} />}
+        {t.tendered && (
+          <>
+            <Row left="CASH TENDERED" right={money(t.tendered)} />
+            <Row left="CHANGE" right={money(Number(t.tendered) - Number(t.total))} strong />
+          </>
+        )}
         {Number(t.total) < 0 && <Row left={`REFUNDED TO ${PAYMENT_LABELS[t.paymentMethod]}`} right={money(t.total)} />}
         {t.type === "REFUND" && t.notes && <div className="sub">{t.notes.replace(/^REFUND OF #\d+: /, "REASON: ").toUpperCase()}</div>}
         <hr className="rule" />

@@ -267,6 +267,7 @@ export type CustomerFormValues = {
   /** New customers only: collect the store membership fee now. */
   collectFee?: boolean;
   paymentMethod?: string;
+  tendered?: string;
 };
 
 // ── Inventory ──
@@ -362,7 +363,7 @@ export const checkoutSchema = z
     override: z.boolean(),
   })
   .refine((v) => v.copyIds.length + v.items.length > 0, { message: "ADD AT LEAST ONE ITEM BEFORE TAKING PAYMENT", path: ["copyIds"] });
-export type CheckoutValues = { copyIds: string[]; items: { itemId: string; quantity: number }[]; paymentMethod: string; override: boolean };
+export type CheckoutValues = { copyIds: string[]; items: { itemId: string; quantity: number }[]; paymentMethod: string; override: boolean; tendered?: string };
 
 // ── Returns ──
 export const RETURN_OUTCOMES = ["RETURNED", "DAMAGED", "LOST"] as const;
@@ -373,7 +374,7 @@ export const returnSchema = z.object({
   paymentMethod: z.enum(PAYMENT_METHODS.map((p) => p.value) as [string, ...string[]], "SELECT A PAYMENT METHOD"),
   notRewound: z.boolean(),
 });
-export type ReturnValues = { outcome: string; lateFee: string; otherFee: string; paymentMethod: string; notRewound: boolean };
+export type ReturnValues = { outcome: string; lateFee: string; otherFee: string; paymentMethod: string; notRewound: boolean; tendered?: string };
 
 // ── Concessions ──
 export const concessionSchema = z.object({

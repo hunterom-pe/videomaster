@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { PaymentMethod } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { FORMAT_LABELS } from "@/lib/inventory";
+import { resolveTender } from "@/lib/cash";
 import { computeTotals, dueDate, fromCents, toCents } from "@/lib/pricing";
 import { membershipState } from "@/lib/membership";
 import { effectiveStatus, overdueCounts } from "@/lib/overdue";
@@ -217,11 +218,15 @@ export async function checkout(customerId: string | null, input: CheckoutValues)
         taxPercent.toString(),
       );
 
+      const tender = resolveTender(paymentMethod, totals.total, input.tendered);
+      if (!tender.ok) throw new CheckoutError(tender.message);
+
       const { nextTransactionNumber } = await tx.store.update({ where: { id: store.id }, data: { nextTransactionNumber: { increment: 1 } }, select: { nextTransactionNumber: true } });
       const transaction = await tx.transaction.create({
         data: {
           storeId: store.id, number: nextTransactionNumber - 1, type: copies.length ? "RENTAL" : "RETAIL_SALE", customerId: customer?.id ?? null, createdById: user.id,
           subtotal: fromCents(totals.subtotal), tax: fromCents(totals.tax), total: fromCents(totals.total), paymentMethod: paymentMethod as PaymentMethod,
+          tendered: tender.tenderedCents === null ? null : fromCents(tender.tenderedCents),
         },
       });
       if (rentalLines.length)

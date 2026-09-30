@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createCustomer, updateCustomer } from "@/actions/customers";
+import { CashTender } from "@/components/CashTender";
 import { ErrorBox } from "@/components/Screen";
 import { CUSTOMER_STATUSES, PAYMENT_METHODS, customerSchema, zodErrors, type CustomerFormValues } from "@/lib/validation";
 
@@ -93,6 +94,12 @@ export function CustomerForm({ customerId, initial, membershipFee }: { customerI
                   {PAYMENT_METHODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                 </select>
                 {errors.paymentMethod && <span id="paymentMethod-err" className="vm-fielderr">{errors.paymentMethod}</span>}
+              </div>
+            )}
+            {v.collectFee && (
+              <div>
+                <CashTender method={v.paymentMethod ?? "CASH"} totalCents={Math.round(Number(membershipFee) * 100)} value={v.tendered ?? ""} onChange={(t) => set("tendered", t)} />
+                {errors.tendered && <span className="vm-fielderr">{errors.tendered}</span>}
               </div>
             )}
           </div>

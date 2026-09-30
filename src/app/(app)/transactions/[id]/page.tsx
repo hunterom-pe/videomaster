@@ -137,6 +137,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
           <dt>SUBTOTAL</dt><dd>{money(t.subtotal)}</dd>
           <dt>TAX</dt><dd>{money(t.tax)}</dd>
           <dt>TOTAL</dt><dd><strong>{money(t.total)}</strong></dd>
+          {t.tendered && (<><dt>CASH TENDERED</dt><dd>{money(t.tendered)}</dd><dt>CHANGE GIVEN</dt><dd>{money(Number(t.tendered) - Number(t.total))}</dd></>)}
         </dl>
       </fieldset>
 

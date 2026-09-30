@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { resolveTender } from "@/lib/cash";
 import { db } from "@/lib/db";
 import { requireStore } from "@/lib/store-access";
 import { renewedExpiry } from "@/lib/membership";
@@ -45,6 +46,9 @@ export async function createCustomer(input: CustomerFormValues): Promise<ActionS
   const method = PAYMENT_METHODS.find((p) => p.value === input.paymentMethod)?.value;
   if (collect && !method) return { ok: false, errors: { paymentMethod: "SELECT A PAYMENT METHOD" }, message: "PLEASE CORRECT THE FIELDS MARKED BELOW" };
 
+  const tender = collect && method ? resolveTender(method, feeCents, input.tendered) : ({ ok: true, tenderedCents: null } as const);
+  if (!tender.ok) return { ok: false, errors: { tendered: tender.message }, message: "PLEASE CORRECT THE FIELDS MARKED BELOW" };
+
   const now = new Date();
   const { customer, transactionId } = await db.$transaction(async (tx) => {
     // Atomic per-store counter: concurrent creates can never share a membership number.
@@ -65,6 +69,7 @@ export async function createCustomer(input: CustomerFormValues): Promise<ActionS
           data: {
             storeId: store.id, number: nextTransactionNumber - 1, type: "MEMBERSHIP_FEE", customerId: customer.id, createdById: user.id,
             subtotal: fromCents(feeCents), tax: "0.00", total: fromCents(feeCents), paymentMethod: method as PaymentMethod, notes: "MEMBERSHIP FEE",
+            tendered: tender.tenderedCents === null ? null : fromCents(tender.tenderedCents),
           },
         })
       ).id;
@@ -77,12 +82,15 @@ export async function createCustomer(input: CustomerFormValues): Promise<ActionS
 }
 
 /** Collect the membership fee (if any) and extend the term. */
-export async function renewMembership(customerId: string, paymentMethod: string): Promise<ActionState> {
+export async function renewMembership(customerId: string, paymentMethod: string, tenderedRaw?: string): Promise<ActionState> {
   const { store, user } = await requireStore();
   const settings = store.settings!;
   const feeCents = toCents(settings.membershipFee);
   const method = PAYMENT_METHODS.find((p) => p.value === paymentMethod)?.value;
   if (feeCents > 0 && !method) return { ok: false, errors: { paymentMethod: "SELECT A PAYMENT METHOD" }, message: "PLEASE CORRECT THE FIELDS MARKED BELOW" };
+
+  const tender = feeCents > 0 && method ? resolveTender(method, feeCents, tenderedRaw) : ({ ok: true, tenderedCents: null } as const);
+  if (!tender.ok) return { ok: false, errors: { tendered: tender.message }, message: "PLEASE CORRECT THE FIELDS MARKED BELOW" };
 
   const now = new Date();
   const transactionId = await db.$transaction(async (tx) => {
@@ -99,6 +107,7 @@ export async function renewMembership(customerId: string, paymentMethod: string)
         data: {
           storeId: store.id, number: nextTransactionNumber - 1, type: "MEMBERSHIP_FEE", customerId: c.id, createdById: user.id,
           subtotal: fromCents(feeCents), tax: "0.00", total: fromCents(feeCents), paymentMethod: method as PaymentMethod, notes: "MEMBERSHIP RENEWAL",
+          tendered: tender.tenderedCents === null ? null : fromCents(tender.tenderedCents),
         },
       })
     ).id;
