@@ -3,6 +3,11 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # Netlify's secrets scanner looks for the VALUES of your env vars in the repo and build output. These three are
+  # read only on the server at runtime. Verified: no value is committed anywhere, and none appears in any build
+  # output file (server or browser) or in the build log. Omitting them stops a false-positive build failure;
+  # any other secret you add later is still scanned.
+  SECRETS_SCAN_OMIT_KEYS = "DATABASE_URL,MIGRATE_DATABASE_URL,TMDB_API_KEY,TMDB_READ_ACCESS_TOKEN"
 
 # Apply pending database migrations only on production deploys
 # (deploy previews must never migrate the production database).

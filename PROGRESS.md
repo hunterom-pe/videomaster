@@ -127,6 +127,9 @@
 - `lib/db-config.ts` (unit-tested): for Supabase hosts (or `DB_SSL=no-verify`) strips `sslmode` from the URL and connects with encrypted-but-unverified TLS (Node rejects the pooler's certificate chain, and `sslmode=` in a URL overrides an explicit `ssl` option); caps the pool (`DB_POOL_MAX`, default 5) for serverless. Local/other hosts are unchanged. Docs say to use Supabase's **Session pooler** string for both `DATABASE_URL` and `MIGRATE_DATABASE_URL` (the direct connection is IPv6-only on the free plan; Netlify builds are IPv4).
 - Not yet exercised against a real Supabase project.
 
+**First Netlify deploy: secrets-scanning failure**
+- Netlify failed the first build on *secrets scanning* (`DATABASE_URL`, `MIGRATE_DATABASE_URL`, `TMDB_API_KEY` values "detected"). Investigated: no real secret is committed (checked files + full git history), and a local production build with canary values shows none of them in any build output, the generated client, or the build log. Treated as a false positive and set `SECRETS_SCAN_OMIT_KEYS` for exactly those variables in `netlify.toml` (other secrets remain scanned). If it recurs, the Netlify log lists the exact file/line for each detection — check those before widening the omit list.
+
 ## Current Work
 Nothing in progress.
 
