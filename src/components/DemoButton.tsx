@@ -8,8 +8,9 @@ export function DemoButton() {
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
   return (
-    <div>
+    <div className="vm-stack">
       {message && <ErrorBox message={message} />}
+      <p className="vm-dim">JUST LOOKING AROUND?</p>
       <button
         type="button"
         className="vm-btn"

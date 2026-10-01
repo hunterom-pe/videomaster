@@ -147,6 +147,11 @@ table.vm-table { border-collapse: collapse; width: 100%; min-width: 640px; }
 .vm-table td input { min-width: 70px; }
 
 .vm-login { max-width: 520px; margin: 24px auto; }
+/* Stacked, centered actions: every button the same width, labels centered between them (log-on / sign-up screens). */
+.vm-stack { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+.vm-stack > p { margin: 0; text-align: center; }
+.vm-stack > .vm-btn { width: 100%; text-align: center; }
+.vm-stack > .vm-hint { text-align: center; }
 
 textarea {
   font: inherit; color: var(--fg); background: var(--bg-field);

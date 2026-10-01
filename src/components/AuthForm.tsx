@@ -30,18 +30,18 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           </div>
         )}
       </div>
-      <div className="vm-actions">
+      <div className="vm-stack" style={{ marginTop: 14 }}>
         <button type="submit" className="vm-btn" disabled={pending}>
           {pending ? "PLEASE WAIT..." : isLogin ? "[ LOG ON ]" : "[ CREATE ACCOUNT ]"}
         </button>
       </div>
       <hr className="vm-thin-rule" />
-      <p className="vm-dim">
-        {isLogin ? "NEW TO VIDEOMASTER? " : "ALREADY HAVE AN ACCOUNT? "}
-        <Link href={isLogin ? "/signup" : "/login"} className="vm-btn small">
+      <div className="vm-stack">
+        <p className="vm-dim">{isLogin ? "NEW TO VIDEOMASTER?" : "ALREADY HAVE AN ACCOUNT?"}</p>
+        <Link href={isLogin ? "/signup" : "/login"} className="vm-btn">
           {isLogin ? "[ CREATE ACCOUNT ]" : "[ LOG ON ]"}
         </Link>
-      </p>
+      </div>
     </form>
   );
 }
