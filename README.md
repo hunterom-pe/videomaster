@@ -77,6 +77,8 @@ It is a real, working point-of-sale and inventory system (rentals, returns, late
 
 **Money and records**
 - Transactions (rentals, returns, retail sales, membership fees) with per-store numbering, payment method, tax and notes; filterable history and a detail page.
+- **Data export and backup:** `Store Settings → DATA EXPORT AND BACKUP` (owner/manager) downloads CSV files for customers, titles, copies, rentals, transactions, transaction items and merchandise, plus a full JSON backup of everything. List reports (overdue, popular, customer activity, balances, merchandise) have `[ DOWNLOAD CSV ]`. Text cells that start with `=`, `+`, `-` or `@` are neutralized so spreadsheets never run them as formulas. Exports contain customer information: keep them private.
+- **Health check:** `GET /api/health` (public, no secrets) returns `{ok, database, ms}` with HTTP 200, or 503 if the database is unreachable (details go to the server log). Use it for uptime monitoring or to tell "site down" from "database unreachable".
 - **Sound effects (on by default):** short retro beeps synthesized in the browser (no audio files): a beep when you add an item to the cart, a chime when a transaction completes, a buzz on errors and a double beep on warnings. A `[ SOUND: ON/OFF ]` button in the title bar toggles them; the choice is remembered in a cookie. Browsers only allow audio after your first click or tap on the page, so nothing plays before that.
 - **Color themes:** a `[ THEME: … ]` button in every screen's title bar cycles BLUE (default) → GREEN (phosphor) → LIGHT (gray Windows-95 look). The choice is stored in a cookie so pages render in the chosen theme immediately. All colors come from CSS variables in `globals.css`; receipts and cards stay paper-colored. Verified with axe-core: no color-contrast violations on the main screens in any theme.
 - **Membership cards:** `Customer → MEMBER CARD` shows and prints a credit-card-size card (store, member name, member #, valid-through, Code 128 barcode of the membership number). Scanning a card (or typing the number, with or without leading zeros) into the Rent or Customers search box opens that customer directly; the Return search already finds a member's open rentals by member number. Barcodes are generated on the server with `bwip-js`.
@@ -423,7 +425,7 @@ The visual identity is deliberate and protected (see `CLAUDE.md`):
 - Payments are simulated (there is no cash drawer or end-of-day cash count). Refunding a rental charge returns money only (a video still out is returned separately); a transaction with any refund cannot be voided.
 - One store per user in the UI; the membership table supports employees/managers but there is no screen to invite them yet.
 - No password reset or e-mail features (out of scope for this local project). Titles cannot be edited after adding (copies can).
-- Reports are computed live (fine at store scale) and there is no CSV export.
+- Reports are computed live (fine at store scale). The JSON backup is for safekeeping/portability; there is no in-app restore yet.
 - Print layout uses standard browser printing (not verified on a thermal receipt printer); layouts were verified by measurement, not by human review at every size.
 - Not yet run on a live Netlify deployment.
 

@@ -157,6 +157,8 @@
 
 **Feature 8 — Sound effects** — `lib/sound.ts` (Web Audio synthesized notes, pure schedule tested; cookie `vm_sound`, default ON), `SoundEngine` (root layout; `data-sound` click sounds, `data-sound-on-show` and `.vm-alert` appearance sounds, throttled) and `SoundToggle` (title bar). Title-bar tools group is right-aligned with fixed-width toggles so the layout is identical in every theme (earlier it shifted because label widths differed).
 
+**Improvement 1 — Health check + data export** — `GET /api/health` (DB ping, 5 s timeout, no secrets); `lib/csv.ts` (formula-safe), `lib/export.ts`, `/settings/export/[kind]` (7 CSVs + JSON backup, owner/manager) and `/reports/[slug]/csv`; Settings section + report buttons. No restore yet.
+
 ## Current Work
 Nothing in progress.
 

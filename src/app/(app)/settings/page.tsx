@@ -2,6 +2,7 @@ import { Screen } from "@/components/Screen";
 import { SamplePanel } from "@/components/SamplePanel";
 import { StoreForm } from "@/components/StoreForm";
 import { db } from "@/lib/db";
+import { EXPORT_KINDS, EXPORT_LABELS } from "@/lib/export";
 import { requireStore } from "@/lib/store-access";
 import type { StoreFormValues } from "@/lib/validation";
 
@@ -62,6 +63,16 @@ export default async function SettingsPage() {
       <hr className="vm-rule" />
       <StoreForm mode="settings" initial={initial} />
       <hr className="vm-rule" />
+      {role !== "EMPLOYEE" && (
+        <fieldset className="vm-section" id="export">
+          <legend>DATA EXPORT AND BACKUP</legend>
+          <p className="vm-hint">DOWNLOAD YOUR STORE&apos;S DATA. CSV FILES OPEN IN EXCEL OR GOOGLE SHEETS. THE BACKUP FILE HOLDS EVERYTHING IN ONE JSON FILE. KEEP DOWNLOADS PRIVATE: THEY CONTAIN CUSTOMER INFORMATION.</p>
+          <div className="vm-actions" style={{ marginTop: 0 }}>
+            <a href="/settings/export/backup" className="vm-btn" download>[ FULL BACKUP (JSON) ]</a>
+            {EXPORT_KINDS.map((k) => <a key={k} href={`/settings/export/${k}`} className="vm-btn small" download>[ {EXPORT_LABELS[k]} CSV ]</a>)}
+          </div>
+        </fieldset>
+      )}
       <SamplePanel isEmpty={isEmpty} isOwner={role === "OWNER"} canManage={role !== "EMPLOYEE"} />
     </Screen>
   );

@@ -11,10 +11,12 @@ type Props = {
   tz: string;
   filter?: { kind: "range"; from: string; to: string } | { kind: "day"; day: string };
   notice?: string;
+  csv?: boolean; // offer a CSV download of this report
   children: React.ReactNode;
 };
 
-export function ReportShell({ title, user, store, slug, tz, filter, notice, children }: Props) {
+export function ReportShell({ title, user, store, slug, tz, filter, notice, csv, children }: Props) {
+  const csvHref = `/reports/${slug}/csv${filter?.kind === "range" ? `?from=${encodeURIComponent(filter.from)}&to=${encodeURIComponent(filter.to)}` : ""}`;
   const period = filter?.kind === "range" ? `${filter.from} TO ${filter.to}` : filter?.kind === "day" ? filter.day : "AS OF NOW";
   return (
     <Screen title={`REPORT: ${title}`} userEmail={user} storeLine={`STORE: ${store.name} #${store.number}`}>
@@ -22,6 +24,7 @@ export function ReportShell({ title, user, store, slug, tz, filter, notice, chil
         <h1>{title}</h1>
         <span className="vm-actions" style={{ marginTop: 0 }}>
           <PrintButton />
+          {csv && <a href={csvHref} className="vm-btn" download>[ DOWNLOAD CSV ]</a>}
           <Link href="/reports" className="vm-btn">[ ALL REPORTS ]</Link>
         </span>
       </div>

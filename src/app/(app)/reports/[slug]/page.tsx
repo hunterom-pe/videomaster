@@ -65,7 +65,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
     const { rows, capped } = await listOverdue(store.id, tz);
     const total = rows.reduce((n, r) => n + r.feeCents, 0);
     return (
-      <ReportShell {...base} title="OVERDUE RENTALS">
+      <ReportShell {...base} title="OVERDUE RENTALS" csv>
         {rows.length === 0 ? (
           <div className="vm-notice" role="status">*** NO OVERDUE RENTALS ***</div>
         ) : (
@@ -125,7 +125,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
   if (slug === "balances") {
     const { rows, totalCents } = await customerBalances(store.id);
     return (
-      <ReportShell {...base} title="CUSTOMER BALANCES">
+      <ReportShell {...base} title="CUSTOMER BALANCES" csv>
         {rows.length === 0 ? <div className="vm-notice" role="status">*** NO CUSTOMER OWES A BALANCE ***</div> : (
           <>
             <p><strong>{rows.length}</strong> CUSTOMER{rows.length === 1 ? " OWES" : "S OWE"} <strong>{fmtMoney(totalCents)}</strong> IN TOTAL</p>
@@ -148,7 +148,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
     if (slug === "popular") {
       const rows = await popularRentals(store.id, r);
       return (
-        <ReportShell {...base} title="POPULAR RENTALS" filter={filter} notice={notice}>
+        <ReportShell {...base} title="POPULAR RENTALS" filter={filter} notice={notice} csv>
           {rows.length === 0 ? <div className="vm-notice" role="status">*** NO RENTALS IN THIS PERIOD ***</div> : (
             <div className="vm-tablewrap">
               <table className="vm-table" style={{ minWidth: 480 }}>
@@ -164,7 +164,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
     }
     const rows = await topCustomers(store.id, r);
     return (
-      <ReportShell {...base} title="CUSTOMER ACTIVITY" filter={filter} notice={notice}>
+      <ReportShell {...base} title="CUSTOMER ACTIVITY" filter={filter} notice={notice} csv>
         {rows.length === 0 ? <div className="vm-notice" role="status">*** NO RENTALS IN THIS PERIOD ***</div> : (
           <div className="vm-tablewrap">
             <table className="vm-table" style={{ minWidth: 520 }}>
@@ -182,7 +182,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
   if (slug === "merchandise") {
     const m = await merchandiseInventory(store.id);
     return (
-      <ReportShell {...base} title="MERCHANDISE INVENTORY">
+      <ReportShell {...base} title="MERCHANDISE INVENTORY" csv>
         <fieldset className="vm-section">
           <legend>SUMMARY</legend>
           <dl className="vm-kv">
