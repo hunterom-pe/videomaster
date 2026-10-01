@@ -27,15 +27,15 @@ export async function Screen({
       <div className="vm-frame">
         <header className="vm-titlebar">
           <span>VIDEOMASTER V1.0 — {title}</span>
-          <span className="vm-titlebar-tools">
+          {userEmail ? (
+            <form action={logout}>
+              <span style={{ marginRight: 12, fontWeight: "normal" }}>{userEmail}</span>
+              <button type="submit" className="vm-btn small">[ LOG OFF ]</button>
+            </form>
+          ) : null}
+          <span className="vm-titlebar-opts">
             <ThemeToggle initial={theme} />
             <SoundToggle initial={soundOn} />
-            {userEmail ? (
-              <form action={logout}>
-                <span style={{ marginRight: 12, fontWeight: "normal" }}>{userEmail}</span>
-                <button type="submit" className="vm-btn small">[ LOG OFF ]</button>
-              </form>
-            ) : null}
           </span>
         </header>
         <main id="main" className="vm-body" tabIndex={-1}>{children}</main>
