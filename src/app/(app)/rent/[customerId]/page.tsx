@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { rentAgainItems } from "@/lib/rent-again";
 import { membershipState } from "@/lib/membership";
 import { effectiveStatus, overdueCounts } from "@/lib/overdue";
+import { toCents } from "@/lib/pricing";
 import { requireStore } from "@/lib/store-access";
 
 export const metadata = { title: "CUSTOMER CHECKOUT" };
@@ -61,7 +62,7 @@ export default async function CheckoutPage({ params, searchParams }: { params: P
           <CheckoutClient
             customerId={c.id} customerName={name} status={status} fees={c.outstandingFees.toFixed(2)}
             key={`${sp.again ?? ""}${sp.againTx ?? ""}`} initialRentals={again?.items} initialNotice={againNotice}
-            restrictions={restrictions} activeOut={activeOut} maxOut={maxOut} timezone={tz} saleCategories={store.concessionCategories.map((c) => ({ id: c.id, name: c.name }))} canOverride={role !== "EMPLOYEE"} taxPercent={store.settings!.salesTaxPercent.toString()}
+            credit={toCents(c.storeCredit)} restrictions={restrictions} activeOut={activeOut} maxOut={maxOut} timezone={tz} saleCategories={store.concessionCategories.map((c) => ({ id: c.id, name: c.name }))} canOverride={role !== "EMPLOYEE"} taxPercent={store.settings!.salesTaxPercent.toString()}
           />
         </>
       )}

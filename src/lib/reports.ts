@@ -10,22 +10,28 @@ const cents = (d: { toString(): string } | null | undefined) => (d ? toCents(d) 
 export async function dailyActivity(storeId: string, day: Date, next: Date) {
   const between = { gte: day, lt: next };
   const live = { voidedAt: null }; // voided transactions never count
-  const [rentals, returns, txCount, sales, txTotal, returned, refunds, acct] = await Promise.all([
+  const revenueTx = { ...live, type: { not: "STORE_CREDIT_SALE" as const } }; // credit sold is a liability, not revenue
+  const [rentals, returns, txCount, sales, txTotal, returned, refunds, acct, creditSold] = await Promise.all([
     db.rental.count({ where: { storeId, rentedAt: between } }),
     db.rental.count({ where: { storeId, returnedAt: between } }),
-    db.transaction.count({ where: { storeId, createdAt: between, ...live } }),
+    db.transaction.count({ where: { storeId, createdAt: between, ...revenueTx } }),
     db.transactionItem.aggregate({ where: { storeId, transaction: { createdAt: between, type: { not: "REFUND" }, ...live } }, _sum: { lineTotal: true, quantity: true } }),
-    db.transaction.aggregate({ where: { storeId, createdAt: between, ...live }, _sum: { total: true, tax: true } }),
+    db.transaction.aggregate({ where: { storeId, createdAt: between, ...revenueTx }, _sum: { total: true, tax: true } }),
     db.rental.aggregate({ where: { storeId, returnedAt: between }, _sum: { chargedLateFee: true, otherFee: true, rewindFee: true } }),
     db.transaction.aggregate({ where: { storeId, type: "REFUND", createdAt: between, ...live }, _sum: { subtotal: true }, _count: { _all: true } }),
     db.transaction.groupBy({ by: ["type"], where: { storeId, createdAt: between, ...live, balanceChange: { not: 0 } }, _sum: { balanceChange: true, total: true } }),
+    db.transaction.groupBy({ by: ["type"], where: { storeId, createdAt: between, ...live, creditChange: { not: 0 } }, _sum: { creditChange: true } }),
   ]);
+  const creditSum = (pred: (type: string, v: number) => boolean) => creditSold.reduce((n, g) => (pred(g.type, cents(g._sum.creditChange)) ? n + cents(g._sum.creditChange) : n), 0);
   const acctSum = (type: string, key: "balanceChange" | "total") => cents(acct.find((g) => g.type === type)?._sum[key]);
   const rentalRevenue = await db.rental.aggregate({ where: { storeId, rentedAt: between }, _sum: { price: true } });
   const membership = await db.transaction.aggregate({ where: { storeId, type: "MEMBERSHIP_FEE", createdAt: between, ...live }, _sum: { total: true } });
   return {
     refundCount: refunds._count._all,
     refundCents: cents(refunds._sum.subtotal), // negative, before tax
+    creditSoldCents: creditSum((t) => t === "STORE_CREDIT_SALE"),
+    creditRefundedCents: creditSum((t, v) => t === "REFUND" && v > 0),
+    creditUsedCents: -creditSum((t, v) => t !== "STORE_CREDIT_SALE" && v < 0),
     onAccountCents: acctSum("RETURN", "balanceChange"), // fees put on account that day
     accountPaymentCents: acctSum("ACCOUNT_PAYMENT", "total"),
     waivedCents: -acctSum("FEE_WAIVER", "balanceChange"),
@@ -46,20 +52,26 @@ export async function dailyActivity(storeId: string, day: Date, next: Date) {
 export async function revenue(storeId: string, r: Range) {
   const between = { gte: r.from, lt: r.toExclusive };
   const live = { voidedAt: null }; // voided transactions never count
-  const [rent, merch, fees, refunds, all] = await Promise.all([
+  const revenueTx = { ...live, type: { not: "STORE_CREDIT_SALE" as const } }; // credit sold is a liability, not revenue
+  const [rent, merch, fees, refunds, all, credit] = await Promise.all([
     db.rental.aggregate({ where: { storeId, transaction: { createdAt: between, ...live } }, _sum: { price: true }, _count: { _all: true } }),
     db.transactionItem.aggregate({ where: { storeId, transaction: { createdAt: between, type: { not: "REFUND" }, ...live } }, _sum: { lineTotal: true } }),
     db.transaction.aggregate({ where: { storeId, type: { in: ["RETURN", "MEMBERSHIP_FEE", "ACCOUNT_PAYMENT"] }, createdAt: between, ...live }, _sum: { total: true }, _count: { _all: true } }),
     db.transaction.aggregate({ where: { storeId, type: "REFUND", createdAt: between, ...live }, _sum: { subtotal: true }, _count: { _all: true } }),
-    db.transaction.aggregate({ where: { storeId, createdAt: between, ...live }, _sum: { tax: true, total: true }, _count: { _all: true } }),
+    db.transaction.aggregate({ where: { storeId, createdAt: between, ...revenueTx }, _sum: { tax: true, total: true }, _count: { _all: true } }),
+    db.transaction.groupBy({ by: ["type"], where: { storeId, createdAt: between, ...live, creditChange: { not: 0 } }, _sum: { creditChange: true } }),
   ]);
-  const byPayment = await db.transaction.groupBy({ by: ["paymentMethod"], where: { storeId, createdAt: between, ...live }, _sum: { total: true }, _count: { _all: true }, orderBy: { paymentMethod: "asc" } });
+  const creditSum = (pred: (type: string, v: number) => boolean) => credit.reduce((n, g) => (pred(g.type, cents(g._sum.creditChange)) ? n + cents(g._sum.creditChange) : n), 0);
+  const byPayment = await db.transaction.groupBy({ by: ["paymentMethod"], where: { storeId, createdAt: between, ...revenueTx }, _sum: { total: true }, _count: { _all: true }, orderBy: { paymentMethod: "asc" } });
   return {
     rentalCents: cents(rent._sum.price),
     merchandiseCents: cents(merch._sum.lineTotal),
     feeCents: cents(fees._sum.total),
     refundCents: cents(refunds._sum.subtotal), // negative, before tax
     refundCount: refunds._count._all,
+    creditSoldCents: creditSum((t) => t === "STORE_CREDIT_SALE"),
+    creditRefundedCents: creditSum((t, v) => t === "REFUND" && v > 0),
+    creditUsedCents: -creditSum((t, v) => t !== "STORE_CREDIT_SALE" && v < 0),
     taxCents: cents(all._sum.tax),
     totalCents: cents(all._sum.total),
     transactions: all._count._all,
@@ -141,12 +153,13 @@ export async function merchandiseInventory(storeId: string) {
 
 /** Customers who owe money, largest balance first. */
 export async function customerBalances(storeId: string) {
+  const credit = await db.customer.aggregate({ where: { storeId }, _sum: { storeCredit: true } });
   const rows = await db.customer.findMany({
     where: { storeId, outstandingFees: { gt: 0 } }, orderBy: [{ outstandingFees: "desc" }, { lastName: "asc" }], take: 1000,
     select: { id: true, firstName: true, lastName: true, membershipNumber: true, phone: true, outstandingFees: true },
   });
   const list = rows.map((c) => ({ id: c.id, name: `${c.lastName.toUpperCase()}, ${c.firstName.toUpperCase()}`, member: c.membershipNumber, phone: c.phone, cents: cents(c.outstandingFees) }));
-  return { rows: list, totalCents: list.reduce((n, r) => n + r.cents, 0) };
+  return { rows: list, totalCents: list.reduce((n, r) => n + r.cents, 0), creditOutstandingCents: cents(credit._sum.storeCredit) };
 }
 
 export { listOverdue };

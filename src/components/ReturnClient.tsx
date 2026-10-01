@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { completeReturn } from "@/actions/returns";
 import { CashTender } from "@/components/CashTender";
+import { CreditHint } from "@/components/CreditHint";
 import { ErrorBox } from "@/components/ErrorBox";
 import { RetroDialog } from "@/components/RetroDialog";
 import { resolvePaidNow } from "@/lib/balance";
@@ -13,9 +14,9 @@ import { PAYMENT_METHODS, returnSchema, zodErrors } from "@/lib/validation";
 
 type Outcome = "RETURNED" | "DAMAGED" | "LOST";
 
-type Props = { rentalId: string; calculated: string; lostFee: string; damageFee: string; rewindFee: string; isVhs: boolean };
+type Props = { creditCents?: number; rentalId: string; calculated: string; lostFee: string; damageFee: string; rewindFee: string; isVhs: boolean };
 
-export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindFee, isVhs }: Props) {
+export function ReturnClient({ creditCents = 0, rentalId, calculated, lostFee, damageFee, rewindFee, isVhs }: Props) {
   const [outcome, setOutcome] = useState<Outcome>("RETURNED");
   const [lateFee, setLateFee] = useState(calculated);
   const [otherFee, setOtherFee] = useState("0.00");
@@ -62,6 +63,11 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
     if (!split.ok) {
       setErrors({});
       setMessage(split.message);
+      return;
+    }
+    if (payment === "STORE_CREDIT" && paidCents > creditCents) {
+      setErrors({});
+      setMessage(`NOT ENOUGH STORE CREDIT: ${fmtMoney(creditCents)} AVAILABLE, ${fmtMoney(paidCents)} DUE NOW.`);
       return;
     }
     const tp = parseTender(tendered);
@@ -121,6 +127,7 @@ export function ReturnClient({ rentalId, calculated, lostFee, damageFee, rewindF
               {PAYMENT_METHODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
             </select>
             <span className="vm-hint">{total > 0 ? "SIMULATED — NO REAL PAYMENT IS PROCESSED" : "NO PAYMENT DUE"}</span>
+            {total > 0 && <CreditHint method={payment} creditCents={creditCents} dueCents={paidCents} />}
           </div>
           {total > 0 && (
             <div className="vm-field">

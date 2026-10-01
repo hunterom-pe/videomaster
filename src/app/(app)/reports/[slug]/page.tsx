@@ -50,6 +50,9 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
             {a.accountPaymentCents > 0 && <Row label="PAYMENTS ON ACCOUNT" value={fmtMoney(a.accountPaymentCents)} />}
             {a.onAccountCents > 0 && <Row label="FEES PUT ON ACCOUNT (NOT COLLECTED)" value={fmtMoney(a.onAccountCents)} />}
             {a.waivedCents > 0 && <Row label="BALANCES WAIVED" value={fmtMoney(a.waivedCents)} />}
+            {a.creditSoldCents > 0 && <Row label="STORE CREDIT SOLD (NOT REVENUE)" value={fmtMoney(a.creditSoldCents)} />}
+            {a.creditUsedCents > 0 && <Row label="PAID WITH STORE CREDIT" value={fmtMoney(a.creditUsedCents)} />}
+            {a.creditRefundedCents > 0 && <Row label="REFUNDED TO STORE CREDIT" value={fmtMoney(a.creditRefundedCents)} />}
             {a.refundCount > 0 && <Row label={`REFUNDS (${a.refundCount}, BEFORE TAX)`} value={`-${fmtMoney(-a.refundCents)}`} />}
             <Row label="SALES TAX (NET OF REFUNDS)" value={fmtMoney(a.taxCents)} />
             <Row label="TOTAL REVENUE" value={fmtMoney(a.totalCents)} strong />
@@ -123,9 +126,10 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
   }
 
   if (slug === "balances") {
-    const { rows, totalCents } = await customerBalances(store.id);
+    const { rows, totalCents, creditOutstandingCents } = await customerBalances(store.id);
     return (
       <ReportShell {...base} title="CUSTOMER BALANCES" csv>
+        {creditOutstandingCents > 0 && <p>STORE CREDIT OUTSTANDING (WHAT THE STORE OWES CUSTOMERS): <strong>{fmtMoney(creditOutstandingCents)}</strong></p>}
         {rows.length === 0 ? <div className="vm-notice" role="status">*** NO CUSTOMER OWES A BALANCE ***</div> : (
           <>
             <p><strong>{rows.length}</strong> CUSTOMER{rows.length === 1 ? " OWES" : "S OWE"} <strong>{fmtMoney(totalCents)}</strong> IN TOTAL</p>
@@ -232,6 +236,9 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
             <Row label="TAXES (NET OF REFUNDS)" value={fmtMoney(v.taxCents)} />
             <Row label="TOTAL" value={fmtMoney(v.totalCents)} strong />
             <Row label="TRANSACTIONS" value={v.transactions} />
+            {v.creditSoldCents > 0 && <Row label="STORE CREDIT SOLD (NOT REVENUE)" value={fmtMoney(v.creditSoldCents)} />}
+            {v.creditUsedCents > 0 && <Row label="PAID WITH STORE CREDIT (INCLUDED ABOVE)" value={fmtMoney(v.creditUsedCents)} />}
+            {v.creditRefundedCents > 0 && <Row label="REFUNDED TO STORE CREDIT (INCLUDED ABOVE)" value={fmtMoney(v.creditRefundedCents)} />}
           </dl>
         </fieldset>
         {v.byPayment.length > 0 && (

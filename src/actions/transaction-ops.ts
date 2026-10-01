@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { PaymentMethod } from "@/generated/prisma/client";
+import { CreditError } from "@/lib/credit-ops";
 import { db } from "@/lib/db";
 import { requireStore } from "@/lib/store-access";
 import { refundTransaction, TransactionOpError, voidTransaction } from "@/lib/transaction-ops";
@@ -23,7 +24,7 @@ export async function voidTransactionAction(transactionId: string, input: { reas
   try {
     await db.$transaction((tx) => voidTransaction(tx, { storeId: store.id, userId: user.id, transactionId, reason: parsed.data.reason }));
   } catch (e) {
-    if (e instanceof TransactionOpError) return { ok: false, errors: {}, message: e.message };
+    if (e instanceof TransactionOpError || e instanceof CreditError) return { ok: false, errors: {}, message: e.message };
     throw e;
   }
   revalidateAll();
@@ -43,7 +44,7 @@ export async function refundTransactionAction(transactionId: string, input: Refu
       )
     ).refundId;
   } catch (e) {
-    if (e instanceof TransactionOpError) return { ok: false, errors: {}, message: e.message };
+    if (e instanceof TransactionOpError || e instanceof CreditError) return { ok: false, errors: {}, message: e.message };
     throw e;
   }
   revalidateAll();

@@ -161,6 +161,8 @@
 
 **Improvement 2 — Staff accounts** — `lib/staff-ops.ts` (add/role/reset/remove, store-scoped, owner member immutable, remove = disable not delete, rehire supported), `actions/staff.ts` (owner-only, re-checked), `/settings/staff` + `StaffManager`, `/account` + `AccountForm` (change own password, rate-limited, signs out other sessions; email in title bar links there), `/account` added to the proxy gate. DB integration test `staff-ops.int.test.ts`.
 
+**Improvement 3 — Store credit** — `Customer.storeCredit` (CHECK ≥ 0) + `Transaction.creditChange` (invariant: balance = Σ creditChange of non-voided txs), `STORE_CREDIT_SALE` type. `lib/credit-ops.ts` (`spendCredit`/`addCredit` guarded, `sellCredit`), wired into checkout, single/batch returns, balance payments, membership renewal, refunds (to credit) and voids (credit restored). `/customers/[id]/credit`, `CreditHint` on payment screens (walk-ins can't pick it), receipts/detail/reports/exports updated; credit sold excluded from revenue. DB test `credit-ops.int.test.ts`.
+
 ## Current Work
 Nothing in progress.
 

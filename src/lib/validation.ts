@@ -454,3 +454,9 @@ export const changePasswordSchema = z.object({
   password: signupSchema.shape.password,
   confirm: z.string(),
 }).refine((v) => v.password === v.confirm, { message: "THE NEW PASSWORDS DO NOT MATCH", path: ["confirm"] });
+
+// ── Store credit ──
+export const creditSaleSchema = z.object({
+  amount: z.string().trim().min(1, "ENTER THE AMOUNT OF CREDIT").max(12, "AMOUNT IS TOO LONG"),
+  paymentMethod: z.enum(PAYMENT_METHODS.filter((p) => p.value !== "STORE_CREDIT").map((p) => p.value) as [string, ...string[]], "SELECT A PAYMENT METHOD"),
+});

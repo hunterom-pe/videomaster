@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { returnAll } from "@/actions/returns";
 import { CashTender } from "@/components/CashTender";
+import { CreditHint } from "@/components/CreditHint";
 import { RetroDialog } from "@/components/RetroDialog";
 import { ErrorBox } from "@/components/ErrorBox";
 import { resolvePaidNow } from "@/lib/balance";
@@ -13,7 +14,7 @@ import { PAYMENT_METHODS } from "@/lib/validation";
 
 export type ReturnAllRow = { id: string; title: string; copyNumber: string; dueLabel: string; days: number; lateCents: number };
 
-export function ReturnAllForm({ customerId, rows }: { customerId: string; rows: ReturnAllRow[] }) {
+export function ReturnAllForm({ customerId, rows, creditCents = 0 }: { customerId: string; rows: ReturnAllRow[]; creditCents?: number }) {
   const [selected, setSelected] = useState<Record<string, boolean>>(() => Object.fromEntries(rows.map((r) => [r.id, true])));
   const [waive, setWaive] = useState(false);
   const [method, setMethod] = useState("CASH");
@@ -36,6 +37,7 @@ export function ReturnAllForm({ customerId, rows }: { customerId: string; rows: 
     setMessage("");
     if (chosen.length === 0) return setMessage("SELECT AT LEAST ONE VIDEO TO RETURN.");
     if (!split.ok) return setMessage(split.message);
+    if (method === "STORE_CREDIT" && paid > creditCents) return setMessage(`NOT ENOUGH STORE CREDIT: ${fmtMoney(creditCents)} AVAILABLE, ${fmtMoney(paid)} DUE NOW.`);
     if (method === "CASH" && paid > 0 && (Number.isNaN(tp) || (tp !== null && tp < paid)))
       return setMessage(Number.isNaN(tp) ? "CASH TENDERED MUST BE A DOLLAR AMOUNT SUCH AS 20 OR 20.00." : `CASH TENDERED IS LESS THAN THE ${fmtMoney(paid)} DUE NOW.`);
     setConfirming(true);
@@ -97,6 +99,7 @@ export function ReturnAllForm({ customerId, rows }: { customerId: string; rows: 
                 {PAYMENT_METHODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
               <span className="vm-hint">SIMULATED — NO REAL PAYMENT IS PROCESSED</span>
+              <CreditHint method={method} creditCents={creditCents} dueCents={paid} />
             </div>
             <div className="vm-field">
               <label htmlFor="paidnow">AMOUNT PAID NOW</label>

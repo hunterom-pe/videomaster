@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { PaymentMethod, Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { resolvePaidNow } from "@/lib/balance";
+import { CreditError, creditUsedChange, spendCredit } from "@/lib/credit-ops";
 import { resolveTender } from "@/lib/cash";
 import { daysLate, lateFeeCents } from "@/lib/late-fees";
 import { fmtMoney, fromCents, toCents } from "@/lib/pricing";
@@ -83,6 +84,7 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
       if (!split.ok) throw new ReturnError(split.message);
       const tender = resolveTender(d.paymentMethod, split.paidCents, input.tendered);
       if (!tender.ok) throw new ReturnError(tender.message);
+      if (d.paymentMethod === "STORE_CREDIT") await spendCredit(tx, { storeId: store.id, customerId: rental.customerId, cents: split.paidCents });
 
       const { nextTransactionNumber } = await tx.store.update({
         where: { id: store.id },
@@ -101,7 +103,7 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
           storeId: store.id, number: nextTransactionNumber - 1, type: "RETURN", customerId: rental.customerId, createdById: user.id,
           // subtotal/total = money actually collected now; the unpaid part is recorded in balanceChange
           subtotal: fromCents(split.paidCents), tax: "0.00", total: fromCents(split.paidCents), balanceChange: fromCents(split.unpaidCents), paymentMethod: d.paymentMethod as PaymentMethod, notes: notes || null,
-          tendered: tender.tenderedCents === null ? null : fromCents(tender.tenderedCents),
+          tendered: tender.tenderedCents === null ? null : fromCents(tender.tenderedCents), creditChange: creditUsedChange(d.paymentMethod, split.paidCents),
         },
       });
 
@@ -124,7 +126,7 @@ export async function completeReturn(rentalId: string, input: ReturnValues): Pro
       return transaction.id;
     });
   } catch (e) {
-    if (e instanceof ReturnError) return { ok: false, errors: {}, message: e.message };
+    if (e instanceof ReturnError || e instanceof CreditError) return { ok: false, errors: {}, message: e.message };
     throw e;
   }
   revalidatePath("/inventory");
@@ -148,7 +150,7 @@ export async function returnAll(customerId: string, input: ReturnAllValues): Pro
       }),
     ));
   } catch (e) {
-    if (e instanceof ReturnBatchError) return { ok: false, errors: {}, message: e.message };
+    if (e instanceof ReturnBatchError || e instanceof CreditError) return { ok: false, errors: {}, message: e.message };
     throw e;
   }
   revalidatePath("/inventory");

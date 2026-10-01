@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { renewMembership } from "@/actions/customers";
 import { CashTender } from "@/components/CashTender";
+import { CreditHint } from "@/components/CreditHint";
 import { ErrorBox } from "@/components/ErrorBox";
 import { PAYMENT_METHODS } from "@/lib/validation";
 
-export function RenewForm({ customerId, fee }: { customerId: string; fee: string }) {
+export function RenewForm({ customerId, fee, creditCents = 0 }: { customerId: string; fee: string; creditCents?: number }) {
   const [method, setMethod] = useState("CASH");
   const [tendered, setTendered] = useState("");
   const [message, setMessage] = useState("");
@@ -30,6 +31,7 @@ export function RenewForm({ customerId, fee }: { customerId: string; fee: string
             {PAYMENT_METHODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
           </select>
           <span className="vm-hint">SIMULATED — NO REAL PAYMENT IS PROCESSED</span>
+          <CreditHint method={method} creditCents={creditCents} dueCents={Math.round(Number(fee) * 100)} />
         </div>
       )}
       {hasFee && <div style={{ maxWidth: 320 }}><CashTender method={method} totalCents={Math.round(Number(fee) * 100)} value={tendered} onChange={setTendered} /></div>}

@@ -19,6 +19,7 @@ export type RefundFormProps = {
   originalTaxCents: number;
   originalTaxableBaseCents: number;
   remainingTaxCents: number;
+  hasCustomer: boolean; // store credit refunds need a customer
 };
 
 export function RefundForm(p: RefundFormProps) {
@@ -137,9 +138,9 @@ export function RefundForm(p: RefundFormProps) {
         <div className="vm-field" style={{ maxWidth: 320 }}>
           <label htmlFor="method">REFUND TO</label>
           <select id="method" value={method} onChange={(e) => setMethod(e.target.value)}>
-            {PAYMENT_METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+            {PAYMENT_METHODS.filter((m) => p.hasCustomer || m.value !== "STORE_CREDIT").map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
-          <span className="vm-hint">SIMULATED — NO REAL PAYMENT IS PROCESSED</span>
+          <span className="vm-hint">{method === "STORE_CREDIT" ? "THE REFUND IS ADDED TO THE CUSTOMER'S STORE CREDIT" : "SIMULATED — NO REAL PAYMENT IS PROCESSED"}</span>
         </div>
         <dl className="vm-kv">
           <dt>SUBTOTAL</dt><dd>{fmtMoney(totals.subtotal)}</dd>

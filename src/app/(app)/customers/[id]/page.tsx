@@ -41,6 +41,7 @@ export default async function CustomerPage({
   const mState = membershipState(c.membershipExpiresAt, now);
   const feesTracked = Number(settings.membershipFee) > 0 || settings.membershipTermMonths > 0;
   const fees = Number(c.outstandingFees);
+  const credit = Number(c.storeCredit);
   const address = [c.address, [c.city, c.region].filter(Boolean).join(", "), c.postalCode].filter(Boolean).join(" · ");
 
   return (
@@ -52,6 +53,7 @@ export default async function CustomerPage({
           {activeRentals.length > 0 && <Link href={`/customers/${c.id}/return-all`} className="vm-btn">[ RETURN ALL ({activeRentals.length}) ]</Link>}
           <Link href={`/customers/${c.id}/history`} className="vm-btn">[ HISTORY ]</Link>
           <Link href={`/customers/${c.id}/card`} className="vm-btn">[ MEMBER CARD ]</Link>
+          <Link href={`/customers/${c.id}/credit`} className="vm-btn">[ ADD STORE CREDIT ]</Link>
           {feesTracked && <Link href={`/customers/${c.id}/renew`} className="vm-btn">[ RENEW MEMBERSHIP ]</Link>}
           <Link href={`/customers/${c.id}/edit`} className="vm-btn">[ EDIT ]</Link>
           <Link href="/customers" className="vm-btn">[ CUSTOMER SEARCH ]</Link>
@@ -101,6 +103,7 @@ export default async function CustomerPage({
           <dt>E-MAIL</dt><dd>{c.email ?? "—"}</dd>
           <dt>ADDRESS</dt><dd>{address || "—"}</dd>
           <dt>DATE OF BIRTH</dt><dd>{c.dateOfBirth ? c.dateOfBirth.toISOString().slice(0, 10) : "—"}</dd>
+          <dt>STORE CREDIT</dt><dd>{credit > 0 ? <span className="vm-cyan">${credit.toFixed(2)}</span> : "$0.00"}</dd>
           <dt>BALANCE DUE</dt><dd>{fees > 0 ? <Link href={`/customers/${c.id}/balance`} className="vm-red">${fees.toFixed(2)}</Link> : "$0.00"}</dd>
           <dt>NOTES</dt><dd style={{ whiteSpace: "pre-wrap" }}>{c.notes ?? "—"}</dd>
         </dl>

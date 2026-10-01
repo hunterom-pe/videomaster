@@ -2,6 +2,7 @@ import "server-only";
 import type { PaymentMethod, Prisma } from "@/generated/prisma/client";
 import { resolveBalanceAmount } from "@/lib/balance";
 import { resolveTender } from "@/lib/cash";
+import { creditUsedChange, spendCredit } from "@/lib/credit-ops";
 import { fromCents, toCents } from "@/lib/pricing";
 
 // Paying down or waiving a customer's account balance. Plain functions over a database transaction (no session);
@@ -39,13 +40,14 @@ export async function payBalance(tx: Tx, o: Base & { method: PaymentMethod; tend
   if (!amount.ok) throw new BalanceOpError(amount.message);
   const tender = resolveTender(o.method, amount.cents, o.tenderedRaw);
   if (!tender.ok) throw new BalanceOpError(tender.message);
+  if (o.method === "STORE_CREDIT") await spendCredit(tx, { storeId: o.storeId, customerId: c.id, cents: amount.cents });
   await reduceBalance(tx, o.storeId, c.id, amount.cents);
   const t = await tx.transaction.create({
     data: {
       storeId: o.storeId, number: await nextNumber(tx, o.storeId), type: "ACCOUNT_PAYMENT", customerId: c.id, createdById: o.userId,
       subtotal: fromCents(amount.cents), tax: "0.00", total: fromCents(amount.cents), paymentMethod: o.method,
       tendered: tender.tenderedCents === null ? null : fromCents(tender.tenderedCents),
-      balanceChange: fromCents(-amount.cents), notes: "PAYMENT ON ACCOUNT",
+      balanceChange: fromCents(-amount.cents), creditChange: creditUsedChange(o.method, amount.cents), notes: "PAYMENT ON ACCOUNT",
     },
   });
   return { transactionId: t.id, cents: amount.cents };

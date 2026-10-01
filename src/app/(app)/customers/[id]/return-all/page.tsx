@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ReturnAllForm } from "@/components/ReturnAllForm";
 import { Screen } from "@/components/Screen";
 import { db } from "@/lib/db";
-import { fmtDate } from "@/lib/pricing";
+import { fmtDate, toCents } from "@/lib/pricing";
 import { lateFeeFor, openRentalsFor } from "@/lib/returns-batch";
 import { requireStore } from "@/lib/store-access";
 
@@ -35,7 +35,7 @@ export default async function ReturnAllPage({ params }: { params: Promise<{ id: 
           <div className="vm-actions"><Link href={`/customers/${c.id}`} className="vm-btn">[ BACK ]</Link></div>
         </>
       ) : (
-        <ReturnAllForm customerId={c.id} rows={rows} />
+        <ReturnAllForm customerId={c.id} rows={rows} creditCents={toCents(c.storeCredit)} />
       )}
     </Screen>
   );

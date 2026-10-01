@@ -2,6 +2,7 @@ import "server-only";
 import type { PaymentMethod, Prisma } from "@/generated/prisma/client";
 import { resolvePaidNow } from "@/lib/balance";
 import { resolveTender } from "@/lib/cash";
+import { creditUsedChange, spendCredit } from "@/lib/credit-ops";
 import { daysLate, lateFeeCents } from "@/lib/late-fees";
 import { fmtMoney, fromCents, toCents } from "@/lib/pricing";
 
@@ -49,6 +50,7 @@ export async function returnRentals(
   if (!split.ok) throw new ReturnBatchError(split.message);
   const tender = resolveTender(o.method, split.paidCents, o.tenderedRaw);
   if (!tender.ok) throw new ReturnBatchError(tender.message);
+  if (o.method === "STORE_CREDIT") await spendCredit(tx, { storeId: o.storeId, customerId: o.customerId, cents: split.paidCents });
 
   const { nextTransactionNumber } = await tx.store.update({ where: { id: o.storeId }, data: { nextTransactionNumber: { increment: 1 } }, select: { nextTransactionNumber: true } });
   const notes = [
@@ -61,7 +63,7 @@ export async function returnRentals(
       storeId: o.storeId, number: nextTransactionNumber - 1, type: "RETURN", customerId: o.customerId, createdById: o.userId,
       // subtotal/total = money collected now; the unpaid part is recorded in balanceChange
       subtotal: fromCents(split.paidCents), tax: "0.00", total: fromCents(split.paidCents), balanceChange: fromCents(split.unpaidCents),
-      paymentMethod: o.method, tendered: tender.tenderedCents === null ? null : fromCents(tender.tenderedCents), notes,
+      paymentMethod: o.method, tendered: tender.tenderedCents === null ? null : fromCents(tender.tenderedCents), creditChange: creditUsedChange(o.method, split.paidCents), notes,
     },
   });
 

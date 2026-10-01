@@ -40,6 +40,7 @@ export default async function RefundPage({ params }: { params: Promise<{ id: str
           originalTaxCents={can.originalTaxCents}
           originalTaxableBaseCents={can.originalTaxableBaseCents}
           remainingTaxCents={can.remainingTaxCents}
+          hasCustomer={!!t.customerId}
         />
       )}
     </Screen>

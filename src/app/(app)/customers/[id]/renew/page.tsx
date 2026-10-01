@@ -27,7 +27,7 @@ export default async function RenewPage({ params }: { params: Promise<{ id: stri
         <dt>CURRENT EXPIRY</dt><dd>{c.membershipExpiresAt ? fmtDateUS(c.membershipExpiresAt, tz) : "—"}</dd>
         <dt>NEW EXPIRY</dt><dd>{next ? fmtDateUS(next, tz) : "NEVER"}</dd>
       </dl>
-      <RenewForm customerId={c.id} fee={s.membershipFee.toFixed(2)} />
+      <RenewForm customerId={c.id} fee={s.membershipFee.toFixed(2)} creditCents={Math.round(Number(c.storeCredit) * 100)} />
     </Screen>
   );
 }

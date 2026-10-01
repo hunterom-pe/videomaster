@@ -6,6 +6,7 @@ import type { PaymentMethod } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { copyInclude, toCartItem as toItem } from "@/lib/cart-items";
 import { resolveTender } from "@/lib/cash";
+import { CreditError, creditUsedChange, spendCredit } from "@/lib/credit-ops";
 import { computeTotals, dueDate, fromCents, toCents } from "@/lib/pricing";
 import { membershipState } from "@/lib/membership";
 import { effectiveStatus, overdueCounts } from "@/lib/overdue";
@@ -203,6 +204,7 @@ export async function checkout(customerId: string | null, input: CheckoutValues)
 
       const tender = resolveTender(paymentMethod, totals.total, input.tendered);
       if (!tender.ok) throw new CheckoutError(tender.message);
+      if (paymentMethod === "STORE_CREDIT") await spendCredit(tx, { storeId: store.id, customerId: customer?.id ?? null, cents: totals.total });
 
       const { nextTransactionNumber } = await tx.store.update({ where: { id: store.id }, data: { nextTransactionNumber: { increment: 1 } }, select: { nextTransactionNumber: true } });
       const transaction = await tx.transaction.create({
@@ -210,6 +212,7 @@ export async function checkout(customerId: string | null, input: CheckoutValues)
           storeId: store.id, number: nextTransactionNumber - 1, type: copies.length ? "RENTAL" : "RETAIL_SALE", customerId: customer?.id ?? null, createdById: user.id,
           subtotal: fromCents(totals.subtotal), tax: fromCents(totals.tax), total: fromCents(totals.total), paymentMethod: paymentMethod as PaymentMethod,
           tendered: tender.tenderedCents === null ? null : fromCents(tender.tenderedCents),
+          creditChange: creditUsedChange(paymentMethod, totals.total),
         },
       });
       if (rentalLines.length)
@@ -229,7 +232,7 @@ export async function checkout(customerId: string | null, input: CheckoutValues)
       return transaction.id;
     });
   } catch (e) {
-    if (e instanceof CheckoutError) return { ok: false, errors: {}, message: e.message };
+    if (e instanceof CheckoutError || e instanceof CreditError) return { ok: false, errors: {}, message: e.message };
     throw e;
   }
   revalidatePath("/inventory");

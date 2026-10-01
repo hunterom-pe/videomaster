@@ -19,8 +19,8 @@ export async function exportTable(kind: ExportKind, storeId: string): Promise<Ta
       const r = await db.customer.findMany({ where: { storeId }, orderBy: { membershipNumber: "asc" }, take: CAP });
       return {
         filename: "customers",
-        headers: ["member_number", "first_name", "last_name", "phone", "email", "address", "city", "state", "postal_code", "date_of_birth", "status", "membership_expires", "balance_due", "notes", "created"],
-        rows: r.map((c) => [c.membershipNumber, c.firstName, c.lastName, c.phone, c.email, c.address, c.city, c.region, c.postalCode, c.dateOfBirth?.toISOString().slice(0, 10) ?? null, c.status, c.membershipExpiresAt, c.outstandingFees, c.notes, c.createdAt]),
+        headers: ["member_number", "first_name", "last_name", "phone", "email", "address", "city", "state", "postal_code", "date_of_birth", "status", "membership_expires", "balance_due", "store_credit", "notes", "created"],
+        rows: r.map((c) => [c.membershipNumber, c.firstName, c.lastName, c.phone, c.email, c.address, c.city, c.region, c.postalCode, c.dateOfBirth?.toISOString().slice(0, 10) ?? null, c.status, c.membershipExpiresAt, c.outstandingFees, c.storeCredit, c.notes, c.createdAt]),
       };
     }
     case "titles": {
@@ -57,8 +57,8 @@ export async function exportTable(kind: ExportKind, storeId: string): Promise<Ta
       });
       return {
         filename: "transactions",
-        headers: ["number", "type", "created", "member_number", "employee", "subtotal", "tax", "total", "payment_method", "cash_tendered", "balance_change", "refund_of", "voided", "void_reason", "notes"],
-        rows: r.map((t) => [t.number, t.type, t.createdAt, t.customer?.membershipNumber ?? null, t.createdBy?.email ?? null, t.subtotal, t.tax, t.total, t.paymentMethod, t.tendered, t.balanceChange, t.refundOf?.number ?? null, t.voidedAt, t.voidReason, t.notes]),
+        headers: ["number", "type", "created", "member_number", "employee", "subtotal", "tax", "total", "payment_method", "cash_tendered", "balance_change", "credit_change", "refund_of", "voided", "void_reason", "notes"],
+        rows: r.map((t) => [t.number, t.type, t.createdAt, t.customer?.membershipNumber ?? null, t.createdBy?.email ?? null, t.subtotal, t.tax, t.total, t.paymentMethod, t.tendered, t.balanceChange, t.creditChange, t.refundOf?.number ?? null, t.voidedAt, t.voidReason, t.notes]),
       };
     }
     case "transaction-items": {

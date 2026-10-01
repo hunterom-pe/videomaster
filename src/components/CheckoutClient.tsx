@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { checkout, findRentableCopies, findSaleItems, type CartItem, type SaleItem, type TitleHit } from "@/actions/rentals";
 import { CashTender } from "@/components/CashTender";
+import { CreditHint } from "@/components/CreditHint";
 import { ErrorBox } from "@/components/ErrorBox";
 import { RetroDialog } from "@/components/RetroDialog";
 import { changeDueCents, parseTender } from "@/lib/cash";
@@ -22,6 +23,7 @@ type Props = {
   taxPercent: string;
   timezone: string; // store zone, for due-date previews
   saleCategories: { id: string; name: string }[]; // merchandise category buttons
+  credit?: number; // customer's store credit in cents
   initialRentals?: CartItem[]; // "rent again": copies already in the cart
   initialNotice?: string;
 };
@@ -33,7 +35,7 @@ const saleKey = (id: string) => `sale:${id}`;
 const rowStyle = (selected: boolean) => (selected ? { background: "var(--hover)", color: "var(--on-hover)" } : undefined);
 const plainBtn = { background: "none", border: 0, font: "inherit", color: "inherit", padding: 0, cursor: "pointer", textAlign: "left" } as const;
 
-export function CheckoutClient({ customerId, customerName, status, fees, restrictions, activeOut, maxOut, canOverride, taxPercent, timezone, saleCategories, initialRentals = [], initialNotice = "" }: Props) {
+export function CheckoutClient({ customerId, customerName, status, fees, restrictions, activeOut, maxOut, canOverride, taxPercent, timezone, saleCategories, credit = 0, initialRentals = [], initialNotice = "" }: Props) {
   const [rentals, setRentals] = useState<CartItem[]>(initialRentals);
   const [sales, setSales] = useState<SaleLine[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -135,6 +137,7 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
     if (itemCount === 0) return setError("*** CART EMPTY *** ADD AT LEAST ONE ITEM BEFORE TAKING PAYMENT.");
     if (needsOverrideNow && !override)
       return setError(canOverride ? `*** ${reasons.join("; ")} *** CHECK "MANAGER OVERRIDE" BELOW TO CONTINUE.` : `*** ${reasons.join("; ")} *** MANAGER OVERRIDE REQUIRED.`);
+    if (payment === "STORE_CREDIT" && totals.total > credit) return setError(`*** NOT ENOUGH STORE CREDIT *** ${fmtMoney(credit)} AVAILABLE, ${fmtMoney(totals.total)} DUE.`);
     if (cashDue && (Number.isNaN(tenderParsed) || (tenderParsed !== null && tenderParsed < totals.total)))
       return setError(Number.isNaN(tenderParsed) ? "*** CASH TENDERED MUST BE A DOLLAR AMOUNT *** E.G. 20 OR 20.00." : `*** CASH SHORT *** TENDERED AMOUNT IS LESS THAN THE ${fmtMoney(totals.total)} DUE.`);
     setError("");
@@ -285,9 +288,10 @@ export function CheckoutClient({ customerId, customerName, status, fees, restric
           <div className="vm-field">
             <label htmlFor="pay">PAYMENT METHOD</label>
             <select id="pay" value={payment} onChange={(e) => setPayment(e.target.value)}>
-              {PAYMENT_METHODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+              {PAYMENT_METHODS.filter((p) => customerId || p.value !== "STORE_CREDIT").map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
             </select>
             <span className="vm-hint">SIMULATED — NO REAL PAYMENT IS PROCESSED</span>
+            {customerId && <CreditHint method={payment} creditCents={credit} dueCents={totals.total} />}
           </div>
           <CashTender method={payment} totalCents={totals.total} value={tendered} onChange={setTendered} />
           {needsOverrideNow && (

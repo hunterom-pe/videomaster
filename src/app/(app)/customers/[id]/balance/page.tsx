@@ -31,7 +31,7 @@ export default async function BalancePage({ params }: { params: Promise<{ id: st
       ) : (
         <>
           <dl className="vm-kv"><dt>BALANCE DUE</dt><dd><strong className="vm-red">{fmtMoney(balance)}</strong></dd></dl>
-          <BalanceForm customerId={c.id} balanceCents={balance} canWaive={role !== "EMPLOYEE"} />
+          <BalanceForm customerId={c.id} balanceCents={balance} canWaive={role !== "EMPLOYEE"} creditCents={toCents(c.storeCredit)} />
         </>
       )}
       {recent.length > 0 && (

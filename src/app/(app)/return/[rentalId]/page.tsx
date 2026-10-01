@@ -58,7 +58,7 @@ export default async function ReturnDetailPage({ params }: { params: Promise<{ r
           <dt>LATE FEE</dt><dd>{fmtMoney(calc)}{cat ? ` (${fmtMoney(toCents(cat.lateFeePerDay))}/DAY${cat.maxLateFee ? `, MAX ${fmtMoney(toCents(cat.maxLateFee))}` : ""})` : " (NO CATEGORY — NO POLICY)"}</dd>
         </dl>
       </fieldset>
-      <ReturnClient rentalId={r.id} calculated={fromCents(calc)} lostFee={fromCents(lostFee)} damageFee={settings.damageFee.toFixed(2)} rewindFee={settings.rewindFee.toFixed(2)} isVhs={r.copy.format === "VHS"} />
+      <ReturnClient creditCents={toCents(r.customer.storeCredit)} rentalId={r.id} calculated={fromCents(calc)} lostFee={fromCents(lostFee)} damageFee={settings.damageFee.toFixed(2)} rewindFee={settings.rewindFee.toFixed(2)} isVhs={r.copy.format === "VHS"} />
     </Screen>
   );
 }

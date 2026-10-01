@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { resolveTender } from "@/lib/cash";
+import { CreditError, creditUsedChange, spendCredit } from "@/lib/credit-ops";
 import { db } from "@/lib/db";
 import { requireStore } from "@/lib/store-access";
 import { renewedExpiry } from "@/lib/membership";
@@ -46,6 +47,7 @@ export async function createCustomer(input: CustomerFormValues): Promise<ActionS
   const method = PAYMENT_METHODS.find((p) => p.value === input.paymentMethod)?.value;
   if (collect && !method) return { ok: false, errors: { paymentMethod: "SELECT A PAYMENT METHOD" }, message: "PLEASE CORRECT THE FIELDS MARKED BELOW" };
 
+  if (collect && method === "STORE_CREDIT") return { ok: false, errors: { paymentMethod: "A NEW CUSTOMER HAS NO STORE CREDIT" }, message: "PLEASE CORRECT THE FIELDS MARKED BELOW" };
   const tender = collect && method ? resolveTender(method, feeCents, input.tendered) : ({ ok: true, tenderedCents: null } as const);
   if (!tender.ok) return { ok: false, errors: { tendered: tender.message }, message: "PLEASE CORRECT THE FIELDS MARKED BELOW" };
 
@@ -93,7 +95,9 @@ export async function renewMembership(customerId: string, paymentMethod: string,
   if (!tender.ok) return { ok: false, errors: { tendered: tender.message }, message: "PLEASE CORRECT THE FIELDS MARKED BELOW" };
 
   const now = new Date();
-  const transactionId = await db.$transaction(async (tx) => {
+  let transactionId: string | null;
+  try {
+  transactionId = await db.$transaction(async (tx) => {
     const c = await tx.customer.findFirst({ where: { id: customerId, storeId: store.id } });
     if (!c) return null;
     await tx.customer.update({
@@ -101,6 +105,7 @@ export async function renewMembership(customerId: string, paymentMethod: string,
       data: { membershipPaidAt: now, membershipExpiresAt: renewedExpiry(c.membershipExpiresAt, now, settings.membershipTermMonths) },
     });
     if (feeCents <= 0) return "none";
+    if (method === "STORE_CREDIT") await spendCredit(tx, { storeId: store.id, customerId: c.id, cents: feeCents });
     const { nextTransactionNumber } = await tx.store.update({ where: { id: store.id }, data: { nextTransactionNumber: { increment: 1 } }, select: { nextTransactionNumber: true } });
     return (
       await tx.transaction.create({
@@ -108,10 +113,15 @@ export async function renewMembership(customerId: string, paymentMethod: string,
           storeId: store.id, number: nextTransactionNumber - 1, type: "MEMBERSHIP_FEE", customerId: c.id, createdById: user.id,
           subtotal: fromCents(feeCents), tax: "0.00", total: fromCents(feeCents), paymentMethod: method as PaymentMethod, notes: "MEMBERSHIP RENEWAL",
           tendered: tender.tenderedCents === null ? null : fromCents(tender.tenderedCents),
+          creditChange: creditUsedChange(method as string, feeCents),
         },
       })
     ).id;
   });
+  } catch (e) {
+    if (e instanceof CreditError) return { ok: false, errors: { paymentMethod: e.message }, message: "PLEASE CORRECT THE FIELDS MARKED BELOW" };
+    throw e;
+  }
   if (!transactionId) return { ok: false, errors: {}, message: "CUSTOMER NOT FOUND" };
   revalidatePath("/customers");
   redirect(transactionId === "none" ? `/customers/${customerId}?saved=1` : `/receipt/${transactionId}?new=1`);

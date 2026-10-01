@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { PaymentMethod } from "@/generated/prisma/client";
+import { CreditError } from "@/lib/credit-ops";
 import { BalanceOpError, payBalance, waiveBalance } from "@/lib/balance-ops";
 import { db } from "@/lib/db";
 import { requireStore } from "@/lib/store-access";
@@ -22,7 +23,7 @@ export async function payBalanceAction(customerId: string, input: { amount: stri
       payBalance(tx, { storeId: store.id, userId: user.id, customerId, amountRaw: parsed.data.amount, method: parsed.data.paymentMethod as PaymentMethod, tenderedRaw: input.tendered }),
     ));
   } catch (e) {
-    if (e instanceof BalanceOpError) return { ok: false, errors: {}, message: e.message };
+    if (e instanceof BalanceOpError || e instanceof CreditError) return { ok: false, errors: {}, message: e.message };
     throw e;
   }
   revalidateAll();
@@ -41,7 +42,7 @@ export async function waiveBalanceAction(customerId: string, input: { amount: st
       waiveBalance(tx, { storeId: store.id, userId: user.id, customerId, amountRaw: parsed.data.amount, reason: parsed.data.reason }),
     ));
   } catch (e) {
-    if (e instanceof BalanceOpError) return { ok: false, errors: {}, message: e.message };
+    if (e instanceof BalanceOpError || e instanceof CreditError) return { ok: false, errors: {}, message: e.message };
     throw e;
   }
   revalidateAll();

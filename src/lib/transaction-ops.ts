@@ -1,5 +1,6 @@
 import "server-only";
 import type { PaymentMethod, Prisma } from "@/generated/prisma/client";
+import { addCredit } from "@/lib/credit-ops";
 import { fromCents, toCents } from "@/lib/pricing";
 import { refundTotals, type RefundLine } from "@/lib/refunds";
 
@@ -94,6 +95,10 @@ export async function voidTransaction(tx: Tx, o: { storeId: string; userId: stri
     data: { voidedAt: new Date(), voidedById: o.userId, voidReason: o.reason },
   });
   if (claimed.count !== 1) throw new TransactionOpError("THIS TRANSACTION WAS JUST VOIDED BY ANOTHER CLERK.");
+
+  // Paid with store credit? The credit goes back to the customer.
+  const creditUsed = -toCents(t.creditChange);
+  if (creditUsed > 0) await addCredit(tx, { storeId: o.storeId, customerId: t.customerId, cents: creditUsed });
 
   const parts: string[] = [];
   // Rentals never happened: remove them and put the copies back on the shelf.
@@ -192,11 +197,16 @@ export async function refundTransaction(tx: Tx, o: { storeId: string; userId: st
     remainingTaxCents: can.remainingTaxCents, isFinalRefund: refundedAll,
   });
 
+  // Refunding to STORE CREDIT puts the money on the customer's account instead of handing it back.
+  const toCredit = req.paymentMethod === "STORE_CREDIT";
+  if (toCredit) await addCredit(tx, { storeId: o.storeId, customerId: t.customerId, cents: totals.total });
+
   const { nextTransactionNumber } = await tx.store.update({ where: { id: o.storeId }, data: { nextTransactionNumber: { increment: 1 } }, select: { nextTransactionNumber: true } });
   const refund = await tx.transaction.create({
     data: {
       storeId: o.storeId, number: nextTransactionNumber - 1, type: "REFUND", customerId: t.customerId, createdById: o.userId, refundOfId: t.id,
       subtotal: fromCents(-totals.subtotal), tax: fromCents(-totals.tax), total: fromCents(-totals.total), paymentMethod: req.paymentMethod,
+      creditChange: toCredit ? fromCents(totals.total) : "0.00",
       notes: `REFUND OF #${String(t.number).padStart(6, "0")}: ${req.reason}`.slice(0, 200),
     },
   });

@@ -138,6 +138,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
           <dt>TAX</dt><dd>{money(t.tax)}</dd>
           <dt>TOTAL</dt><dd><strong>{money(t.total)}</strong></dd>
           {Number(t.balanceChange) !== 0 && (<><dt>{Number(t.balanceChange) > 0 ? "PUT ON ACCOUNT" : "ACCOUNT BALANCE REDUCED"}</dt><dd>{money(Math.abs(Number(t.balanceChange)))}</dd></>)}
+          {Number(t.creditChange) !== 0 && (<><dt>{Number(t.creditChange) > 0 ? "STORE CREDIT ADDED" : "STORE CREDIT USED"}</dt><dd>{money(Math.abs(Number(t.creditChange)))}</dd></>)}
           {t.tendered && (<><dt>CASH TENDERED</dt><dd>{money(t.tendered)}</dd><dt>CHANGE GIVEN</dt><dd>{money(Number(t.tendered) - Number(t.total))}</dd></>)}
         </dl>
       </fieldset>

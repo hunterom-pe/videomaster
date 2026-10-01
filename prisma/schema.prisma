@@ -201,6 +201,7 @@ model Customer {
   status              CustomerStatus @default(GOOD)
   notes               String?
   outstandingFees     Decimal        @default(0) @db.Decimal(8, 2)
+  storeCredit         Decimal        @default(0) @db.Decimal(8, 2)
   membershipPaidAt    DateTime?
   membershipExpiresAt DateTime?
   createdAt           DateTime       @default(now())
@@ -320,6 +321,7 @@ enum TransactionType {
   LOST_ITEM_FEE
   MEMBERSHIP_FEE
   ACCOUNT_PAYMENT
+  STORE_CREDIT_SALE
 }
 
 enum PaymentMethod {
@@ -345,6 +347,9 @@ model Transaction {
   // Signed effect on the customer's account balance: fees put on account (+), payments and waivers (-).
   // Customer.outstandingFees always equals the sum of this column over the customer's non-voided transactions.
   balanceChange   Decimal           @default(0) @db.Decimal(10, 2)
+  // Signed effect on the customer's STORE CREDIT: credit sold or refunded to credit (+), credit spent (-).
+  // Customer.storeCredit always equals the sum of this column over the customer's non-voided transactions.
+  creditChange    Decimal           @default(0) @db.Decimal(10, 2)
   tendered        Decimal?          @db.Decimal(10, 2) // cash handed over (CASH payments with money due only); change = tendered - total
   notes           String?
   createdAt       DateTime          @default(now())

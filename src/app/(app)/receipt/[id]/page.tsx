@@ -12,7 +12,7 @@ export const metadata = { title: "RECEIPT" };
 
 const rentalInclude = { copy: { include: { movieTitle: true } } } as const;
 const money = (n: { toFixed(d: number): string } | number) => (Number(n) < 0 ? `-$${Math.abs(Number(n)).toFixed(2)}` : `$${Number(n).toFixed(2)}`);
-const NO_TAX_TYPES = ["RETURN", "MEMBERSHIP_FEE", "ACCOUNT_PAYMENT", "FEE_WAIVER"];
+const NO_TAX_TYPES = ["RETURN", "MEMBERSHIP_FEE", "ACCOUNT_PAYMENT", "FEE_WAIVER", "STORE_CREDIT_SALE"];
 const Row = ({ left, right, strong }: { left: string; right?: string; strong?: boolean }) => (
   <div className={`row${strong ? " strong" : ""}`}><span>{left}</span><span>{right}</span></div>
 );
@@ -47,7 +47,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
         <div className="center">{store.phone}</div>
         {store.slogan && <div className="center">&quot;{name(store.slogan)}&quot;</div>}
         <hr className="rule" />
-        <Row left={fmtDateUS(t.createdAt, tz)} right={t.type === "ACCOUNT_PAYMENT" ? "ACCOUNT PMT" : t.type === "FEE_WAIVER" ? "WAIVER" : t.type === "REFUND" ? "REFUND" : t.type === "RETURN" ? "RETURN" : t.type === "RETAIL_SALE" ? "SALE" : t.type === "MEMBERSHIP_FEE" ? "MEMBERSHIP" : "RENTAL"} />
+        <Row left={fmtDateUS(t.createdAt, tz)} right={t.type === "STORE_CREDIT_SALE" ? "CREDIT SALE" : t.type === "ACCOUNT_PAYMENT" ? "ACCOUNT PMT" : t.type === "FEE_WAIVER" ? "WAIVER" : t.type === "REFUND" ? "REFUND" : t.type === "RETURN" ? "RETURN" : t.type === "RETAIL_SALE" ? "SALE" : t.type === "MEMBERSHIP_FEE" ? "MEMBERSHIP" : "RENTAL"} />
         <Row left={`TRANSACTION #${String(t.number).padStart(6, "0")}`} />
         {t.refundOf && <div>REFUND OF TRANSACTION #{String(t.refundOf.number).padStart(6, "0")}</div>}
         {t.voidedAt && <div className="center strong" style={{ marginTop: 6 }}>*** VOID ***</div>}
@@ -55,6 +55,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
         {!isNew && <div className="center strong" style={{ marginTop: 6 }}>** REPRINT **</div>}
         <hr className="rule" />
 
+        {t.type === "STORE_CREDIT_SALE" && <div className="item"><Row left="STORE CREDIT PURCHASED" right={money(t.total)} /></div>}
         {(t.type === "ACCOUNT_PAYMENT" || t.type === "FEE_WAIVER") && (
           <div className="item"><Row left={t.type === "FEE_WAIVER" ? "BALANCE WAIVED" : "PAYMENT ON ACCOUNT"} right={money(Math.abs(Number(t.balanceChange)))} /></div>
         )}
@@ -101,6 +102,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
         <Row left="TOTAL" right={money(t.total)} strong />
         {Number(t.total) > 0 && <Row left={PAYMENT_LABELS[t.paymentMethod]} right={money(t.total)} />}
         {t.customer && Number(t.balanceChange) !== 0 && Number(t.customer.outstandingFees) > 0 && <Row left="ACCOUNT BALANCE DUE" right={money(t.customer.outstandingFees)} strong />}
+        {t.customer && Number(t.creditChange) !== 0 && <Row left="STORE CREDIT BALANCE" right={money(t.customer.storeCredit)} strong />}
         {t.tendered && (
           <>
             <Row left="CASH TENDERED" right={money(t.tendered)} />

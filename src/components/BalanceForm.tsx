@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { payBalanceAction, waiveBalanceAction } from "@/actions/balance";
 import { CashTender } from "@/components/CashTender";
+import { CreditHint } from "@/components/CreditHint";
 import { RetroDialog } from "@/components/RetroDialog";
 import { ErrorBox } from "@/components/ErrorBox";
 import { resolveBalanceAmount } from "@/lib/balance";
@@ -11,7 +12,7 @@ import { parseTender } from "@/lib/cash";
 import { fmtMoney } from "@/lib/pricing";
 import { PAYMENT_METHODS } from "@/lib/validation";
 
-export function BalanceForm({ customerId, balanceCents, canWaive }: { customerId: string; balanceCents: number; canWaive: boolean }) {
+export function BalanceForm({ customerId, balanceCents, canWaive, creditCents = 0 }: { customerId: string; balanceCents: number; canWaive: boolean; creditCents?: number }) {
   const [mode, setMode] = useState<"pay" | "waive">("pay");
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("CASH");
@@ -29,6 +30,7 @@ export function BalanceForm({ customerId, balanceCents, canWaive }: { customerId
     e.preventDefault();
     setMessage("");
     if (!amt.ok) return setMessage(amt.message);
+    if (mode === "pay" && method === "STORE_CREDIT" && cents > creditCents) return setMessage(`NOT ENOUGH STORE CREDIT: ${fmtMoney(creditCents)} AVAILABLE, ${fmtMoney(cents)} DUE.`);
     if (mode === "waive" && reason.trim().length < 3) return setMessage("ENTER A REASON (AT LEAST 3 CHARACTERS)");
     if (mode === "pay" && method === "CASH" && (Number.isNaN(tp) || (tp !== null && tp < cents)))
       return setMessage(Number.isNaN(tp) ? "CASH TENDERED MUST BE A DOLLAR AMOUNT SUCH AS 20 OR 20.00." : `CASH TENDERED IS LESS THAN THE ${fmtMoney(cents)} DUE.`);
@@ -69,6 +71,7 @@ export function BalanceForm({ customerId, balanceCents, canWaive }: { customerId
                 {PAYMENT_METHODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
               <span className="vm-hint">SIMULATED — NO REAL PAYMENT IS PROCESSED</span>
+              <CreditHint method={method} creditCents={creditCents} dueCents={cents} />
             </div>
             <CashTender method={method} totalCents={cents} value={tendered} onChange={setTendered} />
           </>
