@@ -441,3 +441,16 @@ export const returnAllSchema = z.object({
   tendered: z.string().trim().max(12, "AMOUNT IS TOO LONG"),
 });
 export type ReturnAllValues = z.input<typeof returnAllSchema>;
+
+// ── Staff / account ──
+export const addStaffSchema = z.object({
+  email: signupSchema.shape.email,
+  role: z.enum(["MANAGER", "EMPLOYEE"], "SELECT A ROLE"),
+  password: signupSchema.shape.password,
+});
+export const staffPasswordSchema = z.object({ password: signupSchema.shape.password });
+export const changePasswordSchema = z.object({
+  current: z.string().min(1, "ENTER YOUR CURRENT PASSWORD").max(128),
+  password: signupSchema.shape.password,
+  confirm: z.string(),
+}).refine((v) => v.password === v.confirm, { message: "THE NEW PASSWORDS DO NOT MATCH", path: ["confirm"] });

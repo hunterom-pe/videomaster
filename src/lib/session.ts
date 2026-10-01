@@ -29,6 +29,12 @@ export async function destroySession() {
   jar.delete(SESSION_COOKIE);
 }
 
+/** Sign out every OTHER device/session of this user (used after a password change). The current session stays. */
+export async function deleteOtherSessions(userId: string) {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  await db.session.deleteMany({ where: { userId, ...(token ? { tokenHash: { not: hashToken(token) } } : {}) } });
+}
+
 /** The authenticated user for this request, or null. Verified against the DB. */
 export const getCurrentUser = cache(async () => {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;

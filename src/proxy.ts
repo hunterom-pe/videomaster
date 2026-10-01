@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Optimistic gate only: real authentication is verified against the database
 // in the data access layer (lib/session.ts, lib/store-access.ts).
-const PROTECTED = ["/setup", "/menu", "/settings", "/customers", "/inventory", "/rent", "/return", "/concessions", "/sale", "/transactions", "/receipt", "/overdue", "/reports"];
+const PROTECTED = ["/setup", "/menu", "/settings", "/account", "/customers", "/inventory", "/rent", "/return", "/concessions", "/sale", "/transactions", "/receipt", "/overdue", "/reports"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

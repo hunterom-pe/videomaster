@@ -30,7 +30,7 @@ export async function Screen({
           <span>VIDEOMASTER V1.0 — {title}</span>
           {userEmail ? (
             <form action={logout}>
-              <span style={{ marginRight: 12, fontWeight: "normal" }}>{userEmail}</span>
+              <Link href="/account" className="vm-account-link" title="My account / change password" style={{ marginRight: 12, fontWeight: "normal" }}>{userEmail}</Link>
               <button type="submit" className="vm-btn small">[ LOG OFF ]</button>
             </form>
           ) : null}

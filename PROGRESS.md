@@ -159,6 +159,8 @@
 
 **Improvement 1 — Health check + data export** — `GET /api/health` (DB ping, 5 s timeout, no secrets); `lib/csv.ts` (formula-safe), `lib/export.ts`, `/settings/export/[kind]` (7 CSVs + JSON backup, owner/manager) and `/reports/[slug]/csv`; Settings section + report buttons. No restore yet.
 
+**Improvement 2 — Staff accounts** — `lib/staff-ops.ts` (add/role/reset/remove, store-scoped, owner member immutable, remove = disable not delete, rehire supported), `actions/staff.ts` (owner-only, re-checked), `/settings/staff` + `StaffManager`, `/account` + `AccountForm` (change own password, rate-limited, signs out other sessions; email in title bar links there), `/account` added to the proxy gate. DB integration test `staff-ops.int.test.ts`.
+
 ## Current Work
 Nothing in progress.
 

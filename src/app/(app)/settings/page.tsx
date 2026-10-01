@@ -63,6 +63,13 @@ export default async function SettingsPage() {
       <hr className="vm-rule" />
       <StoreForm mode="settings" initial={initial} />
       <hr className="vm-rule" />
+      {role === "OWNER" && (
+        <fieldset className="vm-section" id="staff">
+          <legend>STAFF ACCOUNTS</legend>
+          <p className="vm-hint">CREATE LOGINS FOR YOUR MANAGERS AND EMPLOYEES. EMPLOYEES CANNOT VOID, REFUND, WAIVE OR CHANGE SETTINGS.</p>
+          <div className="vm-actions" style={{ marginTop: 0 }}><a href="/settings/staff" className="vm-btn">[ MANAGE STAFF ACCOUNTS ]</a></div>
+        </fieldset>
+      )}
       {role !== "EMPLOYEE" && (
         <fieldset className="vm-section" id="export">
           <legend>DATA EXPORT AND BACKUP</legend>

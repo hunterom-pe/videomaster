@@ -70,7 +70,8 @@ h1, h2, h3 { margin: 0; font-weight: bold; font-size: 20px; letter-spacing: 1px;
 .vm-toggle.theme { min-width: 210px; }
 .vm-toggle.sound { min-width: 175px; }
 .vm-titlebar form { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 0; min-width: 0; max-width: 100%; }
-.vm-titlebar form > span { overflow-wrap: anywhere; min-width: 0; }
+.vm-titlebar form > span, .vm-titlebar .vm-account-link { overflow-wrap: anywhere; min-width: 0; }
+.vm-titlebar .vm-account-link { color: var(--title-fg); }
 .vm-body { padding: 16px 20px; }
 .vm-statusbar {
   border-top: 2px solid var(--fg); padding: 6px 12px; color: var(--cyan);

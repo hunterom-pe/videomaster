@@ -77,6 +77,7 @@ It is a real, working point-of-sale and inventory system (rentals, returns, late
 
 **Money and records**
 - Transactions (rentals, returns, retail sales, membership fees) with per-store numbering, payment method, tax and notes; filterable history and a detail page.
+- **Staff accounts and roles:** the store owner creates logins for managers and employees under `Store Settings → STAFF ACCOUNTS` (e-mail, role, starting password handed over in person), changes roles, resets passwords, or removes people (their account is disabled, not deleted, so old transactions still show who rang them up). Employees cannot override restrictions, void, refund, waive fees or balances, change settings or export data; managers can; only the owner manages staff and clears data. Everyone can change their own password under `MY ACCOUNT` (click your e-mail in the title bar); that signs out their other devices.
 - **Data export and backup:** `Store Settings → DATA EXPORT AND BACKUP` (owner/manager) downloads CSV files for customers, titles, copies, rentals, transactions, transaction items and merchandise, plus a full JSON backup of everything. List reports (overdue, popular, customer activity, balances, merchandise) have `[ DOWNLOAD CSV ]`. Text cells that start with `=`, `+`, `-` or `@` are neutralized so spreadsheets never run them as formulas. Exports contain customer information: keep them private.
 - **Health check:** `GET /api/health` (public, no secrets) returns `{ok, database, ms}` with HTTP 200, or 503 if the database is unreachable (details go to the server log). Use it for uptime monitoring or to tell "site down" from "database unreachable".
 - **Sound effects (on by default):** short retro beeps synthesized in the browser (no audio files): a beep when you add an item to the cart, a chime when a transaction completes, a buzz on errors and a double beep on warnings. A `[ SOUND: ON/OFF ]` button in the title bar toggles them; the choice is remembered in a cookie. Browsers only allow audio after your first click or tap on the page, so nothing plays before that.
@@ -423,7 +424,7 @@ The visual identity is deliberate and protected (see `CLAUDE.md`):
 ## Known limitations
 
 - Payments are simulated (there is no cash drawer or end-of-day cash count). Refunding a rental charge returns money only (a video still out is returned separately); a transaction with any refund cannot be voided.
-- One store per user in the UI; the membership table supports employees/managers but there is no screen to invite them yet.
+- One store per user in the UI. There is no e-mail-based invite or password reset: the owner creates staff accounts and resets their passwords by hand.
 - No password reset or e-mail features (out of scope for this local project). Titles cannot be edited after adding (copies can).
 - Reports are computed live (fine at store scale). The JSON backup is for safekeeping/portability; there is no in-app restore yet.
 - Print layout uses standard browser printing (not verified on a thermal receipt printer); layouts were verified by measurement, not by human review at every size.
