@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { logout } from "@/actions/auth";
 import { SoundToggle } from "@/components/SoundToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -34,6 +35,7 @@ export async function Screen({
             </form>
           ) : null}
           <span className="vm-titlebar-opts">
+            {userEmail && title !== "MAIN MENU" ? <Link href="/menu" className="vm-btn small">[ MAIN MENU ]</Link> : null}
             <ThemeToggle initial={theme} />
             <SoundToggle initial={soundOn} />
           </span>
