@@ -95,7 +95,8 @@ h1.vm-brand { font-size: 30px; letter-spacing: 8px; }
 .vm-field > label, .vm-label { color: var(--cyan); font-size: 14px; letter-spacing: 1px; }
 .vm-hint { color: var(--fg-dim); font-size: 13px; }
 
-input[type="text"], input[type="email"], input[type="password"], input[type="tel"], select {
+/* inputs with no type attribute are text inputs too: style them the same so none renders unstyled */
+input:not([type]), input[type="text"], input[type="email"], input[type="password"], input[type="tel"], input[type="search"], select {
   font: inherit; color: var(--fg); background: var(--bg-field);
   border: 2px solid var(--input-border); padding: 6px 8px; min-height: 38px; width: 100%;
 }
@@ -264,7 +265,7 @@ main:focus { outline: none; }
   margin: 0 auto 16px; padding: 0.14in 0.16in; border: 2px solid #111; display: flex; flex-direction: column; justify-content: space-between;
 }
 .vm-card-store { font-weight: bold; font-size: 15px; text-align: center; }
-.vm-card-sub { font-size: 11px; text-align: center; margin-top: -4px; }
+.vm-card-sub { font-size: 12px; text-align: center; margin-top: -4px; }
 .vm-card-name { font-weight: bold; font-size: 17px; overflow-wrap: anywhere; }
 .vm-card-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
 .vm-card-barcode svg { display: block; width: 100%; height: 0.55in; }

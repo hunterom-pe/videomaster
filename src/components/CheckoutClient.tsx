@@ -33,7 +33,7 @@ type SaleLine = { item: SaleItem; qty: number };
 const rentalKey = (id: string) => `rental:${id}`;
 const saleKey = (id: string) => `sale:${id}`;
 const rowStyle = (selected: boolean) => (selected ? { background: "var(--hover)", color: "var(--on-hover)" } : undefined);
-const plainBtn = { background: "none", border: 0, font: "inherit", color: "inherit", padding: 0, cursor: "pointer", textAlign: "left" } as const;
+const plainBtn = { background: "none", border: 0, font: "inherit", color: "inherit", padding: 0, cursor: "pointer", textAlign: "left", minHeight: 36, display: "flex", alignItems: "center" } as const;
 
 export function CheckoutClient({ customerId, customerName, status, fees, restrictions, activeOut, maxOut, canOverride, taxPercent, timezone, saleCategories, credit = 0, initialRentals = [], initialNotice = "" }: Props) {
   const [rentals, setRentals] = useState<CartItem[]>(initialRentals);
